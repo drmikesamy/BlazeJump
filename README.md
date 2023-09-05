@@ -1,4 +1,4 @@
-# BlazeJump - A Blazor and C# boilerplate for Nostr
+# BlazeJump - A Blazor and C# boilerplate for Nostr Clients
 
 BlazeJump is a bare bones Nostr client intended to be a boilerplate project for C# Blazor Nostr projects.
 
