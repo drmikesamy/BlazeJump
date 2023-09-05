@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <title>BlazeJump</title>
+    <base href="/" />
+    <link href="css/app.css" rel="stylesheet" />
+
+    <!-- If you add any scoped CSS files, uncomment the following to load them
+    <link href="BlazeJump.Client.styles.css" rel="stylesheet" /> -->
+    <script>
+        window.jsMethod = () => {
+            return new Promise((resolve, reject) => {
+
+                var keyGen = async function () {
+                    let keyPair = await window.crypto.subtle.generateKey(
+                        {
+                            name: "RSA-OAEP",
+                            modulusLength: 4096,
+                            publicExponent: new Uint8Array([1, 0, 1]),
+                            hash: "SHA-256"
+                        },
+                        true,
+                        ["encrypt", "decrypt"]
+                    );
+                    var exportedPublicKey = await window.crypto.subtle.exportKey("jwk", keyPair.publicKey);
+                    var exportedPrivateKey = await window.crypto.subtle.exportKey("jwk", keyPair.privateKey);
+                    var keyPairObject = new Object();
+                    keyPairObject.publicKey = exportedPublicKey;
+                    keyPairObject.privateKey = exportedPrivateKey;
+                    var key = JSON.stringify(keyPairObject);
+                    resolve(key);
+                }
+                keyGen();
+            });
+        }
+
+        function waitforme(millisec) {
+            return new Promise(resolve => {
+                setTimeout(() => { resolve('') }, millisec);
+            })
+        }
+    </script>
+</head>
+
+<body>
+    <div id="app">
+        <div class="loading-animation-container">
+            <div class="loading-animation"></div>
+        </div>
+    </div>
+
+    <div id="blazor-error-ui">
+        An unhandled error has occurred.
+        <a href="" class="reload">Reload</a>
+        <a class="dismiss">🗙</a>
+    </div>
+    <script src="_framework/blazor.webassembly.js"></script>
+    <environment names="Development">
+        <script src="_framework/aspnetcore-browser-refresh.js"></script>
+    </environment>    
+</body>
+
+</html>

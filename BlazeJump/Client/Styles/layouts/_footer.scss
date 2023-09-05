@@ -1,0 +1,8 @@
+// Footer Styles
+footer {
+  padding: $pad * 2;
+  
+  div {
+    @extend .container
+  }
+}

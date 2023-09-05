@@ -1,0 +1,37 @@
+﻿@using BlazeJump.Client.Data;
+@using BlazeJump.Client.Models;
+@using BlazeJump.Client.Services.Database;
+@inherits LayoutComponentBase
+@inject IBlazeDbService DbService;
+
+<div class="container">
+	<div class="top-bar box">
+		<img src="images/layout/logo.svg" class="logo" />
+	</div>
+	<div class="main">
+		<div class="nav-left box">
+			<ul>
+				@foreach (var menuItem in MainMenu)
+				{
+					<li><NavLink href="@menuItem.LinkRoute">@menuItem.Title</NavLink></li>
+				}
+			</ul>
+		</div>
+		<div class="discussion-pane">
+			@Body
+		</div>
+	</div>
+</div>
+
+@code {
+	public List<MenuItem> MainMenu = new List<MenuItem>
+	{
+		new MenuItem { Title = "Home", LinkRoute = "" },
+		new MenuItem { Title = "Relays", LinkRoute = "relays" },
+		new MenuItem { Title = "Profile", LinkRoute = "profile" }
+	};
+	protected override async void OnInitialized()
+	{
+		await DbService.InitDatabaseAsync();
+	}
+}

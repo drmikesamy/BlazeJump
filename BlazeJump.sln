@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.4.33205.214
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BlazeJump.Client", "BlazeJump\Client\BlazeJump.Client.csproj", "{02331AD2-66FB-4DA9-8825-00C1B7818991}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{02331AD2-66FB-4DA9-8825-00C1B7818991}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{02331AD2-66FB-4DA9-8825-00C1B7818991}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{02331AD2-66FB-4DA9-8825-00C1B7818991}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{02331AD2-66FB-4DA9-8825-00C1B7818991}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {87FE8445-4FDC-4766-89EC-8E2884E7317E}
+	EndGlobalSection
+EndGlobal
