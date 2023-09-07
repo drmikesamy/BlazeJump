@@ -17,6 +17,7 @@ namespace BlazeJump.Client.Services.Message
         private Dictionary<string, NEvent> sendMessageQueue = new Dictionary<string, NEvent>();
         private List<string> _relatedMessageIds = new List<string>();
         public event EventHandler<NMessage>? NewMessageProcessed;
+        public bool FetchTaskComplete = false;
         public List<string> Users { get; set; } = new List<string>
         {
 
@@ -45,6 +46,10 @@ namespace BlazeJump.Client.Services.Message
             activeSubscriptions.TryAdd(subscriptionHash, true);
             await _relayManager.QueryRelays(new List<string> { "wss://relay.damus.io" }, subscriptionHash, filter);
             FetchCount++;
+            while (!FetchTaskComplete)
+            {
+                await Task.Delay(25);
+            }
         }
 
         private async void ProcessMessage(object sender, NMessage newMessage)
@@ -55,20 +60,24 @@ namespace BlazeJump.Client.Services.Message
                     if (newMessage.Event != null && newMessage.Event.Kind == KindEnum.Text)
                         if (newMessage.Event.Pubkey != null)
                         {
-                            var relatedMessageIds = newMessage.Event.Tags.Where(e => e.Key == TagEnum.e).Select(e => e.Value ?? "").ToList();
+                            var relatedMessageIds = newMessage.Event.Tags.Where(e => e.Key == TagEnum.e && e.Value?.Count() == 64).Select(e => e.Value ?? "").ToList();
                             _relatedMessageIds.AddRange(relatedMessageIds);
                             AddMessage(newMessage);
                         }
                     break;
                 case MessageTypeEnum.Notice:
                     if (newMessage.NoticeMessage != null)
-                        Console.WriteLine(newMessage.NoticeMessage);
+                    {
+						Console.WriteLine(newMessage.NoticeMessage);
+                        if (newMessage.NoticeMessage.Contains("ERROR"))
+                        {
+							FetchTaskComplete = true;
+						}
+					}  
                     break;
                 case MessageTypeEnum.Eose:
                     Console.WriteLine($"End of stored events: {newMessage.SubscriptionId}");
-                    if (FetchCount > 1)
-                        return;
-                    if (_relatedMessageIds != null && _relatedMessageIds.Count() > 0)
+                    if (_relatedMessageIds != null && _relatedMessageIds.Count() > 0 && FetchCount <= 1)
                     {
                         var since = DateTime.UtcNow.AddYears(-20);
                         var until = DateTime.UtcNow;
@@ -82,7 +91,10 @@ namespace BlazeJump.Client.Services.Message
 
                         _relatedMessageIds.Clear();
                     }
-
+                    else
+                    {
+						FetchTaskComplete = true;
+					}
                     break;
                 case MessageTypeEnum Ok:
                     Console.WriteLine($"Event received OK. Event Id {newMessage.NEventId}");

@@ -9,6 +9,11 @@
 @inject IMessageService MessageService
 @inject ICryptoService CryptoService
 
+
+<div class="loading-modal" style="@(Loading ? "display: block" : "display: none")">
+	Loading...
+</div>
+
 <div class="box">
 	<div>
 		<input type="text" id="new-message" name="new-message" @bind="NewNEventInput"><button type="button" @onclick="SendNEvent">Send</button>
@@ -20,6 +25,7 @@
 }
 
 @code {
+	public bool Loading { get; set; } = false;
 	public string NewNEventInput { get; set; } = string.Empty;
 	public Dictionary<string, NEvent> MessageList { get; set; } = new Dictionary<string, NEvent>();
 	public bool SubscriptionLoadingHidden { get; set; } = true;
@@ -28,7 +34,9 @@
 	{
 
 		MessageService.NewMessageProcessed += OnMessageReceived;
-		_ = GetMessagesByFilter();
+		Loading = true;
+		await GetMessagesByFilter(DateTime.UtcNow.AddDays(-1), DateTime.Now.AddDays(1));
+		Loading = false;
 		ActiveSubscriptions.TryAdd(Guid.NewGuid().ToString(), true);
 	}
 
@@ -38,12 +46,9 @@
 		await MessageService.SendNEvent(newNEvent, ActiveSubscriptions.Keys.First());
 	}
 
-	public async Task GetMessagesByFilter()
+	public async Task GetMessagesByFilter(DateTime since, DateTime until)
 	{
 		SubscriptionLoadingHidden = false;
-
-		var since = DateTime.UtcNow.AddMonths(-1);
-		var until = DateTime.Now.AddDays(1);
 
 		var ownPubKey = await CryptoService.GetPublicKey();
 
