@@ -14,13 +14,10 @@ namespace BlazeJump.Client.Services.Message
 		private IBlazeDbService _dbService;
 		private ICryptoService _cryptoService;
 		private IMapper _mapper;
-		private Dictionary<string, bool> activeSubscriptions = new Dictionary<string, bool>();
+		private Dictionary<string, List<NMessage>> activeSubscriptions = new Dictionary<string, List<NMessage>>();
 		private Dictionary<string, NEvent> sendMessageQueue = new Dictionary<string, NEvent>();
-		private Dictionary<string, bool> _relatedMessageIds = new Dictionary<string, bool>();
-		private Dictionary<string, bool> _relatedMetaIds = new Dictionary<string, bool>();
 		public event EventHandler<NMessage>? NewMessageProcessed;
 		public bool FetchTaskComplete = false;
-		public List<NMessage> MessageBuffer { get; set; } = new List<NMessage>();
 		public List<string> Users { get; set; } = new List<string>
 		{
 
@@ -38,7 +35,7 @@ namespace BlazeJump.Client.Services.Message
 		public async Task FetchMessagesByFilter(Filter filter, int parentDepth = 1)
 		{
 			var subscriptionHash = Guid.NewGuid().ToString();
-			activeSubscriptions.TryAdd(subscriptionHash, true);
+			activeSubscriptions.Add(subscriptionHash, new List<NMessage>());
 			await _relayManager.QueryRelays(new List<string> { "wss://relay.damus.io" }, subscriptionHash, filter);
 			while (!FetchTaskComplete)
 			{
@@ -47,7 +44,8 @@ namespace BlazeJump.Client.Services.Message
 
 			if (parentDepth > 0)
 			{
-				var allTags = MessageBuffer.Where(m => m.Event?.Kind == KindEnum.Text).Select(m => m.Event.Tags.Select(t => new Tuple<TagEnum, string?>(t.Key, t.Value))).SelectMany(tu => tu.Select(tf => tf)).Distinct().ToList();
+				FetchTaskComplete = false;
+				var allTags = activeSubscriptions[subscriptionHash].Where(m => m.Event?.Kind == KindEnum.Text).Select(m => m.Event.Tags.Select(t => new Tuple<TagEnum, string?>(t.Key, t.Value))).SelectMany(tu => tu.Select(tf => tf)).Distinct().ToList();
 				var parentEventIds = allTags.Where(t => t.Item1 == TagEnum.e && t.Item2 != null && t.Item2.Count() == 64).Select(t => t.Item2).ToList();
 
 				var since = DateTime.UtcNow.AddYears(-20);
@@ -64,7 +62,6 @@ namespace BlazeJump.Client.Services.Message
 					}, parentDepth);
 				}
 			}
-
 			ProcessMessages();
 		}
 
@@ -74,18 +71,26 @@ namespace BlazeJump.Client.Services.Message
 			{
 				FetchTaskComplete = true;
 			}
-			MessageBuffer.Add(newMessage);
+			else
+			{
+				if (!String.IsNullOrEmpty(newMessage.SubscriptionId) && activeSubscriptions.ContainsKey(newMessage.SubscriptionId))
+				{
+					activeSubscriptions[newMessage.SubscriptionId].Add(newMessage);
+				}
+
+			}
 		}
 
 		private async void ProcessMessages()
 		{
-			var textMessages = MessageBuffer.Where(m => m.Event?.Kind == KindEnum.Text);
-
-			foreach (var textMessage in textMessages)
+			foreach (var subscription in activeSubscriptions)
 			{
-				
-				AddMessage(textMessage);
+				foreach (var textMessage in subscription.Value)
+				{
+					AddMessage(textMessage);
+				}
 			}
+			activeSubscriptions.Clear();
 		}
 		public User GetOrCreateUser(string userId)
 		{
