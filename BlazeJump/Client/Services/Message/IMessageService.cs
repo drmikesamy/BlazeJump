@@ -7,8 +7,7 @@ namespace BlazeJump.Client.Services.Message
     {
 		event EventHandler<NMessage>? NewMessageProcessed;
         void AddMessage(NMessage nMessage);
-        List<NEvent> GetAllMessages();
-		Task FetchMessagesByFilter(Filter filter);
+		Task FetchMessagesByFilter(Filter filter, int parentDepth = 1);
 		Task<NEvent> GetNewNEvent(KindEnum kind, string message, string? parentId);
 		Task SendNEvent(NEvent nEvent, string subscriptionHash);
 	}
