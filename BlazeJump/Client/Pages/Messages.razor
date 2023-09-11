@@ -11,7 +11,11 @@
 
 
 <div class="loading-modal" style="@(Loading ? "display: block" : "display: none")">
-	Loading...
+	@foreach(var Connection in RelayManager.RelayConnections)
+	{
+		@Connection.Key
+		<br />
+	}
 </div>
 
 <div class="box">
@@ -19,7 +23,7 @@
 		<input type="text" id="new-message" name="new-message" @bind="NewNEventInput"><button type="button" @onclick="SendNEvent">Send</button>
 	</div>
 </div>
-@foreach (var message in MessageList.Values)
+@foreach (var message in MessageList)
 {
 	<MessageCard Message=message></MessageCard>
 }
@@ -27,17 +31,14 @@
 @code {
 	public bool Loading { get; set; } = false;
 	public string NewNEventInput { get; set; } = string.Empty;
-	public Dictionary<string, NEvent> MessageList { get; set; } = new Dictionary<string, NEvent>();
+	public List<NEvent> MessageList { get; set; } = new List<NEvent>();
 	public bool SubscriptionLoadingHidden { get; set; } = true;
 	public Dictionary<string, bool> ActiveSubscriptions = new Dictionary<string, bool>();
 	protected override async Task OnInitializedAsync()
 	{
-
-		MessageService.NewMessageProcessed += OnMessageReceived;
 		Loading = true;
-		await GetMessagesByFilter(DateTime.UtcNow.AddDays(-1), DateTime.Now.AddDays(1));
+		await GetMessagesByFilter(DateTime.UtcNow.AddDays(-7), DateTime.Now.AddDays(1));
 		Loading = false;
-		ActiveSubscriptions.TryAdd(Guid.NewGuid().ToString(), true);
 	}
 
 	public async Task SendNEvent()
@@ -68,24 +69,8 @@
 			filter.Authors.Add(ownPubKey);
 		}
 
-		await MessageService.FetchMessagesByFilter(filter);
-	}
+		MessageList = await MessageService.FetchMessagesByFilter(filter);
 
-	void OnMessageReceived(object sender, NMessage e)
-	{
-		var addMessage = MessageList.TryAdd(e.Event.Id, e.Event);
-		if(addMessage == false)
-		{
-			MessageList.Remove(e.Event.Id);
-			MessageList.TryAdd(e.Event.Id, e.Event);
-		}
-
-		if (e?.SubscriptionId != null)
-			ActiveSubscriptions.TryAdd(e.SubscriptionId, true);
-		if (e?.MessageType == Enums.MessageTypeEnum.Eose && ActiveSubscriptions.ContainsKey(e?.SubscriptionId ?? ""))
-		{
-			ActiveSubscriptions.Remove(e!.SubscriptionId!);
-		}
 		StateHasChanged();
 	}
 }
