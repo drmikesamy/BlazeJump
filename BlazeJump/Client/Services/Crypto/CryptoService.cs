@@ -25,8 +25,23 @@ namespace BlazeJump.Client.Services.Crypto
 		}
 		public async Task<string> GetPublicKey()
 		{
-			var pubKey = await _jsRuntime.InvokeAsync<string>("nostr.getPublicKey");
-			return pubKey;
+			string? pubKey;
+			try
+			{
+				return await _jsRuntime.InvokeAsync<string>("nostr.getPublicKey");
+			}
+			catch
+			{
+				if(!string.IsNullOrEmpty(RsaPublicKey))
+				{
+					return RsaPublicKey;
+				}
+				else
+				{
+					await GenerateRSAKeyPair();
+					return RsaPublicKey;
+				}
+			}
 		}
 
 		public async Task<NEvent> SignEvent(NEvent nEvent)

@@ -1,4 +1,5 @@
 ﻿@page "/"
+@using BlazeJump.Client.Enums;
 @using BlazeJump.Client.Pages.Components
 @using BlazeJump.Client.Services.Connections;
 @using BlazeJump.Client.Models;
@@ -25,7 +26,9 @@
 </div>
 @foreach (var message in MessageList)
 {
-	<MessageCard Message=message></MessageCard>
+
+		<MessageCard Message=message></MessageCard>
+
 }
 
 @code {
@@ -34,10 +37,11 @@
 	public List<NEvent> MessageList { get; set; } = new List<NEvent>();
 	public bool SubscriptionLoadingHidden { get; set; } = true;
 	public Dictionary<string, bool> ActiveSubscriptions = new Dictionary<string, bool>();
+	public string BaseSubscriptionId;
 	protected override async Task OnInitializedAsync()
 	{
 		Loading = true;
-		await GetMessagesByFilter(DateTime.UtcNow.AddDays(-7), DateTime.Now.AddDays(1));
+		await GetMessagesByFilter(DateTime.UtcNow.AddDays(-1), DateTime.Now.AddDays(1));
 		Loading = false;
 	}
 
@@ -64,7 +68,7 @@
 		filter.Authors.Add("82341f882b6eabcd2ba7f1ef90aad961cf074af15b9ef44a09f9d2a8fbfbe6a2");
 
 		//Own key
-		if(ownPubKey != null)
+		if(!string.IsNullOrEmpty(ownPubKey))
 		{
 			filter.Authors.Add(ownPubKey);
 		}

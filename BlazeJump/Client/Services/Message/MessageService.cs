@@ -30,14 +30,40 @@ namespace BlazeJump.Client.Services.Message
 			_mapper = mapper;
 		}
 
-		public async Task<List<NEvent>> FetchMessagesByFilter(Filter filter)
+		public async Task<List<NEvent>> FetchMessagesByFilter(Filter filter, int depth = 1, int currentDepth = 0)
 		{
 			var subscriptionHash = Guid.NewGuid().ToString();
 			var rawMessages = await _relayManager.QueryRelays(new List<string> { "wss://relay.damus.io" }, subscriptionHash, filter);
 			var nMessages = rawMessages.Select(rawMessage => JsonConvert.DeserializeObject<NMessage>(rawMessage));
-			var textMessages = nMessages.Where(m => m.MessageType == MessageTypeEnum.Event).Select(m => m.Event).ToList();
+			var textMessages = nMessages.Where(m => m?.MessageType == MessageTypeEnum.Event).Select(m => m?.Event).ToList();
+			if(currentDepth == 0)
+			{
+				textMessages.ForEach(t => t.IsBaseMessage = true);
+			}
+			var parentIds = textMessages.Where(t => t.ParentNEventId != null && t.ParentNEventId.Count() ==  64).Select(m => m.ParentNEventId).ToList();
+
+			
+			if(currentDepth < depth)
+			{
+				currentDepth++;
+				var parentMessages = await FetchMessagesByFilter(new Filter
+				{
+					Since = DateTime.Now.AddYears(-20),
+					Until = DateTime.Now,
+					EventId = parentIds
+				}, depth, currentDepth);
+                foreach (var t in textMessages)
+                {
+					var parentId = t.ParentNEventId;
+					var parentMessage = parentMessages.Where(p => p.Id == parentId).First();
+					t.ParentNEvent = parentMessage;
+                }
+			}
+			
 
 			await AddMessagesToDb(textMessages);
+
+
 
 			return textMessages;
 		}

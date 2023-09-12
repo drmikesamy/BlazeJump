@@ -14,7 +14,13 @@
 				@(Message.Pubkey ?? "")
 			</h3>
 			<p>@(Message.Content ?? "")</p>
-			<p>@(Message.CreatedAtDateTime)</p>
+			<p>
+				@(Message.CreatedAtDateTime)
+				@foreach (var reaction in Message.Reactions.GroupBy(r => r.Content))
+				{
+					@($"  {reaction.FirstOrDefault()?.Content} {reaction.Count()}")
+				}
+			</p>
 		</div>
 	</div>
 </div>
