@@ -41,7 +41,7 @@
 	protected override async Task OnInitializedAsync()
 	{
 		Loading = true;
-		await GetMessagesByFilter(DateTime.UtcNow.AddDays(-1), DateTime.Now.AddDays(1));
+		await GetMessagesByFilter(DateTime.UtcNow.AddDays(-7), DateTime.Now.AddDays(1));
 		Loading = false;
 	}
 

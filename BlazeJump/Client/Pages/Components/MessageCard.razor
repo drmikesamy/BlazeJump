@@ -9,19 +9,19 @@
 		<div class="profile-picture">
 			<img src="@($"images/profilepics/{Message.User?.ProfilePic ?? ""}.png")" alt="profile picture">
 		</div>
-		<div class="card-body">
-			<h3>
-				@(Message.Pubkey ?? "")
-			</h3>
-			<p>@(Message.Content ?? "")</p>
-			<p>
-				@(Message.CreatedAtDateTime)
-				@foreach (var reaction in Message.Reactions.GroupBy(r => r.Content))
-				{
-					@($"  {reaction.FirstOrDefault()?.Content} {reaction.Count()}")
-				}
-			</p>
-		</div>
+        <div class="card-body">
+            <h3>
+                @(Message.Pubkey ?? "")
+            </h3>
+            <p>@(Message.Content ?? "")</p>
+            <p>
+                @(Message.CreatedAtDateTime)
+                @foreach (var reaction in Message.Reactions.GroupBy(r => r.Content))
+                {
+                    @($"  {reaction.FirstOrDefault()?.Content} {reaction.Count()}")
+                }
+            </p>
+        </div>
 	</div>
 </div>
 
