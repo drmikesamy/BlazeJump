@@ -1,14 +1,11 @@
 ﻿@using BlazeJump.Client.Models;
 
 <div class="box">
-	@if (Message.ParentNEvent?.Sig != null)
-	{
-		<MessageCard Message=Message.ParentNEvent></MessageCard>
-	}
-	<div class="card box">
-		<div class="profile-picture">
-			<img src="@($"images/profilepics/{Message.User?.ProfilePic ?? ""}.png")" alt="profile picture">
-		</div>
+
+    <div class="card box">
+        <div class="profile-picture">
+            <img src="@($"images/profilepics/{Message.User?.ProfilePic ?? ""}.png")" alt="profile picture">
+        </div>
         <div class="card-body">
             <h3>
                 @(Message.Pubkey ?? "")
@@ -22,10 +19,14 @@
                 }
             </p>
         </div>
-	</div>
+    </div>
+    @foreach (var child in Message.ChildNEvents)
+    {
+        <MessageCard Message=child></MessageCard>
+    }
 </div>
 
 @code {
-	[Parameter]
-	public NEvent Message { get; set; }
+    [Parameter]
+    public NEvent Message { get; set; }
 }

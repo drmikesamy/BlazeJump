@@ -49,7 +49,9 @@ namespace BlazeJump.Client.Models
         }
         [JsonIgnore]
         public virtual NEvent? ParentNEvent { get; set; }
-		[JsonIgnore]
+        [JsonIgnore]
+        public virtual List<NEvent> ChildNEvents { get; set; } = new List<NEvent>();
+        [JsonIgnore]
         [InverseProperty(nameof(Reactions))]
 		public string? ReactionId
 		{

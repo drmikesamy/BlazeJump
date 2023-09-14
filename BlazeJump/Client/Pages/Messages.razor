@@ -73,7 +73,8 @@
 			filter.Authors.Add(ownPubKey);
 		}
 
-		MessageList = await MessageService.FetchMessagesByFilter(filter);
+
+		MessageList = MessageService.FetchMessagesFromDb(m => m.Kind == KindEnum.Text);
 
 		StateHasChanged();
 	}
