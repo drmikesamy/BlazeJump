@@ -74,7 +74,7 @@
 		}
 
 
-		MessageList = MessageService.FetchMessagesFromDb(m => m.Kind == KindEnum.Text);
+		MessageList = await MessageService.FetchNEventsByFilter(filter);
 
 		StateHasChanged();
 	}

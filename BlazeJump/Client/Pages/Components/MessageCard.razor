@@ -1,4 +1,6 @@
 ﻿@using BlazeJump.Client.Models;
+@using BlazeJump.Client.Services.Message;
+@inject IMessageService MessageService
 
 <div class="box">
 
@@ -12,7 +14,7 @@
             </h3>
             <p>@(Message.Content ?? "")</p>
             <p>
-                @(Message.CreatedAtDateTime)
+                @(Message.CreatedAtDateTime) | <a href="" @onclick="LoadChildNEvents">Load comments</a>
                 @foreach (var reaction in Message.Reactions.GroupBy(r => r.Content))
                 {
                     @($"  {reaction.FirstOrDefault()?.Content} {reaction.Count()}")
@@ -29,4 +31,9 @@
 @code {
     [Parameter]
     public NEvent Message { get; set; }
+
+    public async Task LoadChildNEvents()
+    {
+        Message.ChildNEvents = await MessageService.FetchNEventsByParentId(Message.Id);
+    }
 }
