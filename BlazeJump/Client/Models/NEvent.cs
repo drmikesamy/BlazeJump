@@ -72,7 +72,7 @@ namespace BlazeJump.Client.Models
 		[JsonIgnore]
 		public List<NEvent> Reactions { get; set; } = new List<NEvent>();
         [JsonIgnore]
-        public bool IsBaseMessage { get; set; } = false;
+        public int ReplyCount => ChildNEvents?.Count() ?? 0;
 	}
 
 }

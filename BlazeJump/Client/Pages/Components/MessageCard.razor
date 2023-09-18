@@ -14,7 +14,7 @@
             </h3>
             <p>@(Message.Content ?? "")</p>
             <p>
-                @(Message.CreatedAtDateTime) | <a href="" @onclick="LoadChildNEvents">Load comments</a>
+                @(Message.CreatedAtDateTime) | <img src="./images/layout/loader.gif" style="@(Loading ? "display: inline-block" : "display: none")" /><a @onclick="ShowHideComments" style="cursor: pointer; @(Loading ? "display: none" : "display: inline-block")">@(Message.ReplyCount > 10 ? "10+" : Message.ReplyCount) comments</a>
                 @foreach (var reaction in Message.Reactions.GroupBy(r => r.Content))
                 {
                     @($"  {reaction.FirstOrDefault()?.Content} {reaction.Count()}")
@@ -22,15 +22,31 @@
             </p>
         </div>
     </div>
-    @foreach (var child in Message.ChildNEvents)
+    @if (ShowComments)
     {
-        <MessageCard Message=child></MessageCard>
+        @foreach (var child in Message.ChildNEvents)
+        {
+            <MessageCard Message=child></MessageCard>
+        }
     }
 </div>
 
 @code {
     [Parameter]
     public NEvent Message { get; set; }
+    public bool Loading { get; set; } = false;
+    public bool ShowComments { get; set; } = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        Loading = true;
+        await LoadChildNEvents();
+        Loading = false;
+    }
+    public void ShowHideComments() {
+        ShowComments = !ShowComments;
+        StateHasChanged();
+    }
 
     public async Task LoadChildNEvents()
     {

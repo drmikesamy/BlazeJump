@@ -47,7 +47,7 @@ namespace BlazeJump.Client.Services.Message
 				Since = DateTime.Now.AddYears(-20),
 				Until = DateTime.Now,
 				EventId = new List<string> { nEventId },
-				Limit = 10
+				Limit = 11
 			});
 
 			return nEvents;
