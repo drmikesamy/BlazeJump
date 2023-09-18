@@ -32,15 +32,34 @@ namespace BlazeJump.Client.Services.Message
 
 		public async Task<List<NEvent>> FetchNEventsByFilter(Filter filter)
 		{
-			filter.Kinds = new int[] { 1 };
 			var subscriptionHash = Guid.NewGuid().ToString();
 			var rawMessages = await _relayManager.QueryRelays(new List<string> { "wss://relay.damus.io" }, subscriptionHash, filter);
 			var nMessages = rawMessages.Select(rawMessage => JsonConvert.DeserializeObject<NMessage>(rawMessage));
 			var nEvents = nMessages.Where(m => m?.MessageType == MessageTypeEnum.Event).Select(m => m?.Event).ToList();
 			return nEvents;
 		}
+        public async Task<int> FetchStatsByFilter(Filter filter)
+        {
+            var subscriptionHash = Guid.NewGuid().ToString();
+            var rawMessages = await _relayManager.QueryRelays(new List<string> { "wss://relay.damus.io" }, subscriptionHash, filter, true);
+            int.TryParse(rawMessages.FirstOrDefault(), out var stat);
+			return stat;
+        }
 
-		public async Task<List<NEvent>> FetchNEventsByParentId(string nEventId)
+        public async Task<NEvent?> FetchById(string nEventId)
+        {
+            var nEvent = (await FetchNEventsByFilter(new Filter
+            {
+                Since = DateTime.Now.AddYears(-20),
+                Until = DateTime.Now,
+                Ids = new List<string> { nEventId },
+                Limit = 1
+            })).FirstOrDefault();
+
+            return nEvent;
+        }
+
+        public async Task<List<NEvent>> FetchNEventsByParentId(string nEventId)
 		{
 			var nEvents = await FetchNEventsByFilter(new Filter
 			{

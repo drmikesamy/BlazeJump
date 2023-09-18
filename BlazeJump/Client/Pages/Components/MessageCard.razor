@@ -1,9 +1,13 @@
-﻿@using BlazeJump.Client.Models;
+﻿@using BlazeJump.Client.Enums;
+@using BlazeJump.Client.Models;
 @using BlazeJump.Client.Services.Message;
 @inject IMessageService MessageService
 
 <div class="box">
-
+    @if (Message.ParentNEvent != null)
+    {
+            <MessageCard Message=Message.ParentNEvent></MessageCard>
+    }
     <div class="card box">
         <div class="profile-picture">
             <img src="@($"images/profilepics/{Message.User?.ProfilePic ?? ""}.png")" alt="profile picture">
@@ -14,11 +18,18 @@
             </h3>
             <p>@(Message.Content ?? "")</p>
             <p>
-                @(Message.CreatedAtDateTime) | <img src="./images/layout/loader.gif" style="@(Loading ? "display: inline-block" : "display: none")" /><a @onclick="ShowHideComments" style="cursor: pointer; @(Loading ? "display: none" : "display: inline-block")">@(Message.ReplyCount > 10 ? "10+" : Message.ReplyCount) comments</a>
-                @foreach (var reaction in Message.Reactions.GroupBy(r => r.Content))
+                @(Message.CreatedAtDateTime) | <img src="./images/layout/loader.gif" style="@(Loading ? "display: inline-block" : "display: none")" /><a @onclick="ShowHideComments" style="cursor: pointer; @(Loading ? "display: none" : "display: inline-block")">@Message.ReplyCount comments</a>
+@*                @if(Message.Reactions?.Count() > 0)
                 {
-                    @($"  {reaction.FirstOrDefault()?.Content} {reaction.Count()}")
+                    @foreach (var reaction in Message.Reactions.GroupBy(r => r.Content))
+                    {
+                        @($"  {reaction.FirstOrDefault()?.Content} {reaction.Count()}")
+                    }
                 }
+                else
+                {
+                    <a @onclick="LoadReactions" style="cursor: pointer; @(Loading ? "display: none" : "display: inline-block")">@Message.ReactionCount reactions</a>
+                }*@
             </p>
         </div>
     </div>
@@ -40,16 +51,36 @@
     protected override async Task OnInitializedAsync()
     {
         Loading = true;
-        await LoadChildNEvents();
+        await LoadCommentCounts();
         Loading = false;
     }
-    public void ShowHideComments() {
+
+    public async Task ShowHideComments() {
+        if (!ShowComments && Message.ChildNEvents.Count() == 0)
+        {
+            var filter = new Filter
+                {
+                    Kinds = new int[] { (int)KindEnum.Text },
+                    Since = DateTime.Now.AddYears(-20),
+                    Until = DateTime.Now,
+                    EventId = new List<string> { Message.Id }
+                };
+            Message.ChildNEvents = await MessageService.FetchNEventsByFilter(filter);
+        }
+
         ShowComments = !ShowComments;
         StateHasChanged();
     }
 
-    public async Task LoadChildNEvents()
+    public async Task LoadCommentCounts()
     {
-        Message.ChildNEvents = await MessageService.FetchNEventsByParentId(Message.Id);
+        var filter = new Filter
+            {
+                Kinds = new int[] { (int)KindEnum.Text },
+                Since = DateTime.Now.AddYears(-20),
+                Until = DateTime.Now,
+                EventId = new List<string> { Message.Id }
+            };
+        Message.ReplyCount = await MessageService.FetchStatsByFilter(filter);
     }
 }

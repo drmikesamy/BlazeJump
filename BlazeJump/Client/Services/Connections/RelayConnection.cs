@@ -51,21 +51,26 @@ namespace BlazeJump.Client.Services.Connections
 			if (WebSocket.State == WebSocketState.Open)
 			{
 				Console.WriteLine($"subscribing to {_uri} using {subscriptionId}");
-
-				object[] obj = { "REQ", subscriptionId, filter };
-
-				string newsub = JsonConvert.SerializeObject(obj);
-
-				var dataToSend = new ArraySegment<byte>(Encoding.UTF8.GetBytes(newsub));
-
-				await WebSocket.SendAsync(dataToSend, WebSocketMessageType.Text, true, _webSocketCancellationToken);
-
-				ActiveSubscriptions.TryAdd(subscriptionId, true);
+				await SendRequest(MessageTypeEnum.Req, subscriptionId, filter);
+                ActiveSubscriptions.TryAdd(subscriptionId, true);
 			}
 		}
-		public async Task<List<string>> MessageLoop()
+		public async Task SendRequest(MessageTypeEnum requestMessageType, string subscriptionId, Filter filter)
+		{
+            object[] obj = { requestMessageType.ToString().ToUpper(), subscriptionId, filter };
+
+            string newsub = JsonConvert.SerializeObject(obj);
+
+            var dataToSend = new ArraySegment<byte>(Encoding.UTF8.GetBytes(newsub));
+
+            await WebSocket.SendAsync(dataToSend, WebSocketMessageType.Text, true, _webSocketCancellationToken);
+        }
+		public async Task<List<string>> MessageLoop(bool countOnly = false)
 		{
 			var messages = new List<string>();
+			if(countOnly)
+				messages.Add("0");
+			var messageCount = 0;
 			Console.WriteLine($"setting up listener for {_uri}");
 			await foreach (var rawMessage in ReceiveLoop())
 			{
@@ -74,7 +79,6 @@ namespace BlazeJump.Client.Services.Connections
 					continue;
 				}
 				Console.WriteLine($"Message received from {_uri}");
-				messages.Add(rawMessage);
 				if (!rawMessage.StartsWith("[\"EVENT"))
 				{
 					var abbreviatedRawMessage = rawMessage.Count() < 100 ? rawMessage : rawMessage.Substring(0, 100);
@@ -86,6 +90,18 @@ namespace BlazeJump.Client.Services.Connections
 						break;
 					}
 				}
+				else
+				{
+                    if (countOnly)
+                    {
+                        messageCount++;
+                        messages[0] = messageCount.ToString();
+                    }
+                    else
+                    {
+                        messages.Add(rawMessage);
+                    }
+                }
 			}
 			return messages;
 		}

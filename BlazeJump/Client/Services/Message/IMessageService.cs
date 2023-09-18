@@ -6,9 +6,10 @@ namespace BlazeJump.Client.Services.Message
     public interface IMessageService
     {
 		Task<List<NEvent>> FetchNEventsByFilter(Filter filter);
+        Task<NEvent?> FetchById(string nEventId);
         Task<List<NEvent>> FetchNEventsByParentId(string nEventId);
+        Task<int> FetchStatsByFilter(Filter filter);
         List<NEvent> FetchMessagesFromDb(Func<NEvent, bool> selector);
-
         Task SendNEvent(NEvent nEvent, string subscriptionHash);
 		Task<NEvent> GetNewNEvent(KindEnum kind, string message, string? parentId = null);
 	}
