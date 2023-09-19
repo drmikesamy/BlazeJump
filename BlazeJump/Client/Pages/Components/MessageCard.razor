@@ -32,42 +32,10 @@
 @code {
 	[Parameter]
 	public NEvent Message { get; set; }
-	[Parameter]
-	public string? PageType { get; set; }
 	public bool Loading { get; set; } = false;
 
-	protected override async Task OnInitializedAsync()
-	{
-		Loading = true;
-		await LoadComments();
-		Loading = false;
-	}
-
-	public void ViewMessage()
+	public async Task ViewMessage()
 	{
 		NavManager.NavigateTo($"event/{Message.Id}");
-	}
-
-	public async Task LoadComments()
-	{
-		var filter = new Filter
-			{
-				Kinds = new int[] { (int)KindEnum.Text },
-				Since = DateTime.Now.AddYears(-20),
-				Until = DateTime.Now,
-				EventId = new List<string> { Message.Id }
-			};
-		Message.ReplyCount = await MessageService.FetchStatsByFilter(filter);
-		if (PageType?.ToLowerInvariant() == PageTypeEnum.Event.ToString().ToLowerInvariant())
-		{
-			filter = new Filter
-				{
-					Kinds = new int[] { (int)KindEnum.Text },
-					Since = DateTime.Now.AddYears(-20),
-					Until = DateTime.Now,
-					EventId = new List<string> { Message.Id }
-				};
-			Message.ChildNEvents = await MessageService.FetchNEventsByFilter(filter);
-		}
 	}
 }

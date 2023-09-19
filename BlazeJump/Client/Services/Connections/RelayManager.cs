@@ -27,7 +27,7 @@ namespace BlazeJump.Client.Services.Connections
 				connection.Cancel();
 			}
 		}
-		public async Task<List<string>> QueryRelays(List<string> uris, string subscriptionId, Filter filter, bool countOnly = false)
+		public async Task<List<string>> QueryRelays(List<string> uris, string subscriptionId, Filter filter)
 		{
 			var connectionTasks = new List<Task>();
 
@@ -39,7 +39,7 @@ namespace BlazeJump.Client.Services.Connections
 				{
 					await OpenConnection(uri);
 					await RelayConnections[uri].SubscribeAsync(subscriptionId, filter);
-					var connectionMessages = await RelayConnections[uri].MessageLoop(countOnly);
+					var connectionMessages = await RelayConnections[uri].MessageLoop();
 					if(connectionMessages != null)
 						messages.AddRange(connectionMessages);
 				});

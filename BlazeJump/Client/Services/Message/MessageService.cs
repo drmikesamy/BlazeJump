@@ -16,6 +16,7 @@ namespace BlazeJump.Client.Services.Message
 		private ICryptoService _cryptoService;
 		private IMapper _mapper;
 		private Dictionary<string, NEvent> sendMessageQueue = new Dictionary<string, NEvent>();
+		public List<NEvent> NEvents { get; set; }
 
 		public List<string> Users { get; set; } = new List<string>();
 
@@ -27,20 +28,48 @@ namespace BlazeJump.Client.Services.Message
 			_mapper = mapper;
 		}
 
-		public async Task<List<NEvent>> FetchNEventsByFilter(Filter filter)
+		public async Task<List<NEvent>> FetchNEventsByFilter(Filter filter, bool fullFetch = false)
 		{
 			var subscriptionHash = Guid.NewGuid().ToString();
 			var rawMessages = await _relayManager.QueryRelays(new List<string> { "wss://relay.damus.io" }, subscriptionHash, filter);
 			var nMessages = rawMessages.Select(rawMessage => JsonConvert.DeserializeObject<NMessage>(rawMessage));
 			var nEvents = nMessages.Where(m => m?.MessageType == MessageTypeEnum.Event).Select(m => m?.Event).ToList();
+			if(fullFetch)
+			{
+				foreach (var nEvent in nEvents)
+				{
+					filter = new Filter
+					{
+						Kinds = new int[] { (int)KindEnum.Text },
+						Since = DateTime.Now.AddYears(-20),
+						Until = DateTime.Now,
+						EventId = new List<string> { nEvent.Id }
+					};
+					nEvent.ChildNEvents = await FetchNEventsByFilter(filter);
+					nEvent.ReplyCount = nEvent.ChildNEvents.Count();
+				}
+			}
+			else
+			{
+				foreach (var nEvent in nEvents)
+				{
+					nEvent.ReplyCount = await FetchStats(nEvent.Id);
+				}
+			}
 			return nEvents;
 		}
-		public async Task<int> FetchStatsByFilter(Filter filter)
+		private async Task<int> FetchStats(string nEventId)
 		{
+			var filter = new Filter
+			{
+				Kinds = new int[] { (int)KindEnum.Text },
+				Since = DateTime.Now.AddYears(-20),
+				Until = DateTime.Now,
+				EventId = new List<string> { nEventId }
+			};
 			var subscriptionHash = Guid.NewGuid().ToString();
-			var rawMessages = await _relayManager.QueryRelays(new List<string> { "wss://relay.damus.io" }, subscriptionHash, filter, true);
-			int.TryParse(rawMessages.FirstOrDefault(), out var stat);
-			return stat;
+			var rawMessages = await _relayManager.QueryRelays(new List<string> { "wss://relay.damus.io" }, subscriptionHash, filter);
+			return rawMessages.Count();
 		}
 
 		public async Task<NEvent?> FetchById(string nEventId)

@@ -27,7 +27,7 @@
 @foreach (var message in MessageList)
 {
 
-	<MessageCard Message=message PageType=@PageType></MessageCard>
+	<MessageCard Message=message></MessageCard>
 
 }
 
@@ -76,7 +76,7 @@
 				filter.Since = DateTime.Now.AddYears(-20);
 				filter.Until = DateTime.Now.AddDays(1);
 				filter.Ids = new List<string> { Hex };
-				MessageList = await MessageService.FetchNEventsByFilter(filter);
+				MessageList = await MessageService.FetchNEventsByFilter(filter, true);
 			}
 			else
 			{

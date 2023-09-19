@@ -52,25 +52,22 @@ namespace BlazeJump.Client.Services.Connections
 			{
 				Console.WriteLine($"subscribing to {_uri} using {subscriptionId}");
 				await SendRequest(MessageTypeEnum.Req, subscriptionId, filter);
-                ActiveSubscriptions.TryAdd(subscriptionId, true);
+				ActiveSubscriptions.TryAdd(subscriptionId, true);
 			}
 		}
 		public async Task SendRequest(MessageTypeEnum requestMessageType, string subscriptionId, Filter filter)
 		{
-            object[] obj = { requestMessageType.ToString().ToUpper(), subscriptionId, filter };
+			object[] obj = { requestMessageType.ToString().ToUpper(), subscriptionId, filter };
 
-            string newsub = JsonConvert.SerializeObject(obj);
+			string newsub = JsonConvert.SerializeObject(obj);
 
-            var dataToSend = new ArraySegment<byte>(Encoding.UTF8.GetBytes(newsub));
+			var dataToSend = new ArraySegment<byte>(Encoding.UTF8.GetBytes(newsub));
 
-            await WebSocket.SendAsync(dataToSend, WebSocketMessageType.Text, true, _webSocketCancellationToken);
-        }
-		public async Task<List<string>> MessageLoop(bool countOnly = false)
+			await WebSocket.SendAsync(dataToSend, WebSocketMessageType.Text, true, _webSocketCancellationToken);
+		}
+		public async Task<List<string>> MessageLoop()
 		{
 			var messages = new List<string>();
-			if(countOnly)
-				messages.Add("0");
-			var messageCount = 0;
 			Console.WriteLine($"setting up listener for {_uri}");
 			await foreach (var rawMessage in ReceiveLoop())
 			{
@@ -85,23 +82,16 @@ namespace BlazeJump.Client.Services.Connections
 
 					var subscriptionId = ActiveSubscriptions.Keys.FirstOrDefault(s => abbreviatedRawMessage.Contains(s));
 
-					if (subscriptionId != null){
+					if (subscriptionId != null)
+					{
 						await UnSubscribeAsync(subscriptionId);
 						break;
 					}
 				}
 				else
 				{
-                    if (countOnly)
-                    {
-                        messageCount++;
-                        messages[0] = messageCount.ToString();
-                    }
-                    else
-                    {
-                        messages.Add(rawMessage);
-                    }
-                }
+					messages.Add(rawMessage);
+				}
 			}
 			return messages;
 		}
