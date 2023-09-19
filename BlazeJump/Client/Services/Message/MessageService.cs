@@ -17,10 +17,7 @@ namespace BlazeJump.Client.Services.Message
 		private IMapper _mapper;
 		private Dictionary<string, NEvent> sendMessageQueue = new Dictionary<string, NEvent>();
 
-		public List<string> Users { get; set; } = new List<string>
-		{
-
-		};
+		public List<string> Users { get; set; } = new List<string>();
 
 		public MessageService(IBlazeDbService dbService, IRelayManager relayManager, ICryptoService cryptoService, IMapper mapper)
 		{
@@ -38,28 +35,28 @@ namespace BlazeJump.Client.Services.Message
 			var nEvents = nMessages.Where(m => m?.MessageType == MessageTypeEnum.Event).Select(m => m?.Event).ToList();
 			return nEvents;
 		}
-        public async Task<int> FetchStatsByFilter(Filter filter)
-        {
-            var subscriptionHash = Guid.NewGuid().ToString();
-            var rawMessages = await _relayManager.QueryRelays(new List<string> { "wss://relay.damus.io" }, subscriptionHash, filter, true);
-            int.TryParse(rawMessages.FirstOrDefault(), out var stat);
+		public async Task<int> FetchStatsByFilter(Filter filter)
+		{
+			var subscriptionHash = Guid.NewGuid().ToString();
+			var rawMessages = await _relayManager.QueryRelays(new List<string> { "wss://relay.damus.io" }, subscriptionHash, filter, true);
+			int.TryParse(rawMessages.FirstOrDefault(), out var stat);
 			return stat;
-        }
+		}
 
-        public async Task<NEvent?> FetchById(string nEventId)
-        {
-            var nEvent = (await FetchNEventsByFilter(new Filter
-            {
-                Since = DateTime.Now.AddYears(-20),
-                Until = DateTime.Now,
-                Ids = new List<string> { nEventId },
-                Limit = 1
-            })).FirstOrDefault();
+		public async Task<NEvent?> FetchById(string nEventId)
+		{
+			var nEvent = (await FetchNEventsByFilter(new Filter
+			{
+				Since = DateTime.Now.AddYears(-20),
+				Until = DateTime.Now,
+				Ids = new List<string> { nEventId },
+				Limit = 1
+			})).FirstOrDefault();
 
-            return nEvent;
-        }
+			return nEvent;
+		}
 
-        public async Task<List<NEvent>> FetchNEventsByParentId(string nEventId)
+		public async Task<List<NEvent>> FetchNEventsByParentId(string nEventId)
 		{
 			var nEvents = await FetchNEventsByFilter(new Filter
 			{

@@ -1,4 +1,5 @@
 ﻿@page "/"
+@page "/{PageType}/{Hex}"
 @using BlazeJump.Client.Enums;
 @using BlazeJump.Client.Pages.Components
 @using BlazeJump.Client.Services.Connections;
@@ -10,9 +11,8 @@
 @inject IMessageService MessageService
 @inject ICryptoService CryptoService
 
-
 <div class="loading-modal" style="@(Loading ? "display: block" : "display: none")">
-	@foreach(var Connection in RelayManager.RelayConnections)
+	@foreach (var Connection in RelayManager.RelayConnections)
 	{
 		@Connection.Key
 		<br />
@@ -27,7 +27,7 @@
 @foreach (var message in MessageList)
 {
 
-		<MessageCard Message=message></MessageCard>
+	<MessageCard Message=message PageType=@PageType></MessageCard>
 
 }
 
@@ -35,48 +35,61 @@
 	public bool Loading { get; set; } = false;
 	public string NewNEventInput { get; set; } = string.Empty;
 	public List<NEvent> MessageList { get; set; } = new List<NEvent>();
-	public bool SubscriptionLoadingHidden { get; set; } = true;
+
 	public Dictionary<string, bool> ActiveSubscriptions = new Dictionary<string, bool>();
-	public string BaseSubscriptionId;
-	protected override async Task OnInitializedAsync()
+	[Parameter]
+	public string? PageType { get; set; }
+	[Parameter]
+	public string? Hex { get; set; }
+
+	protected override async Task OnParametersSetAsync()
+	{
+		await Load();
+	}
+
+	public async Task Load()
 	{
 		Loading = true;
-		await GetMessagesByFilter(DateTime.UtcNow.AddDays(-7), DateTime.Now.AddDays(1));
+		var ownPubKey = await CryptoService.GetPublicKey();
+		if (PageType != null && Hex != null)
+		{
+			var filter = new Filter
+				{
+					Kinds = new int[] { (int)KindEnum.Text },
+					Since = DateTime.Now.AddDays(-7),
+					Until = DateTime.Now.AddDays(1)
+				};
+			if (PageType.ToLowerInvariant() == PageTypeEnum.User.ToString().ToLowerInvariant())
+			{
+				filter.Authors = new List<string>();
+				//Jack's key 82341f882b6eabcd2ba7f1ef90aad961cf074af15b9ef44a09f9d2a8fbfbe6a2
+				filter.Authors.Add(Hex);
+				//Own key
+				if (!string.IsNullOrEmpty(ownPubKey))
+				{
+					filter.Authors.Add(ownPubKey);
+				}
+				MessageList = await MessageService.FetchNEventsByFilter(filter);
+			}
+			else if (PageType.ToLowerInvariant() == PageTypeEnum.Event.ToString().ToLowerInvariant())
+			{
+				filter.Since = DateTime.Now.AddYears(-20);
+				filter.Until = DateTime.Now.AddDays(1);
+				filter.Ids = new List<string> { Hex };
+				MessageList = await MessageService.FetchNEventsByFilter(filter);
+			}
+			else
+			{
+
+			}
+		}
 		Loading = false;
+		StateHasChanged();
 	}
 
 	public async Task SendNEvent()
 	{
 		var newNEvent = await MessageService.GetNewNEvent(Enums.KindEnum.Text, NewNEventInput, null);
 		await MessageService.SendNEvent(newNEvent, ActiveSubscriptions.Keys.First());
-	}
-
-	public async Task GetMessagesByFilter(DateTime since, DateTime until)
-	{
-		SubscriptionLoadingHidden = false;
-
-		var ownPubKey = await CryptoService.GetPublicKey();
-
-		var filter = new Filter
-			{
-				Kinds = new int[] { (int)KindEnum.Text },
-				Since = since,
-				Until = until,
-				Authors = new List<string>(),
-			};
-
-		//Jack's key
-		filter.Authors.Add("82341f882b6eabcd2ba7f1ef90aad961cf074af15b9ef44a09f9d2a8fbfbe6a2");
-
-		//Own key
-		if(!string.IsNullOrEmpty(ownPubKey))
-		{
-			filter.Authors.Add(ownPubKey);
-		}
-
-
-		MessageList = await MessageService.FetchNEventsByFilter(filter);
-
-		StateHasChanged();
 	}
 }

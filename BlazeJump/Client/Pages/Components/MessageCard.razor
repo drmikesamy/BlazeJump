@@ -2,85 +2,72 @@
 @using BlazeJump.Client.Models;
 @using BlazeJump.Client.Services.Message;
 @inject IMessageService MessageService
+@inject NavigationManager NavManager
 
 <div class="box">
-    @if (Message.ParentNEvent != null)
-    {
-            <MessageCard Message=Message.ParentNEvent></MessageCard>
-    }
-    <div class="card box">
-        <div class="profile-picture">
-            <img src="@($"images/profilepics/{Message.User?.ProfilePic ?? ""}.png")" alt="profile picture">
-        </div>
-        <div class="card-body">
-            <h3>
-                @(Message.Pubkey ?? "")
-            </h3>
-            <p>@(Message.Content ?? "")</p>
-            <p>
-                @(Message.CreatedAtDateTime) | <img src="./images/layout/loader.gif" style="@(Loading ? "display: inline-block" : "display: none")" /><a @onclick="ShowHideComments" style="cursor: pointer; @(Loading ? "display: none" : "display: inline-block")">@Message.ReplyCount comments</a>
-@*                @if(Message.Reactions?.Count() > 0)
-                {
-                    @foreach (var reaction in Message.Reactions.GroupBy(r => r.Content))
-                    {
-                        @($"  {reaction.FirstOrDefault()?.Content} {reaction.Count()}")
-                    }
-                }
-                else
-                {
-                    <a @onclick="LoadReactions" style="cursor: pointer; @(Loading ? "display: none" : "display: inline-block")">@Message.ReactionCount reactions</a>
-                }*@
-            </p>
-        </div>
-    </div>
-    @if (ShowComments)
-    {
-        @foreach (var child in Message.ChildNEvents)
-        {
-            <MessageCard Message=child></MessageCard>
-        }
-    }
+	@if (Message.ParentNEvent != null)
+	{
+		<MessageCard Message=Message.ParentNEvent></MessageCard>
+	}
+	<div class="card box">
+		<div class="profile-picture">
+			<img src="@($"images/profilepics/{Message.User?.ProfilePic ?? ""}.png")" alt="profile picture">
+		</div>
+		<div class="card-body">
+			<h3>
+				@(Message.Pubkey ?? "")
+			</h3>
+			<p>@(Message.Content ?? "")</p>
+			<p>
+				@(Message.CreatedAtDateTime) | <img src="./images/layout/loader.gif" style="@(Loading ? "display: inline-block" : "display: none")" /><a @onclick=ViewMessage style="cursor: pointer; @(Loading ? "display: none" : "display: inline-block")">@Message.ReplyCount comments</a>
+			</p>
+		</div>
+	</div>
+	@foreach (var child in Message.ChildNEvents)
+	{
+		<MessageCard Message=child></MessageCard>
+	}
 </div>
 
 @code {
-    [Parameter]
-    public NEvent Message { get; set; }
-    public bool Loading { get; set; } = false;
-    public bool ShowComments { get; set; } = false;
+	[Parameter]
+	public NEvent Message { get; set; }
+	[Parameter]
+	public string? PageType { get; set; }
+	public bool Loading { get; set; } = false;
 
-    protected override async Task OnInitializedAsync()
-    {
-        Loading = true;
-        await LoadCommentCounts();
-        Loading = false;
-    }
+	protected override async Task OnInitializedAsync()
+	{
+		Loading = true;
+		await LoadComments();
+		Loading = false;
+	}
 
-    public async Task ShowHideComments() {
-        if (!ShowComments && Message.ChildNEvents.Count() == 0)
-        {
-            var filter = new Filter
-                {
-                    Kinds = new int[] { (int)KindEnum.Text },
-                    Since = DateTime.Now.AddYears(-20),
-                    Until = DateTime.Now,
-                    EventId = new List<string> { Message.Id }
-                };
-            Message.ChildNEvents = await MessageService.FetchNEventsByFilter(filter);
-        }
+	public void ViewMessage()
+	{
+		NavManager.NavigateTo($"event/{Message.Id}");
+	}
 
-        ShowComments = !ShowComments;
-        StateHasChanged();
-    }
-
-    public async Task LoadCommentCounts()
-    {
-        var filter = new Filter
-            {
-                Kinds = new int[] { (int)KindEnum.Text },
-                Since = DateTime.Now.AddYears(-20),
-                Until = DateTime.Now,
-                EventId = new List<string> { Message.Id }
-            };
-        Message.ReplyCount = await MessageService.FetchStatsByFilter(filter);
-    }
+	public async Task LoadComments()
+	{
+		var filter = new Filter
+			{
+				Kinds = new int[] { (int)KindEnum.Text },
+				Since = DateTime.Now.AddYears(-20),
+				Until = DateTime.Now,
+				EventId = new List<string> { Message.Id }
+			};
+		Message.ReplyCount = await MessageService.FetchStatsByFilter(filter);
+		if (PageType?.ToLowerInvariant() == PageTypeEnum.Event.ToString().ToLowerInvariant())
+		{
+			filter = new Filter
+				{
+					Kinds = new int[] { (int)KindEnum.Text },
+					Since = DateTime.Now.AddYears(-20),
+					Until = DateTime.Now,
+					EventId = new List<string> { Message.Id }
+				};
+			Message.ChildNEvents = await MessageService.FetchNEventsByFilter(filter);
+		}
+	}
 }
