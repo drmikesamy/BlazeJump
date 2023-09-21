@@ -28,7 +28,10 @@
 {
 
 	<MessageCard Message=message></MessageCard>
-
+	@if(message.Id == MessageList.Last().Id)
+	{
+		<div><a style="cursor: pointer" @onclick="() => Load(message.CreatedAtDateTime, true)">Load more</a></div>
+	}
 }
 
 @code {
@@ -47,7 +50,7 @@
 		await Load();
 	}
 
-	public async Task Load()
+	public async Task Load(DateTime? endDate = null, bool append = false)
 	{
 		Loading = true;
 		var ownPubKey = await CryptoService.GetPublicKey();
@@ -56,8 +59,9 @@
 			var filter = new Filter
 				{
 					Kinds = new int[] { (int)KindEnum.Text },
-					Since = DateTime.Now.AddDays(-7),
-					Until = DateTime.Now.AddDays(1)
+					Since = DateTime.Now.AddYears(-20),
+					Until = endDate ?? DateTime.Now.AddDays(1),
+					Limit = 5
 				};
 			if (PageType.ToLowerInvariant() == PageTypeEnum.User.ToString().ToLowerInvariant())
 			{
@@ -69,12 +73,18 @@
 				{
 					filter.Authors.Add(ownPubKey);
 				}
-				MessageList = await MessageService.FetchNEventsByFilter(filter);
+				var messageList = await MessageService.FetchNEventsByFilter(filter);
+				if (append)
+				{
+					MessageList.AddRange(messageList);
+				}
+				else
+				{
+					MessageList = messageList;
+				}
 			}
 			else if (PageType.ToLowerInvariant() == PageTypeEnum.Event.ToString().ToLowerInvariant())
 			{
-				filter.Since = DateTime.Now.AddYears(-20);
-				filter.Until = DateTime.Now.AddDays(1);
 				filter.Ids = new List<string> { Hex };
 				MessageList = await MessageService.FetchNEventsByFilter(filter, true);
 			}

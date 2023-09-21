@@ -38,13 +38,8 @@ namespace BlazeJump.Client.Services.Message
 			{
 				foreach (var nEvent in nEvents)
 				{
-					filter = new Filter
-					{
-						Kinds = new int[] { (int)KindEnum.Text },
-						Since = DateTime.Now.AddYears(-20),
-						Until = DateTime.Now,
-						EventId = new List<string> { nEvent.Id }
-					};
+					filter.EventId = new List<string> { nEvent.Id };
+					filter.Ids = null;
 					nEvent.ChildNEvents = await FetchNEventsByFilter(filter);
 					nEvent.ReplyCount = nEvent.ChildNEvents.Count();
 				}
