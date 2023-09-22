@@ -13,6 +13,7 @@ namespace BlazeJump.Client.Models
 		public string? Password { get; set; }
         public string? RepeatPassword { get; set; }
 		public string? ProfilePic { get; set; }
+		public string? Banner { get; set; }
 		public ICollection<NEvent> Events { get; set; } = new List<NEvent>();
 	}
 

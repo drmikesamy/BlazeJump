@@ -1,4 +1,6 @@
 ﻿@page "/"
+@page "/{PageType}/{Hex}"
+@using BlazeJump.Client.Enums;
 @using BlazeJump.Client.Pages.Components
 @using BlazeJump.Client.Services.Connections;
 @using BlazeJump.Client.Models;
@@ -9,83 +11,101 @@
 @inject IMessageService MessageService
 @inject ICryptoService CryptoService
 
-
 <div class="loading-modal" style="@(Loading ? "display: block" : "display: none")">
-	Loading...
+	@foreach (var Connection in RelayManager.RelayConnections)
+	{
+		@Connection.Key
+		<br />
+	}
 </div>
 
-<div class="box">
-	<div>
-		<input type="text" id="new-message" name="new-message" @bind="NewNEventInput"><button type="button" @onclick="SendNEvent">Send</button>
-	</div>
+<div class="content-container">
+	@foreach (var message in MessageList)
+	{
+		<MessageCard Message=message></MessageCard>
+		@if (message.Id == MessageList.Last().Id)
+		{
+			<div><a style="cursor: pointer" @onclick="() => Load(message.CreatedAtDateTime, true)">Load more</a></div>
+		}
+	}
 </div>
-@foreach (var message in MessageList.Values)
-{
-	<MessageCard Message=message></MessageCard>
-}
 
 @code {
 	public bool Loading { get; set; } = false;
 	public string NewNEventInput { get; set; } = string.Empty;
-	public Dictionary<string, NEvent> MessageList { get; set; } = new Dictionary<string, NEvent>();
-	public bool SubscriptionLoadingHidden { get; set; } = true;
-	public Dictionary<string, bool> ActiveSubscriptions = new Dictionary<string, bool>();
-	protected override async Task OnInitializedAsync()
-	{
+	public List<NEvent> MessageList { get; set; } = new List<NEvent>();
 
-		MessageService.NewMessageProcessed += OnMessageReceived;
+	public Dictionary<string, bool> ActiveSubscriptions = new Dictionary<string, bool>();
+	[Parameter]
+	public string? PageType { get; set; }
+	[Parameter]
+	public string? Hex { get; set; }
+
+	protected override async Task OnParametersSetAsync()
+	{
+		await Load();
+	}
+
+	public async Task Load(DateTime? endDate = null, bool append = false)
+	{
 		Loading = true;
-		await GetMessagesByFilter(DateTime.UtcNow.AddDays(-1), DateTime.Now.AddDays(1));
+		var ownPubKey = await CryptoService.GetPublicKey();
+		if (PageType != null && Hex != null)
+		{
+			var filter = new Filter
+				{
+					Kinds = new int[] { (int)KindEnum.Text },
+					Since = DateTime.Now.AddYears(-20),
+					Until = endDate ?? DateTime.Now.AddDays(1),
+					Limit = 5
+				};
+			if (PageType.ToLowerInvariant() == PageTypeEnum.User.ToString().ToLowerInvariant())
+			{
+				filter.Authors = new List<string>();
+				filter.Authors.Add(Hex);
+				if (!string.IsNullOrEmpty(ownPubKey))
+				{
+					filter.Authors.Add(ownPubKey);
+				}
+				var messageList = await MessageService.FetchNEventsByFilter(filter, true);
+				if (append)
+				{
+					MessageList.AddRange(messageList);
+				}
+				else
+				{
+					MessageList = messageList;
+					var users = await MessageService.FetchProfiles(MessageList.Select(m => m.Pubkey).ToList());
+					MessageList.ForEach(m => m.User = users.FirstOrDefault(u => u.Id == m.Pubkey));
+				}
+			}
+			else if (PageType.ToLowerInvariant() == PageTypeEnum.Event.ToString().ToLowerInvariant())
+			{
+				filter.Ids = new List<string> { Hex };
+				MessageList = await MessageService.FetchNEventsByFilter(filter, false, true);
+
+
+
+
+				var baseProfileId = MessageList.Select(m => m.Pubkey);
+				var replyProfileIds = MessageList.SelectMany(m => m.ChildNEvents).Select(m => m.Pubkey);
+				var allProfileIds = baseProfileId.Concat(replyProfileIds).Distinct().ToList();
+				var users = await MessageService.FetchProfiles(allProfileIds);
+				MessageList.ForEach(m => m.User = users.FirstOrDefault(u => u.Id == m.Pubkey));
+				MessageList.SelectMany(m => m.ChildNEvents).ToList().ForEach(m => m.User = users.FirstOrDefault(u => u.Id == m.Pubkey));
+			}
+			else
+			{
+
+			}
+		}
 		Loading = false;
-		ActiveSubscriptions.TryAdd(Guid.NewGuid().ToString(), true);
+		StateHasChanged();
 	}
 
 	public async Task SendNEvent()
 	{
 		var newNEvent = await MessageService.GetNewNEvent(Enums.KindEnum.Text, NewNEventInput, null);
 		await MessageService.SendNEvent(newNEvent, ActiveSubscriptions.Keys.First());
-	}
-
-	public async Task GetMessagesByFilter(DateTime since, DateTime until)
-	{
-		SubscriptionLoadingHidden = false;
-
-		var ownPubKey = await CryptoService.GetPublicKey();
-
-		var filter = new Filter
-			{
-				Since = since,
-				Until = until,
-				Authors = new List<string>(),
-			};
-
-		//Jack's key
-		filter.Authors.Add("82341f882b6eabcd2ba7f1ef90aad961cf074af15b9ef44a09f9d2a8fbfbe6a2");
-
-		//Own key
-		if(ownPubKey != null)
-		{
-			filter.Authors.Add(ownPubKey);
-		}
-
-		await MessageService.FetchMessagesByFilter(filter);
-	}
-
-	void OnMessageReceived(object sender, NMessage e)
-	{
-		var addMessage = MessageList.TryAdd(e.Event.Id, e.Event);
-		if(addMessage == false)
-		{
-			MessageList.Remove(e.Event.Id);
-			MessageList.TryAdd(e.Event.Id, e.Event);
-		}
-
-		if (e?.SubscriptionId != null)
-			ActiveSubscriptions.TryAdd(e.SubscriptionId, true);
-		if (e?.MessageType == Enums.MessageTypeEnum.Eose && ActiveSubscriptions.ContainsKey(e?.SubscriptionId ?? ""))
-		{
-			ActiveSubscriptions.Remove(e!.SubscriptionId!);
-		}
-		StateHasChanged();
 	}
 }

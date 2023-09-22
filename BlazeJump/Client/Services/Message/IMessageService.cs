@@ -5,10 +5,10 @@ namespace BlazeJump.Client.Services.Message
 {
     public interface IMessageService
     {
-		event EventHandler<NMessage>? NewMessageProcessed;
-        void AddMessage(NMessage nMessage);
-		Task FetchMessagesByFilter(Filter filter, int parentDepth = 1);
-		Task<NEvent> GetNewNEvent(KindEnum kind, string message, string? parentId);
-		Task SendNEvent(NEvent nEvent, string subscriptionHash);
+		Task<List<NEvent>> FetchNEventsByFilter(Filter filter, bool fetchStats = false, bool fullFetch = false);
+		Task<List<User>> FetchProfiles(List<string> pubKeys);
+        List<NEvent> FetchMessagesFromDb(Func<NEvent, bool> selector);
+        Task SendNEvent(NEvent nEvent, string subscriptionHash);
+		Task<NEvent> GetNewNEvent(KindEnum kind, string message, string? parentId = null);
 	}
 }

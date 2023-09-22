@@ -4,15 +4,17 @@
 @using BlazeJump.Client.Services.Connections;
 @inject IRelayManager ConnectView
 
-<div class="box">
-	<ul>
-		@foreach (var relayConnection in ConnectView.RelayConnections)
-		{
-			<li>
-				@relayConnection.Key @relayConnection.Value.WebSocket.State.ToString()
-				<button type="button" hidden="@(relayConnection.Value.WebSocket.State == WebSocketState.Open)" @onclick="() => ConnectView.OpenConnection(relayConnection.Key)">Start</button>
-				<button type="button" hidden="@(relayConnection.Value.WebSocket.State != WebSocketState.Open)" @onclick="() => ConnectView.CloseConnection(relayConnection.Key)">Stop</button>
-			</li>
-		}
-	</ul>
-</div>
+<section>
+	<article class="card">
+		<ul>
+			@foreach (var relayConnection in ConnectView.RelayConnections)
+			{
+				<li>
+					@relayConnection.Key @relayConnection.Value.WebSocket.State.ToString()
+					<button type="button" hidden="@(relayConnection.Value.WebSocket.State == WebSocketState.Open)" @onclick="() => ConnectView.OpenConnection(relayConnection.Key)">Start</button>
+					<button type="button" hidden="@(relayConnection.Value.WebSocket.State != WebSocketState.Open)" @onclick="() => ConnectView.CloseConnection(relayConnection.Key)">Stop</button>
+				</li>
+			}
+		</ul>
+	</article>
+</section>

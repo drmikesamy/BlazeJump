@@ -49,6 +49,32 @@ namespace BlazeJump.Client.Models
         }
         [JsonIgnore]
         public virtual NEvent? ParentNEvent { get; set; }
+        [JsonIgnore]
+        public virtual List<NEvent> ChildNEvents { get; set; } = new List<NEvent>();
+        [JsonIgnore]
+        [InverseProperty(nameof(Reactions))]
+		public string? ReactionId
+		{
+			get
+			{
+                if(Kind == KindEnum.Reaction)
+                {
+					return Tags.LastOrDefault(t => t.Key == Enums.TagEnum.e)?.Value;
+				}
+                return null;
+			}
+			set
+			{
+				if (value != null)
+					Tags.Add(new EventTag { Key = Enums.TagEnum.e, Value = value });
+			}
+		}
+		[JsonIgnore]
+		public List<NEvent> Reactions { get; set; } = new List<NEvent>();
+        [JsonIgnore]
+        public int ReplyCount { get; set; } = 0;
+        [JsonIgnore]
+        public int ReactionCount { get; set; } = 0;
     }
 
 }

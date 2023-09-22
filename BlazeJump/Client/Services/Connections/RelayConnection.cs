@@ -15,14 +15,14 @@ namespace BlazeJump.Client.Services.Connections
 		public CancellationTokenSource _listenerCancellationTokenSource;
 		public CancellationToken _listenerCancellationToken;
 		private readonly string _uri;
-		private Dictionary<string, bool> activeSubscriptions { get; set; }
+		public Dictionary<string, bool> ActiveSubscriptions { get; set; }
 		public ClientWebSocket WebSocket { get; set; }
 		public List<string> Messages { get; set; }
-		public event EventHandler<NMessage>? NewMessageReceived;
+		public event EventHandler<string>? NewMessageReceived;
 		public RelayConnection(string uri)
 		{
 			_uri = uri;
-			activeSubscriptions= new Dictionary<string, bool>();
+			ActiveSubscriptions = new Dictionary<string, bool>();
 			_webSocketCancellationTokenSource = new CancellationTokenSource();
 			_webSocketCancellationToken = _webSocketCancellationTokenSource.Token;
 			_listenerCancellationTokenSource = new CancellationTokenSource();
@@ -40,17 +40,34 @@ namespace BlazeJump.Client.Services.Connections
 			try
 			{
 				await WebSocket.ConnectAsync(new Uri(_uri), _webSocketCancellationToken);
-				_ = MessageLoop();
-				//await BasicSubscription();
 			}
 			catch
 			{
 				Console.WriteLine($"Failed to connect to relay: {_uri}.");
 			}
 		}
-
-		private async Task MessageLoop()
+		public async Task SubscribeAsync(string subscriptionId, Filter filter)
 		{
+			if (WebSocket.State == WebSocketState.Open)
+			{
+				Console.WriteLine($"subscribing to {_uri} using {subscriptionId}");
+				await SendRequest(MessageTypeEnum.Req, subscriptionId, filter);
+				ActiveSubscriptions.TryAdd(subscriptionId, true);
+			}
+		}
+		public async Task SendRequest(MessageTypeEnum requestMessageType, string subscriptionId, Filter filter)
+		{
+			object[] obj = { requestMessageType.ToString().ToUpper(), subscriptionId, filter };
+
+			string newsub = JsonConvert.SerializeObject(obj);
+
+			var dataToSend = new ArraySegment<byte>(Encoding.UTF8.GetBytes(newsub));
+
+			await WebSocket.SendAsync(dataToSend, WebSocketMessageType.Text, true, _webSocketCancellationToken);
+		}
+		public async Task<List<string>> MessageLoop()
+		{
+			var messages = new List<string>();
 			Console.WriteLine($"setting up listener for {_uri}");
 			await foreach (var rawMessage in ReceiveLoop())
 			{
@@ -59,30 +76,24 @@ namespace BlazeJump.Client.Services.Connections
 					continue;
 				}
 				Console.WriteLine($"Message received from {_uri}");
+				if (!rawMessage.StartsWith("[\"EVENT"))
+				{
+					var abbreviatedRawMessage = rawMessage.Count() < 100 ? rawMessage : rawMessage.Substring(0, 100);
 
-				try
-				{
-					var nMessage = JsonConvert.DeserializeObject<NMessage>(rawMessage);
-					if(nMessage != null)
-						_ = HandleMessage(nMessage);
+					var subscriptionId = ActiveSubscriptions.Keys.FirstOrDefault(s => abbreviatedRawMessage.Contains(s));
+
+					if (subscriptionId != null)
+					{
+						await UnSubscribeAsync(subscriptionId);
+						break;
+					}
 				}
-				catch (Exception e)
+				else
 				{
-					var logMessageForException = rawMessage == null ? "null" : rawMessage;
-					Console.WriteLine($"Incompatible message type in message: {logMessageForException}");
-					Console.WriteLine($"Exception message: {e.Message}");
+					messages.Add(rawMessage);
 				}
 			}
-		}
-
-		private async Task HandleMessage(NMessage nMessage)
-		{
-			NewMessageReceived?.Invoke(this, nMessage);
-			if (nMessage.SubscriptionId != null && nMessage!.MessageType == MessageTypeEnum.Eose)
-			{
-				await UnSubscribeAsync(nMessage.SubscriptionId);
-			}
-			
+			return messages;
 		}
 
 		private async IAsyncEnumerable<string> ReceiveLoop()
@@ -111,28 +122,22 @@ namespace BlazeJump.Client.Services.Connections
 				}
 			}
 		}
-		public async Task SubscribeAsync(string subscriptionId, Filter filter)
+		public async Task SendNEvent(string serialisedNMessage, string subscriptionId)
 		{
 			if (WebSocket.State == WebSocketState.Open)
 			{
-				Console.WriteLine($"subscribing to {_uri} using {subscriptionId}");
+				Console.WriteLine($"Sending NEvent to {_uri} using {subscriptionId}");
 
-				object[] obj = { "REQ", subscriptionId, filter };
-
-				string newsub = JsonConvert.SerializeObject(obj);
-
-				var dataToSend = new ArraySegment<byte>(Encoding.UTF8.GetBytes(newsub));
+				var dataToSend = new ArraySegment<byte>(Encoding.UTF8.GetBytes(serialisedNMessage));
 
 				await WebSocket.SendAsync(dataToSend, WebSocketMessageType.Text, true, _webSocketCancellationToken);
-
-				activeSubscriptions.TryAdd(subscriptionId, true);
 			}
 		}
 		public async Task UnSubscribeAsync(string subscriptionId)
 		{
 			if (WebSocket.State == WebSocketState.Open)
 			{
-				Console.WriteLine($"unsubscribing from {_uri}");
+				Console.WriteLine($"unsubscribing from {_uri}, subscriptionid {subscriptionId}");
 				object[] obj = { "CLOSE", subscriptionId };
 
 				string closeMessage = JsonConvert.SerializeObject(obj);
@@ -140,29 +145,14 @@ namespace BlazeJump.Client.Services.Connections
 				var dataToSend = new ArraySegment<byte>(Encoding.UTF8.GetBytes(closeMessage));
 
 				await WebSocket.SendAsync(dataToSend, WebSocketMessageType.Text, true, _webSocketCancellationToken);
-				activeSubscriptions.Remove(subscriptionId);
-			}
-		}
-		public async Task SendNEvent(NEvent nEvent, string subscriptionId)
-		{
-			if (WebSocket.State == WebSocketState.Open)
-			{
-				Console.WriteLine($"Sending NEvent to {_uri} using {subscriptionId}");
-
-				object[] obj = { "EVENT", nEvent };
-
-				string serialisedNMessage = JsonConvert.SerializeObject(obj);
-
-				var dataToSend = new ArraySegment<byte>(Encoding.UTF8.GetBytes(serialisedNMessage));
-
-				await WebSocket.SendAsync(dataToSend, WebSocketMessageType.Text, true, _webSocketCancellationToken);
+				ActiveSubscriptions.Remove(subscriptionId);
 			}
 		}
 		public async void Cancel()
 		{
 			var unsubscribeTasks = new List<Task>();
 
-			foreach (var activeSubscription in activeSubscriptions)
+			foreach (var activeSubscription in ActiveSubscriptions)
 			{
 				Task connectionTask = Task.Run(async () =>
 				{

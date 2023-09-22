@@ -1,0 +1,23 @@
+/*
+Theme Name: BlazeJump
+Author: ObjectWizard
+Version: 1.0
+*/
+
+// Import sass partials
+
+@import "reset/reset";
+
+@import "base/dimensions";
+@import "base/colours";
+@import "base/typography";
+@import "base/mixins";
+
+@import "components/layout";
+@import "components/animations";
+@import "components/article";
+@import "components/buttons";
+@import "components/cards";
+@import "components/inputs";
+@import "components/navigation";
+
