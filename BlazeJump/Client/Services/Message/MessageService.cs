@@ -6,6 +6,7 @@ using AutoMapper;
 using BlazeJump.Client.Services.Crypto;
 using System.Linq;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 namespace BlazeJump.Client.Services.Message
 {
@@ -28,28 +29,25 @@ namespace BlazeJump.Client.Services.Message
 			_mapper = mapper;
 		}
 
-		public async Task<List<NEvent>> FetchNEventsByFilter(Filter filter, bool fullFetch = false)
+		public async Task<List<NEvent>> FetchNEventsByFilter(Filter filter, bool fetchStats = false, bool fullFetch = false)
 		{
 			var subscriptionHash = Guid.NewGuid().ToString();
 			var rawMessages = await _relayManager.QueryRelays(new List<string> { "wss://relay.damus.io" }, subscriptionHash, filter);
 			var nMessages = rawMessages.Select(rawMessage => JsonConvert.DeserializeObject<NMessage>(rawMessage));
 			var nEvents = nMessages.Where(m => m?.MessageType == MessageTypeEnum.Event).Select(m => m?.Event).ToList();
-			if(fullFetch)
+
+			if (fullFetch)
 			{
 				foreach (var nEvent in nEvents)
 				{
 					filter.EventId = new List<string> { nEvent.Id };
 					filter.Ids = null;
-					nEvent.ChildNEvents = await FetchNEventsByFilter(filter);
-					nEvent.ReplyCount = nEvent.ChildNEvents.Count();
+					nEvent.ChildNEvents = await FetchNEventsByFilter(filter, true);
 				}
 			}
-			else
+			foreach (var nEvent in nEvents)
 			{
-				foreach (var nEvent in nEvents)
-				{
-					nEvent.ReplyCount = await FetchStats(nEvent.Id);
-				}
+				nEvent.ReplyCount = await FetchStats(nEvent.Id);
 			}
 			return nEvents;
 		}
@@ -66,33 +64,43 @@ namespace BlazeJump.Client.Services.Message
 			var rawMessages = await _relayManager.QueryRelays(new List<string> { "wss://relay.damus.io" }, subscriptionHash, filter);
 			return rawMessages.Count();
 		}
-
-		public async Task<NEvent?> FetchById(string nEventId)
+		public async Task<List<User>> FetchProfiles(List<string> pubKeys)
 		{
-			var nEvent = (await FetchNEventsByFilter(new Filter
+			var filter = new Filter
 			{
+				Kinds = new int[] { (int)KindEnum.Metadata },
 				Since = DateTime.Now.AddYears(-20),
 				Until = DateTime.Now,
-				Ids = new List<string> { nEventId },
-				Limit = 1
-			})).FirstOrDefault();
-
-			return nEvent;
-		}
-
-		public async Task<List<NEvent>> FetchNEventsByParentId(string nEventId)
-		{
-			var nEvents = await FetchNEventsByFilter(new Filter
+				Authors = pubKeys.Distinct().ToList()
+			};
+			var events = await FetchNEventsByFilter(filter, false, false);
+			var metaData = events.Where(e => e.Kind == KindEnum.Metadata && pubKeys.Contains(e.Pubkey));
+			var profiles = new List<User>();
+			foreach (var m in metaData)
 			{
-				Since = DateTime.Now.AddYears(-20),
-				Until = DateTime.Now,
-				EventId = new List<string> { nEventId },
-				Limit = 11
-			});
+				if (!string.IsNullOrEmpty(m.Content))
+				{
+					try
+					{
+						var parsed = JObject.Parse(m.Content);
+						var user = new User
+						{
+							Id = m.Pubkey,
+							Username = parsed["name"]?.ToString(),
+							Bio = parsed["about"]?.ToString(),
+							ProfilePic = parsed["picture"]?.ToString(),
+							Banner = parsed["banner"]?.ToString(),
+						};
+						profiles.Add(user);
+					}
+					catch
+					{
 
-			return nEvents;
+					}
+				}
+			}
+			return profiles;
 		}
-
 
 		private async Task AddMessagesToDb(List<NEvent> rawMessages)
 		{

@@ -17,6 +17,7 @@
         ChannelMuteUser = 44,
         PublicChatReserved = 45,
         ReplaceableEventsReserved = 10000,
+        RelayListMetadata = 10002,
         EphemeralEventsReserved = 20000
     }
 }

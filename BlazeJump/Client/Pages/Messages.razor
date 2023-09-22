@@ -19,20 +19,16 @@
 	}
 </div>
 
-<div class="box">
-	<div>
-		<input type="text" id="new-message" name="new-message" @bind="NewNEventInput"><button type="button" @onclick="SendNEvent">Send</button>
-	</div>
-</div>
-@foreach (var message in MessageList)
-{
-
-	<MessageCard Message=message></MessageCard>
-	@if(message.Id == MessageList.Last().Id)
+<div class="content-container">
+	@foreach (var message in MessageList)
 	{
-		<div><a style="cursor: pointer" @onclick="() => Load(message.CreatedAtDateTime, true)">Load more</a></div>
+		<MessageCard Message=message></MessageCard>
+		@if (message.Id == MessageList.Last().Id)
+		{
+			<div><a style="cursor: pointer" @onclick="() => Load(message.CreatedAtDateTime, true)">Load more</a></div>
+		}
 	}
-}
+</div>
 
 @code {
 	public bool Loading { get; set; } = false;
@@ -66,14 +62,12 @@
 			if (PageType.ToLowerInvariant() == PageTypeEnum.User.ToString().ToLowerInvariant())
 			{
 				filter.Authors = new List<string>();
-				//Jack's key 82341f882b6eabcd2ba7f1ef90aad961cf074af15b9ef44a09f9d2a8fbfbe6a2
 				filter.Authors.Add(Hex);
-				//Own key
 				if (!string.IsNullOrEmpty(ownPubKey))
 				{
 					filter.Authors.Add(ownPubKey);
 				}
-				var messageList = await MessageService.FetchNEventsByFilter(filter);
+				var messageList = await MessageService.FetchNEventsByFilter(filter, true);
 				if (append)
 				{
 					MessageList.AddRange(messageList);
@@ -81,12 +75,24 @@
 				else
 				{
 					MessageList = messageList;
+					var users = await MessageService.FetchProfiles(MessageList.Select(m => m.Pubkey).ToList());
+					MessageList.ForEach(m => m.User = users.FirstOrDefault(u => u.Id == m.Pubkey));
 				}
 			}
 			else if (PageType.ToLowerInvariant() == PageTypeEnum.Event.ToString().ToLowerInvariant())
 			{
 				filter.Ids = new List<string> { Hex };
-				MessageList = await MessageService.FetchNEventsByFilter(filter, true);
+				MessageList = await MessageService.FetchNEventsByFilter(filter, false, true);
+
+
+
+
+				var baseProfileId = MessageList.Select(m => m.Pubkey);
+				var replyProfileIds = MessageList.SelectMany(m => m.ChildNEvents).Select(m => m.Pubkey);
+				var allProfileIds = baseProfileId.Concat(replyProfileIds).Distinct().ToList();
+				var users = await MessageService.FetchProfiles(allProfileIds);
+				MessageList.ForEach(m => m.User = users.FirstOrDefault(u => u.Id == m.Pubkey));
+				MessageList.SelectMany(m => m.ChildNEvents).ToList().ForEach(m => m.User = users.FirstOrDefault(u => u.Id == m.Pubkey));
 			}
 			else
 			{

@@ -1,0 +1,191 @@
+//Jumbo Banner
+
+.jumbo-banner {
+    background-size: cover;
+    background-repeat: no-repeat;
+    background-position: center;
+    margin-top: $base-spacing*5;
+    margin-bottom: $base-spacing*5;
+
+    h1 {
+        font-size: $base-font-size*4;
+        color: white;
+        text-shadow: $default-shadow;
+    }
+
+    h5 {
+        font-size: $base-font-size*1.5;
+        color: white;
+        text-shadow: $default-shadow;
+    }
+
+    @media only screen and (min-width: $large-mobile-screen-size) {
+        h1 {
+            font-size: $base-font-size*4;
+            color: white;
+            text-shadow: $default-shadow;
+        }
+
+        h5 {
+            font-size: $base-font-size*2;
+            color: white;
+            text-shadow: $default-shadow;
+        }
+    }
+
+    @media only screen and (min-width: $tablet-screen-size) {
+        h1 {
+            font-size: $base-font-size*5;
+            color: white;
+            text-shadow: $default-shadow;
+        }
+
+        h5 {
+            font-size: $base-font-size*2.5;
+            color: white;
+            text-shadow: $default-shadow;
+        }
+    }
+
+    @media only screen and (min-width: $desktop-screen-size) {
+        h1 {
+            font-size: $base-font-size*6;
+            color: white;
+            text-shadow: $default-shadow;
+        }
+
+        h5 {
+            font-size: $base-font-size*3;
+            color: white;
+            text-shadow: $default-shadow;
+        }
+    }
+}
+//error card
+.error {
+    @include responsive-content-padding;
+
+    p {
+        color: $warning-colour;
+    }
+
+    background-color: black;
+}
+
+//video player
+.video-player {
+    width: 100%;
+    min-height: 350px;
+}
+
+//section editor
+.section-editor {
+    background-color: rgba(0,0,0,0.2);
+
+    article {
+        background-color: rgba(0,0,0,0.2);
+    }
+}
+
+//card
+.card {
+    background-color: rgba(255,255,255,0.5);
+    margin: 0.5rem;
+    display: grid;
+    grid-gap: 1rem;
+    grid-template-columns: min-content auto;
+    overflow: hidden;
+    overflow-wrap: break-word;
+}
+
+.card-body h3, .card-body p {
+    margin: 0;
+    padding: 0;
+    padding-bottom: 0.5rem;
+}
+
+.profile-picture img {
+    width: 50px;
+    height: 50px;
+    border-radius: 25px;
+}
+
+.text-editor {
+    width: 100%;
+}
+
+.mouseover-border {
+    border: 1px solid rgba(0,0,0,0);
+}
+
+.mouseover-border:hover {
+    border: 1px dotted $black;
+}
+
+.editing-border {
+}
+
+//background designer
+.background-designer {
+    position: fixed;
+    left: 0px;
+    right: 0px;
+    top: 40px;
+    bottom: 0px;
+    z-index: 1;
+}
+
+.draggable-circle {
+    width: 20px;
+    height: 20px;
+    box-shadow: $dark-shadow;
+    background-color: $white-transparent;
+    border-radius: 12px;
+    position: absolute;
+    z-index: 9;
+}
+
+.draggable-circle-highlighted {
+    border: 2px solid white;
+}
+
+.colour-settings {
+    position: fixed;
+    right: 20px;
+    bottom: 20px;
+    width: 280px;
+}
+
+.slider-row {
+    display: grid;
+    grid-template-columns: 20px auto 20px;
+}
+
+.slider-hue {
+    appearance: none;
+    background-color: rgba(0,0,0,0.1);
+    background: linear-gradient(to right, rgb(255,0,0), rgb(255,255,0), rgb(0,255,0),rgb(0,255,255),rgb(0,0,255),rgb(255,0,255),rgb(255,0,0));
+}
+
+.slider-saturation {
+    appearance: none;
+    background-color: rgba(0,0,0,0.1);
+}
+
+.slider-lightness {
+    appearance: none;
+    background-color: rgba(0,0,0,0.1);
+}
+
+.fixed-debug {
+    position: fixed;
+    left: 10px;
+    top: 10px;
+}
+
+.fixed-button-bottom-right {
+    position: fixed;
+    bottom: 250px;
+    right: 10px;
+    width: 100px;
+}
