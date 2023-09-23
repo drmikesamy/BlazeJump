@@ -20,6 +20,10 @@
 </div>
 
 <div class="content-container">
+	@if(User != null)
+	{
+		<UserCard User="User"></UserCard>
+	}
 	@foreach (var message in MessageList)
 	{
 		<MessageCard Message=message></MessageCard>
@@ -40,6 +44,7 @@
 	public string? PageType { get; set; }
 	[Parameter]
 	public string? Hex { get; set; }
+	public User? User { get; set; }
 
 	protected override async Task OnParametersSetAsync()
 	{
@@ -75,24 +80,21 @@
 				else
 				{
 					MessageList = messageList;
-					var users = await MessageService.FetchProfiles(MessageList.Select(m => m.Pubkey).ToList());
-					MessageList.ForEach(m => m.User = users.FirstOrDefault(u => u.Id == m.Pubkey));
+					User = (await MessageService.FetchProfiles(new List<string> { Hex })).FirstOrDefault();
+					MessageList.ForEach(m => m.User = User);
 				}
 			}
 			else if (PageType.ToLowerInvariant() == PageTypeEnum.Event.ToString().ToLowerInvariant())
 			{
 				filter.Ids = new List<string> { Hex };
 				MessageList = await MessageService.FetchNEventsByFilter(filter, false, true);
-
-
-
-
 				var baseProfileId = MessageList.Select(m => m.Pubkey);
 				var replyProfileIds = MessageList.SelectMany(m => m.ChildNEvents).Select(m => m.Pubkey);
 				var allProfileIds = baseProfileId.Concat(replyProfileIds).Distinct().ToList();
 				var users = await MessageService.FetchProfiles(allProfileIds);
 				MessageList.ForEach(m => m.User = users.FirstOrDefault(u => u.Id == m.Pubkey));
 				MessageList.SelectMany(m => m.ChildNEvents).ToList().ForEach(m => m.User = users.FirstOrDefault(u => u.Id == m.Pubkey));
+				User = users.FirstOrDefault(u => u.Id == baseProfileId.FirstOrDefault());
 			}
 			else
 			{

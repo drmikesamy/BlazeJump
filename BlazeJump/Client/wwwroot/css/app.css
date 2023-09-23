@@ -294,14 +294,39 @@ body {
   background-color: rgba(0, 0, 0, 0.2);
 }
 
+section {
+  background-size: cover;
+  background-position: center;
+  mask-image: linear-gradient(to right, rgb(0, 0, 0) 50%, transparent 100%);
+}
+
 .card {
-  background-color: rgba(255, 255, 255, 0.5);
   margin: 0.5rem;
   display: grid;
   grid-gap: 1rem;
-  grid-template-columns: min-content auto;
   overflow: hidden;
   overflow-wrap: break-word;
+}
+
+.card-message {
+  grid-template-columns: min-content auto;
+  background-color: rgba(255, 255, 255, 0.5);
+}
+
+.profile-header {
+  justify-items: center;
+}
+.profile-header img {
+  width: 140px;
+  height: 140px;
+  border-radius: 50%;
+  background-size: cover;
+}
+.profile-header h1 {
+  background-color: white;
+}
+.profile-header h2 {
+  background-color: white;
 }
 
 .card-body h3, .card-body p {
