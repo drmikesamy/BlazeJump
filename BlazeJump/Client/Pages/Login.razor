@@ -1,0 +1,81 @@
+﻿@page "/Login"
+@page "/Login/{TempPubKey}"
+@using BlazeJump.Client.Helpers;
+@using BlazeJump.Client.Models.SubtleCrypto;
+@using BlazeJump.Client.Services.Connections;
+@using BlazeJump.Client.Services.Crypto;
+@using BlazeJump.Client.Services.Message;
+@using System.Drawing.Imaging;
+@using System.Drawing;
+@using System.IO;
+@using QRCoder;
+@using System.Runtime.InteropServices;
+@inject IRelayManager RelayManager
+@inject IMessageService MessageService
+@inject ICryptoService CryptoService
+@inject IJSRuntime JS
+<div class="content-container">
+	<section>
+		<h2>Create an account</h2>
+		<div class="qr-code-container">
+			@if (string.IsNullOrEmpty(TempPubKey))
+			{
+
+				<p>Scan QR Code with your phone to create your account</p>
+				@if (!CodeLoading)
+				{
+					<img src="data:image/jpeg;base64,@ImageData" class="qr-code" />
+				}
+				else
+				{
+					<div class="qr-code qr-code-loading">
+						<div class="wave"></div>
+						<div class="wave"></div>
+						<div class="wave"></div>
+						<div class="wave"></div>
+						<div class="wave"></div>
+						<div class="wave"></div>
+						<div class="wave"></div>
+						<div class="wave"></div>
+						<div class="wave"></div>
+					</div>
+				}
+			}
+			else
+			{
+
+			}
+		</div>
+	</section>
+</div>
+
+@code {
+	public string? ImageData { get; set; }
+	public RSAKeyPair? KeyPair { get; set; }
+	[Parameter]
+	public string? TempPubKey { get; set; }
+	public bool CodeLoading { get; set; } = false;
+	protected override async Task OnInitializedAsync()
+	{
+		if (TempPubKey != null)
+		{
+
+		}
+		else
+		{
+			CodeLoading = true;
+			await GenerateTemporaryKeyPair();
+		}
+	}
+
+	public async Task GenerateTemporaryKeyPair()
+	{
+		KeyPair = await CryptoService.GenerateRSAKeyPair();
+		var url = $"https://192.168.0.15/login/{KeyPair.PublicKey}";
+		ImageData = QRCode.GenerateQRCode(url);
+		CodeLoading = false;
+		StateHasChanged();
+	}
+
+
+}

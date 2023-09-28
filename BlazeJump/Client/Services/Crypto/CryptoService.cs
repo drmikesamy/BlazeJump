@@ -2,20 +2,25 @@
 using BlazeJump.Client.Models.SubtleCrypto;
 using Microsoft.JSInterop;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
-using System;
-using System.Text.Json;
+using BlazeJump.Services.Crypto.Bindings;
 
 namespace BlazeJump.Client.Services.Crypto
 {
 	public class CryptoService : ICryptoService
 	{
 		private IJSRuntime _jsRuntime;
-		public string RsaPublicKey { get; set; } = "";
-		public string RsaPrivateKey { get; set; } = "";
+		public string ECDHPublicKey { get; set; } = "";
+		public string ECDHPrivateKey { get; set; } = "";
+
 		public CryptoService(IJSRuntime jsRuntime)
 		{
 			_jsRuntime = jsRuntime;
+		}
+		public void GenerateKeys()
+		{
+			byte[] privateKey = new byte[32];
+			privateKey[0] = 1;
+			bool result = SecP256k1.VerifyPrivateKey(privateKey);
 		}
 		public async Task<RSAKeyPair> GenerateRSAKeyPair()
 		{
@@ -32,14 +37,14 @@ namespace BlazeJump.Client.Services.Crypto
 			}
 			catch
 			{
-				if(!string.IsNullOrEmpty(RsaPublicKey))
+				if(!string.IsNullOrEmpty(ECDHPublicKey))
 				{
-					return RsaPublicKey;
+					return ECDHPublicKey;
 				}
 				else
 				{
 					await GenerateRSAKeyPair();
-					return RsaPublicKey;
+					return ECDHPublicKey;
 				}
 			}
 		}

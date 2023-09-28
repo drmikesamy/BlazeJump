@@ -17,13 +17,11 @@
                 var keyGen = async function () {
                     let keyPair = await window.crypto.subtle.generateKey(
                         {
-                            name: "RSA-OAEP",
-                            modulusLength: 4096,
-                            publicExponent: new Uint8Array([1, 0, 1]),
-                            hash: "SHA-256"
+                            name: "ECDH",
+                            namedCurve: "P-256"
                         },
                         true,
-                        ["encrypt", "decrypt"]
+                        ["deriveKey", "deriveBits"]
                     );
                     var exportedPublicKey = await window.crypto.subtle.exportKey("jwk", keyPair.publicKey);
                     var exportedPrivateKey = await window.crypto.subtle.exportKey("jwk", keyPair.privateKey);
@@ -60,7 +58,7 @@
     <script src="_framework/blazor.webassembly.js"></script>
     <environment names="Development">
         <script src="_framework/aspnetcore-browser-refresh.js"></script>
-    </environment>    
+    </environment>
 </body>
 
 </html>

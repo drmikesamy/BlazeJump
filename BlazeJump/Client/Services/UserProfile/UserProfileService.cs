@@ -22,7 +22,7 @@ namespace BlazeJump.Client.Services.UserProfile
 		public async Task Init()
         {
             RSAKeys = await _cryptoService.GenerateRSAKeyPair();
-            User.Id = RSAKeys.PublicKey.N;
+            User.Id = RSAKeys.PublicKey;
             NPubKey = await _cryptoService.GetPublicKey();
         }
 

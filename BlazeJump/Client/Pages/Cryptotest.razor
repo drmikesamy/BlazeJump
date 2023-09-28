@@ -1,0 +1,10 @@
+﻿@page "/ct"
+@using BlazeJump.Client.Services.Crypto;
+@inject ICryptoService CryptoService
+
+@code {
+	protected override async Task OnInitializedAsync()
+	{
+		CryptoService.GenerateKeys();
+	}
+}

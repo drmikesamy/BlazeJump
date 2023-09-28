@@ -41,11 +41,11 @@
 			</div>
 			<div>
 				<label for="public-key">Public Key:</label>
-				<input type="text" id="public-key" name="public-key" @bind="UserProfileService.RSAKeys.PublicKey.N">
+				<input type="text" id="public-key" name="public-key" @bind="UserProfileService.RSAKeys.PublicKey">
 			</div>
 			<div>
 				<label for="private-key">Private Key:</label>
-				<input type="text" id="private-key" name="private-key" @bind="UserProfileService.RSAKeys.PrivateKey.D">
+				<input type="text" id="private-key" name="private-key" @bind="UserProfileService.RSAKeys.PrivateKey">
 			</div>
 			<div>
 				<button type="button">Generate New Keys</button>
