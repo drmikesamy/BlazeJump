@@ -12,7 +12,7 @@ body {
 .content-container {
     @include default-row-grid;
 
-    & > section, & > nav {
+    & > section:not(.full-width-section), & > nav {
         @include fullwidth-centred-content;
 
         & > article, & > ul {

@@ -145,34 +145,34 @@ body {
   grid-template-rows: repeat(auto);
   justify-items: stretch;
 }
-.content-container > section, .content-container > nav {
+.content-container > section:not(.full-width-section), .content-container > nav {
   display: grid;
   justify-items: center;
 }
-.content-container > section > *, .content-container > nav > * {
+.content-container > section:not(.full-width-section) > *, .content-container > nav > * {
   width: 100%;
 }
 @media only screen and (min-width: 481px) {
-  .content-container > section > *, .content-container > nav > * {
+  .content-container > section:not(.full-width-section) > *, .content-container > nav > * {
     max-width: 700px;
   }
 }
 @media only screen and (min-width: 769px) {
-  .content-container > section > *, .content-container > nav > * {
+  .content-container > section:not(.full-width-section) > *, .content-container > nav > * {
     max-width: 800px;
   }
 }
 @media only screen and (min-width: 1025px) {
-  .content-container > section > *, .content-container > nav > * {
+  .content-container > section:not(.full-width-section) > *, .content-container > nav > * {
     max-width: 900px;
   }
 }
 @media only screen and (min-width: 1201px) {
-  .content-container > section > *, .content-container > nav > * {
+  .content-container > section:not(.full-width-section) > *, .content-container > nav > * {
     max-width: 1000px;
   }
 }
-.content-container > section > article, .content-container > section > ul, .content-container > nav > article, .content-container > nav > ul {
+.content-container > section:not(.full-width-section) > article, .content-container > section:not(.full-width-section) > ul, .content-container > nav > article, .content-container > nav > ul {
   padding: calc(0.5rem + 0.5vw);
 }
 
@@ -209,8 +209,19 @@ section {
   grid-template-columns: min-content auto;
 }
 
+.profile-picture img {
+  width: calc(50px + 2vw);
+  height: calc(50px + 2vw);
+  border-radius: 50%;
+  border: 5px solid white;
+}
+
+.video-player {
+  width: 100%;
+  min-height: 350px;
+}
+
 .profile-header {
-  padding-top: calc(4rem + 3vw) !important;
   justify-items: center;
   text-align: center;
 }
@@ -219,27 +230,17 @@ section {
   height: calc(140px + 3vw);
   border-radius: 50%;
   background-size: cover;
-  margin-top: calc((140px + 3vw) / 2 * -1);
   border: 5px solid white;
 }
 
-.profile-picture img {
-  width: calc(50px + 2vw);
-  height: calc(50px + 2vw);
-  border-radius: 50%;
-  border: 5px solid white;
-}
-
-.profile-name-bio {
-  background-color: rgba(0, 0, 0, 0.5);
-  width: 100%;
-  padding: calc(0.5rem + 0.5vw);
+.name-bio-band {
   backdrop-filter: blur(10px);
+  background-color: rgba(0, 0, 0, 0.5);
+  padding: calc(0.5rem + 0.5vw);
 }
 
-.video-player {
-  width: 100%;
-  min-height: 350px;
+.profile-pic-band {
+  padding: calc(0.5rem + 0.5vw);
 }
 
 nav.primary-nav {

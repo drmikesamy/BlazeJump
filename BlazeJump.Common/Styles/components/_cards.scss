@@ -12,22 +12,6 @@ section {
     grid-template-columns: min-content auto;
 }
 
-.profile-header {
-    padding-top: calc(4rem + 3vw) !important;
-
-    img {
-        width: calc(140px + 3vw);
-        height: calc(140px + 3vw);
-        border-radius: 50%;
-        background-size: cover;
-        margin-top: calc(((140px + 3vw)/2)*-1);
-        border: 5px solid white;
-    }
-
-    justify-items: center;
-    text-align: center;
-}
-
 .profile-picture img {
     width: calc(50px + 2vw);
     height: calc(50px + 2vw);
@@ -35,14 +19,33 @@ section {
     border: 5px solid white;
 }
 
-.profile-name-bio {
-    background-color: rgba(black, 0.5);
-    width: 100%;
-    @include responsive-content-padding;
-    backdrop-filter: blur(10px);
-}
 //video player
 .video-player {
     width: 100%;
     min-height: 350px;
+}
+
+//Profile header
+
+.profile-header {
+
+    img {
+        width: calc(140px + 3vw);
+        height: calc(140px + 3vw);
+        border-radius: 50%;
+        background-size: cover;
+        border: 5px solid white;
+    }
+
+    justify-items: center;
+    text-align: center;
+}
+
+.name-bio-band {
+    backdrop-filter: blur(10px);
+    background-color: rgba(black, 0.5);
+    @include responsive-content-padding;
+}
+.profile-pic-band {
+    @include responsive-content-padding;
 }

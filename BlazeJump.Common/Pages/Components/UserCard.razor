@@ -5,15 +5,16 @@
 @inject IMessageService MessageService
 @inject NavigationManager NavManager
 
-<section style="background-image: url('@($"{User.Banner}")')">
-	<article class="card profile-header">	
-		<div class="profile-name-bio">
-			<img src="@($"{User.ProfilePic ?? $"images/profilepics/{new Random().Next(1, 18)}.png"}")" alt="profile picture">
-			<a href="user/@(User.Id)"><h2>@(User.Username ?? $"{User.Id.Substring(0, 10)}...")</h2></a>
-			<p>@(User.Bio)</p>
-		</div>
+<section class="profile-header full-width-section" style="background-image: url('@($"{User.Banner}")')">
+	<article class="profile-pic-band">
+		<img src="@($"{User.ProfilePic ?? $"images/profilepics/{new Random().Next(1, 18)}.png"}")" alt="profile picture">
+	</article>
+	<article class="name-bio-band">
+		<a href="user/@(User.Id)"><h2>@(User.Username ?? $"{User.Id.Substring(0, 10)}...")</h2></a>
+		<p>@(User.Bio)</p>
 	</article>
 </section>
+
 
 @code {
 	[Parameter]
