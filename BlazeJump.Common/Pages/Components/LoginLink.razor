@@ -1,0 +1,21 @@
+﻿@using BlazeJump.Common.Enums;
+@using BlazeJump.Common.Models;
+@using BlazeJump.Common.Services.UserProfile;
+@inject IUserProfileService UserProfileService
+@inject NavigationManager NavManager
+
+@if(!string.IsNullOrEmpty(UserProfileService.NPubKey))
+{
+	<span>Welcome @(UserProfileService.User), <NavLink @onclick="UserProfileService.Logout">Log out</NavLink></span>
+}else{
+	<NavLink href="login">Log in</NavLink>
+}
+
+@code {
+	public User User { get; set; }
+	protected override async void OnInitialized()
+	{
+		await UserProfileService.Init();
+		StateHasChanged();
+	}
+}

@@ -1,0 +1,80 @@
+//Base font sizing
+
+html {
+    font-size: $base-font-size;
+    color: $font-colour;
+
+    @media only screen and (min-width: $mobile-screen-size) {
+        font-size: 0.8rem;
+    }
+
+    @media only screen and (min-width: $large-mobile-screen-size) {
+        font-size: 0.9rem;
+    }
+
+    @media only screen and (min-width: $desktop-screen-size) {
+        font-size: 1rem;
+    }
+
+    @media only screen and (min-width: $large-desktop-screen-size) {
+        font-size: 1.1rem;
+    }
+}
+
+//Base fonts
+
+@font-face {
+    font-family: 'Open Sans';
+    src: url('/_content/BlazeJump.Common/css/fonts/open-sans/OpenSans-Regular.ttf');
+}
+@font-face {
+    font-family: 'Arsenal';
+    src: url('/_content/BlazeJump.Common/css/fonts/arsenal/Arsenal-Regular.ttf');
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+    font-family: 'Arsenal';
+    color: $font-colour;
+}
+
+p {
+    color: $font-colour;
+}
+
+h2.layout-element {
+    padding: 0;
+    margin: 0;
+    font-weight: normal;
+}
+
+.colour-invert {
+    color: white;
+}
+
+p {
+    font-family: 'Open Sans';
+}
+
+a:link {
+    color: $primary-colour;
+    -webkit-transition: ease-in 0.2s;
+    -o-transition: ease-in 0.2s;
+    transition: ease-in 0.2s;
+}
+
+a:hover {
+    text-decoration: underline;
+}
+
+.info-message {
+    padding: 1rem 2rem;
+    margin: 1rem 2rem;
+    border: 1px solid white;
+    border-radius: 8px;
+    text-align: center;
+}

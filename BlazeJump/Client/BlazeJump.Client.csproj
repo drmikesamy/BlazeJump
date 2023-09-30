@@ -38,6 +38,6 @@
     <Folder Include="wwwroot\css\" />
   </ItemGroup>
   <ItemGroup>
-    <NativeFileReference Include="Libs\secp256k1.o" />
+    <NativeFileReference Include="Services\Crypto\Bindings\Runtime\secp256k1.o" />
   </ItemGroup>
 </Project>

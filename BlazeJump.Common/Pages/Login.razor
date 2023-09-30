@@ -1,0 +1,88 @@
+﻿@page "/Login"
+@page "/Login/{TempPubKey}/{TempRelay}"
+@using BlazeJump.Common.Helpers;
+@using BlazeJump.Common.Models.SubtleCrypto;
+@using BlazeJump.Common.Services.Connections;
+@using BlazeJump.Common.Services.Crypto;
+@using BlazeJump.Common.Services.Message;
+@using System.Drawing.Imaging;
+@using System.Drawing;
+@using System.IO;
+@using QRCoder;
+@using System.Runtime.InteropServices;
+@inject IRelayManager RelayManager
+@inject IMessageService MessageService
+@inject ICryptoService CryptoService
+@inject IJSRuntime JS
+<div class="content-container">
+	<section>
+		<h2>Create an account</h2>
+		<p>Scan QR Code with your phone to create your account</p>
+		<div class="qr-code-container">
+			@if (string.IsNullOrEmpty(TempPubKey))
+			{
+
+				
+				@if (!CodeLoading)
+				{
+					<img src="data:image/jpeg;base64,@ImageData" class="qr-code" />
+				}
+				else
+				{
+					<div class="qr-code qr-code-loading">
+						<div class="wave"></div>
+						<div class="wave"></div>
+						<div class="wave"></div>
+						<div class="wave"></div>
+						<div class="wave"></div>
+						<div class="wave"></div>
+						<div class="wave"></div>
+						<div class="wave"></div>
+						<div class="wave"></div>
+					</div>
+				}
+			}
+			else
+			{
+
+			}
+		</div>
+	</section>
+</div>
+
+@code {
+	public string? ImageData { get; set; }
+	public Secp256k1KeyPair? KeyPair { get; set; }
+	[Parameter]
+	public string? TempPubKey { get; set; }
+	[Parameter]
+	public string? TempRelay { get; set; }
+	public bool CodeLoading { get; set; } = false;
+	protected override async Task OnInitializedAsync()
+	{
+		if (TempPubKey != null && TempRelay != null)
+		{
+			//We are on the phone that just took the QR snap. Generate the account keypair and encrypt it using the TempPubKey, and send it to the TempRelay
+
+		}
+		else
+		{
+			CodeLoading = true;
+			//1. Generate temporary key pair
+			await GenerateTemporaryKeyPair();
+			//2. QR Code is presented to user containing a link to mobile login page with public key & selected relay where they will continue.
+			//3. In the mean time lets start polling the nostr relay for collecting the confirmation
+		}
+	}
+
+	public async Task GenerateTemporaryKeyPair()
+	{
+		KeyPair = await CryptoService.GenerateKeyPair();
+		var url = $"https://192.168.0.15/login/{KeyPair.PublicKey}/{RelayManager.RelayConnections.First().Key}";
+		ImageData = QRCode.GenerateQRCode(url);
+		CodeLoading = false;
+		StateHasChanged();
+	}
+
+
+}

@@ -1,14 +1,14 @@
-using BlazeJump.Common;
+using AutoMapper;
 using BlazeJump.Common.Data;
-using BlazeJump.Common.Services.Database;
 using BlazeJump.Common.Services.Connections;
 using BlazeJump.Common.Services.Crypto;
+using BlazeJump.Common.Services.Database;
+using BlazeJump.Common.Services.Message;
 using BlazeJump.Common.Services.UserProfile;
+using BlazeJump.Web;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
 using Microsoft.EntityFrameworkCore;
-using BlazeJump.Common.Services.Message;
-using AutoMapper;
 using System.Reflection;
 
 var builder = WebAssemblyHostBuilder.CreateDefault(args);
@@ -33,5 +33,4 @@ var mapperConfig = new MapperConfiguration(cfg =>
 
 IMapper mapper = mapperConfig.CreateMapper();
 builder.Services.AddSingleton(mapper);
-
 await builder.Build().RunAsync();
