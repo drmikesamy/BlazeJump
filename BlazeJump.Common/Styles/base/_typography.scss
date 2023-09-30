@@ -1,25 +1,35 @@
 //Base font sizing
 
 html {
-    font-size: $base-font-size;
-    color: $font-colour;
-
-    @media only screen and (min-width: $mobile-screen-size) {
-        font-size: 0.8rem;
-    }
-
-    @media only screen and (min-width: $large-mobile-screen-size) {
-        font-size: 0.9rem;
-    }
-
-    @media only screen and (min-width: $desktop-screen-size) {
-        font-size: 1rem;
-    }
-
-    @media only screen and (min-width: $large-desktop-screen-size) {
-        font-size: 1.1rem;
-    }
+    color: $text-colour;
 }
+
+h1 {
+    font-size: calc(2.6rem + 0.5vw);
+}
+h2 {
+    font-size: calc(1.8rem + 0.5vw);
+}
+h3 {
+    font-size: calc(1.1rem + 0.5vw);
+}
+h4 {
+    font-size: calc(0.6rem + 0.5vw);
+}
+h5 {
+    font-size: calc(0.4rem + 0.5vw);
+}
+h6 {
+    font-size: calc(0.2rem + 0.5vw);
+}
+p {
+    font-size: calc(0.9rem + 0.5vw);
+}
+
+nav.primary-nav {
+    font-size: calc(1.1rem + 0.5vw);
+}
+
 
 //Base fonts
 
@@ -39,36 +49,35 @@ h4,
 h5,
 h6 {
     font-family: 'Arsenal';
-    color: $font-colour;
+    color: $text-colour;
 }
 
 p {
-    color: $font-colour;
-}
-
-h2.layout-element {
-    padding: 0;
-    margin: 0;
-    font-weight: normal;
-}
-
-.colour-invert {
-    color: white;
-}
-
-p {
+    color: $text-colour;
     font-family: 'Open Sans';
 }
 
 a:link {
-    color: $primary-colour;
+    color: $accent-colour;
+    text-decoration: none;
     -webkit-transition: ease-in 0.2s;
     -o-transition: ease-in 0.2s;
     transition: ease-in 0.2s;
 }
+a:visited {
+    color: $accent-colour;
+}
 
 a:hover {
     text-decoration: underline;
+}
+
+.subtle-info-line {
+    color: rgba($text-colour, 0.6);
+    font-size: calc(0.7rem + 0.5vw);
+}
+.stats-line {
+    font-size: calc(0.7rem + 0.5vw);
 }
 
 .info-message {

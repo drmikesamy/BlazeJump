@@ -1,19 +1,12 @@
 html {
     font-family: 'Open Sans';
+    color: $text-colour;
 }
 
 body {
     margin: 0;
     padding: 0;
-    background-size: 100vw 100vh;
-    background-repeat: no-repeat;
-    background-attachment: fixed;
-}
-
-.background-container {
-    background-attachment: fixed;
-    background-size: 100vw 100vh;
-    @include blues-and-purples-meshed-background;
+    background-color: $background-colour;
 }
 
 .content-container {

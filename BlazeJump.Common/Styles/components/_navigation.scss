@@ -1,18 +1,15 @@
 nav.primary-nav {
     padding: 0rem 1rem;
-    background-color: $black;
-
-    h1 {
-        color: white;
-    }
-
+    background-color: black;
     display: grid;
     grid-template-columns: auto auto;
     text-transform: capitalize;
     align-items: center;
+    border-bottom: 1px solid rgba(white, 0.5);
 }
 nav.horizontal-scroll-menu {
     background-color: rgba(0,0,0,0.2);
+    font-family: Arsenal;
 
     ul {
         background-color: rgba(0,0,0,0.5);
@@ -31,12 +28,10 @@ nav.horizontal-scroll-menu {
                 text-decoration: none;
                 color: white;
                 font-weight: bold;
-                border-bottom: 2px solid black;
             }
 
             a.active {
                 background-color: black;
-                border-bottom: 2px solid white;
             }
         }
     }

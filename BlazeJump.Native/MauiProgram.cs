@@ -34,9 +34,6 @@ namespace BlazeJump.Native
 			builder.Services.AddScoped<IMessageService, MessageService>();
 			builder.Services.AddScoped<ICryptoService, CryptoService>();
 			builder.Services.AddScoped<IRelayManager, RelayManager>();
-			// Supply HttpClient instances that include access tokens when making requests to the server project
-			builder.Services.AddScoped(sp => sp.GetRequiredService<IHttpClientFactory>().CreateClient("BlazeJump.ServerAPI"));
-
 			builder.Services.AddSingleton<IBlazeDbService, BlazeDbService>();
 			builder.Services.AddDbContextFactory<BlazeDbContext>(opts => opts.UseSqlite("Filename=app.db"));
 

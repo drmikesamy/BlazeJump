@@ -45,35 +45,11 @@
 //Spacings
 
 @mixin responsive-grid-gap {
-	grid-gap: $base-spacing;
-
-	@media only screen and (min-width: $large-mobile-screen-size) {
-		grid-gap: $base-spacing*0.6;
-	}
-
-	@media only screen and (min-width: $tablet-screen-size) {
-		grid-gap: $base-spacing*0.8;
-	}
-
-	@media only screen and (min-width: $desktop-screen-size) {
-		grid-gap: $base-spacing*1;
-	}
+	grid-gap: calc(0.5rem + 0.5vw);
 }
 
 @mixin responsive-content-padding {
-	padding: $base-spacing;
-
-	@media only screen and (min-width: $large-mobile-screen-size) {
-		padding: $base-spacing*1.2;
-	}
-
-	@media only screen and (min-width: $tablet-screen-size) {
-		padding: $base-spacing*1.4;
-	}
-
-	@media only screen and (min-width: $desktop-screen-size) {
-		padding: $base-spacing*1.6;
-	}
+	padding: calc(0.5rem + 0.5vw);
 }
 
 @mixin responsive-navlink-padding {
@@ -131,19 +107,6 @@
 
 .hide-on-mobile {
 	@include display-on-tablet-upwards;
-}
-
-//Funky meshed backgrounds
-
-@mixin blues-and-purples-meshed-background {
-	background-color:hsla(237,100%,50%,1);
-	background-image: radial-gradient(at 55% 68%, hsla(228,40%,83%,1) 0px, transparent 50%), 
-		radial-gradient(at 38% 31%, hsla(191,100%,50%,0.84) 0px, transparent 50%), 
-		radial-gradient(at 24% 60%, hsla(310,95%,60%,1) 0px, transparent 50%), 
-		radial-gradient(at 67% 41%, hsla(304,95%,62%,1) 0px, transparent 50%), 
-		radial-gradient(at 0% 100%, hsla(254,0%,73%,1) 0px, transparent 50%), 
-		radial-gradient(at 80% 100%, hsla(201,57%,76%,1) 0px, transparent 50%), 
-		radial-gradient(at 15% 20%, hsla(258,100%,11%,1) 0px, transparent 50%);
 }
 
 //grid mixin

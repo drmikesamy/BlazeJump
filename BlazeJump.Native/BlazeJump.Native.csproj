@@ -13,10 +13,10 @@
         <EnableDefaultCssItems>false</EnableDefaultCssItems>
 
         <!-- Display name -->
-        <ApplicationTitle>BlazeJump.Native</ApplicationTitle>
+        <ApplicationTitle>BlazeJump.NativeApp</ApplicationTitle>
 
         <!-- App Identifier -->
-        <ApplicationId>com.companyname.blazejump.native</ApplicationId>
+        <ApplicationId>com.blazejump.nativeapp</ApplicationId>
         <ApplicationIdGuid>1B5F3AFC-1901-4860-9DD3-68D4FD42325A</ApplicationIdGuid>
 
         <!-- Versions -->
@@ -56,5 +56,8 @@
     <ItemGroup>
       <ProjectReference Include="..\BlazeJump.Common\BlazeJump.Common.csproj" />
     </ItemGroup>
-
+	
+	<ItemGroup>
+		<NativeFileReference Include="..\BlazeJump.Common\Runtimes\secp256k1.o" />
+	</ItemGroup>
 </Project>

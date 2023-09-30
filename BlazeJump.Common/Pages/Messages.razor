@@ -11,14 +11,6 @@
 @inject IMessageService MessageService
 @inject ICryptoService CryptoService
 
-<div class="loading-modal" style="@(Loading ? "display: block" : "display: none")">
-	@foreach (var Connection in RelayManager.RelayConnections)
-	{
-		@Connection.Key
-		<br />
-	}
-</div>
-
 <div class="content-container">
 	@if(User != null)
 	{
@@ -31,6 +23,10 @@
 		{
 			<div><a style="cursor: pointer" @onclick="() => Load(message.CreatedAtDateTime, true)">Load more</a></div>
 		}
+	}
+	@if(MessageList.Count() == 0)
+	{
+		<p>Nothing to see here. Click <NavLink href="user/82341f882b6eabcd2ba7f1ef90aad961cf074af15b9ef44a09f9d2a8fbfbe6a2">here</NavLink> for Jack Dorsey's profile.</p>
 	}
 </div>
 

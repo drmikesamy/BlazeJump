@@ -8,16 +8,19 @@
 <section>
 	<article class="card card-message">
 		<div class="profile-picture">
-			<img src="@($"{Message.User?.ProfilePic ?? $"images/profilepics/{new Random().Next(1, 18)}.png"}")" alt="profile picture">
+			<img src="@($"{Message.User?.ProfilePic ?? $"/_content/BlazeJump.Common/images/profilepics/{new Random().Next(1, 18)}.png"}")" alt="profile picture">
 		</div>
 		<div class="card-body">
 			<h3>
 				<a href="user/@(Message.User?.Id)">@(Message.User?.Username ?? $"{Message.User?.Id.Substring(0, 10)}...")</a>
 			</h3>
+			<p class="subtle-info-line">
+				@(TimeAgo.GetTimeAgo(Message.CreatedAtDateTime))
+			</p>
 			@ParseEmbeds.ParseEmbedsFromContent(Message.Content).FirstOrDefault()
 			<p>@(Message.Content ?? "(No content)")</p>
-			<p>
-				@(TimeAgo.GetTimeAgo(Message.CreatedAtDateTime)) ago | <a @onclick=ViewMessage style="cursor: pointer">@Message.ReplyCount comments</a>
+			<p class="stats-line">
+				<a @onclick=ViewMessage style="cursor: pointer">@Message.ReplyCount comments</a>
 			</p>
 		</div>
 	</article>

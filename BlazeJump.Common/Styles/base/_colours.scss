@@ -1,30 +1,12 @@
 //Palette
-$primary-colour: #435578;
+$background-colour: #000000;
+$primary-colour: #C60F7B;
 $secondary-colour: #6cdbd2;
-$accent-colour: #f77f00;
+$accent-colour: #00B7FF;
 $warning-colour: #fe5f55;
-$contrast-colour: #551b14;
 
 //Text colours
-$midnight-blue: #161c27;
-$charcoal-grey: #222222;
-$medium-grey: #5c5c5c;
-$light-grey: #929292;
-$very-light-grey: #e0e0e0;
-$font-colour: black;
-
-//Basic colours:
-$white: #ffffff;
-$black: #000000;
-$background-colour: #fdfdfd;
-$dark-overlay-colour: rgba($charcoal-grey, 0.5);
-$dark-overlay-bottom-gradient: rgba($charcoal-grey, 0.5);
-
-//Styles
-$default-border-colour: transparent;
-
-//Transparent
-$white-transparent: rgba($white, 0.6);
+$text-colour: #e0e0e0;
 
 //Gradients
 
@@ -41,9 +23,3 @@ $hover-shadow: 0px 2px 12px rgba(0, 0, 0, 0.5);
 $click-shadow: 0px 2px 0px rgba(0, 0, 0, 0.25);
 $lighten-shadow: inset 0 0 100px 100px rgba(255, 255, 255, 0.2);
 $darken-shadow: inset 0 0 100px 100px rgba(0, 0, 0, 0.2);
-
-//Forms
-$input-border: 1px solid $light-grey;
-$input-border-hover: 1 px solid $charcoal-grey;
-$input-border-focus: 1px solid $secondary-colour;
-$button-border: 0px;
