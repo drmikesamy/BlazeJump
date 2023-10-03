@@ -1,5 +1,6 @@
 ﻿// Copied and modified from NethermindEth/secp256-bindings commit 03f5a8d2ce9e087df627a7db974ac025e6cd5ef4 under MIT License. Copyright (c) 2023 Nethermind.
 
+using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 
