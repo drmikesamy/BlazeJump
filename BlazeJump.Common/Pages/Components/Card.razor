@@ -1,0 +1,10 @@
+﻿<section>
+	<article class="card">
+		@ChildContent
+	</article>
+</section>
+
+@code {
+	[Parameter]
+	public RenderFragment ChildContent { get; set; }
+}

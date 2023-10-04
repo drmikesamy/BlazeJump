@@ -12,50 +12,48 @@
 @inject IUserProfileService UserProfileService
 
 
-<section>
-	<article class="card">
+<Card>
+	<div>
 		<div>
-			<div>
-				<label for="username">Username:</label>
-				<input type="text" id="username" name="username" @bind="UserProfileService.User.Username">
-			</div>
-			<div>
-				<label for="bio">Bio:</label>
-				<textarea id="bio" name="bio" @bind="UserProfileService.User.Bio"></textarea>
-			</div>
-			<div>
-				<label for="email">Email Address:</label>
-				<input type="email" id="email" name="email" @bind="UserProfileService.User.Email">
-			</div>
-			<div>
-				<label for="password">Password:</label>
-				<input type="password" id="password" name="password" @bind="UserProfileService.User.Password">
-			</div>
-			<div>
-				<label for="repeat-password">Repeat Password:</label>
-				<input type="password" id="repeat-password" name="repeat-password" @bind="UserProfileService.User.RepeatPassword">
-			</div>
-			<div>
-				<label for="npub-key">Nos2x PubKey:</label>
-				<input type="text" id="npub-key" name="npub-key" @bind="UserProfileService.NPubKey">
-			</div>
-			<div>
-				<label for="public-key">Public Key:</label>
-				<input type="text" id="public-key" name="public-key" @bind="UserProfileService.Secp256k1Keys.PublicKey">
-			</div>
-			<div>
-				<label for="private-key">Private Key:</label>
-				<input type="text" id="private-key" name="private-key" @bind="UserProfileService.Secp256k1Keys.PrivateKey">
-			</div>
-			<div>
-				<button type="button">Generate New Keys</button>
-			</div>
-			<div>
-				<button type="button" @onclick="SaveChanges">Save Changes</button>
-			</div>
+			<label for="username">Username:</label>
+			<input type="text" id="username" name="username" @bind="UserProfileService.User.Username">
 		</div>
-	</article>
-</section>
+		<div>
+			<label for="bio">Bio:</label>
+			<textarea id="bio" name="bio" @bind="UserProfileService.User.Bio"></textarea>
+		</div>
+		<div>
+			<label for="email">Email Address:</label>
+			<input type="email" id="email" name="email" @bind="UserProfileService.User.Email">
+		</div>
+		<div>
+			<label for="password">Password:</label>
+			<input type="password" id="password" name="password" @bind="UserProfileService.User.Password">
+		</div>
+		<div>
+			<label for="repeat-password">Repeat Password:</label>
+			<input type="password" id="repeat-password" name="repeat-password" @bind="UserProfileService.User.RepeatPassword">
+		</div>
+		<div>
+			<label for="npub-key">Nos2x PubKey:</label>
+			<input type="text" id="npub-key" name="npub-key" @bind="UserProfileService.NPubKey">
+		</div>
+		<div>
+			<label for="public-key">Public Key:</label>
+			<input type="text" id="public-key" name="public-key" @bind="UserProfileService.Secp256k1Keys.PublicKey">
+		</div>
+		<div>
+			<label for="private-key">Private Key:</label>
+			<input type="text" id="private-key" name="private-key" @bind="UserProfileService.Secp256k1Keys.PrivateKey">
+		</div>
+		<div>
+			<button type="button">Generate New Keys</button>
+		</div>
+		<div>
+			<button type="button" @onclick="SaveChanges">Save Changes</button>
+		</div>
+	</div>
+</Card>
 
 @code {
 	protected override async void OnInitialized()

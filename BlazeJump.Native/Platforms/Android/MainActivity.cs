@@ -17,7 +17,7 @@ namespace BlazeJump.Native
 			}
 			catch (UnsatisfiedLinkError e)
 			{
-				var potato = e.Message;
+				Console.WriteLine(e.Message);
 			}
 		}
 	}

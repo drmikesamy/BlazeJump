@@ -1,5 +1,6 @@
 ﻿using BlazeJump.Common.Models;
 using Newtonsoft.Json;
+using System;
 
 namespace BlazeJump.Common.Services.Connections
 {
@@ -10,7 +11,9 @@ namespace BlazeJump.Common.Services.Connections
 
 		public RelayManager()
 		{
+			var defaultRelay = "wss://relay.damus.io";
 			RelayConnections = new Dictionary<string, RelayConnection>();
+			RelayConnections.TryAdd(defaultRelay, new RelayConnection(defaultRelay));
 		}
 
 		public async Task OpenConnection(string uri)

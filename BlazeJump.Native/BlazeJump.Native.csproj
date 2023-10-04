@@ -51,6 +51,8 @@
 	
     <ItemGroup>
       <AndroidNativeLibrary Include="Resources\lib\arm64-v8a\libsecp256k1.so" />
+      <AndroidNativeLibrary Include="Resources\lib\armeabi-v7a\libsecp256k1.so" />
+      <AndroidNativeLibrary Include="Resources\lib\x86\libsecp256k1.so" />
       <AndroidNativeLibrary Include="Resources\lib\x86_64\libsecp256k1.so" />
     </ItemGroup>
 

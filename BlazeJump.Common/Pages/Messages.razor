@@ -11,24 +11,24 @@
 @inject IMessageService MessageService
 @inject ICryptoService CryptoService
 
-<div class="content-container">
-	@if(User != null)
+@if (User != null)
+{
+	<UserCard User="User"></UserCard>
+}
+@foreach (var message in MessageList)
+{
+	<MessageCard Message=message></MessageCard>
+	@if (message.Id == MessageList.Last().Id)
 	{
-		<UserCard User="User"></UserCard>
+		<div><a style="cursor: pointer" @onclick="() => Load(message.CreatedAtDateTime, true)">Load more</a></div>
 	}
-	@foreach (var message in MessageList)
-	{
-		<MessageCard Message=message></MessageCard>
-		@if (message.Id == MessageList.Last().Id)
-		{
-			<div><a style="cursor: pointer" @onclick="() => Load(message.CreatedAtDateTime, true)">Load more</a></div>
-		}
-	}
-	@if(MessageList.Count() == 0)
-	{
+}
+@if (MessageList.Count() == 0)
+{
+	<Card>
 		<p>Nothing to see here. Click <NavLink href="user/82341f882b6eabcd2ba7f1ef90aad961cf074af15b9ef44a09f9d2a8fbfbe6a2">here</NavLink> for Jack Dorsey's profile.</p>
-	}
-</div>
+	</Card>
+}
 
 @code {
 	public bool Loading { get; set; } = false;
