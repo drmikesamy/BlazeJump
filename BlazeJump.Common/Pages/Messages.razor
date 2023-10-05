@@ -6,10 +6,12 @@
 @using BlazeJump.Common.Models;
 @using BlazeJump.Common.Services.Crypto;
 @using BlazeJump.Common.Services.Message;
+@using BlazeJump.Common.Services.Notification;
 @using BlazeJump.Common.Services.UserProfile;
 @inject IRelayManager RelayManager
 @inject IMessageService MessageService
 @inject ICryptoService CryptoService
+@inject INotificationService NotificationService;
 
 @if (User != null)
 {
@@ -44,12 +46,13 @@
 
 	protected override async Task OnParametersSetAsync()
 	{
+		NotificationService.Loading = true;
 		await Load();
+		NotificationService.Loading = false;
 	}
 
 	public async Task Load(DateTime? endDate = null, bool append = false)
 	{
-		Loading = true;
 		if (PageType != null && Hex != null)
 		{
 			var filter = new Filter
@@ -92,8 +95,6 @@
 
 			}
 		}
-		Loading = false;
-		StateHasChanged();
 	}
 
 	public async Task SendNEvent()

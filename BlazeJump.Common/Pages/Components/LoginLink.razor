@@ -4,18 +4,23 @@
 @inject IUserProfileService UserProfileService
 @inject NavigationManager NavManager
 
-@if(!string.IsNullOrEmpty(UserProfileService.NPubKey))
+@if (!string.IsNullOrEmpty(UserProfileService.NPubKey))
 {
 	<span>Welcome @(UserProfileService.User), <NavLink @onclick="UserProfileService.Logout">Log out</NavLink></span>
-}else{
+}
+else
+{
 	<NavLink href="login">Log in</NavLink>
 }
 
 @code {
 	public User User { get; set; }
-	protected override async void OnInitialized()
+	protected override async Task OnInitializedAsync()
 	{
-		await UserProfileService.Init();
-		StateHasChanged();
+		if (string.IsNullOrEmpty(UserProfileService.User.Id))
+		{
+			await UserProfileService.Init();
+			StateHasChanged();
+		}
 	}
 }

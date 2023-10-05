@@ -14,7 +14,6 @@
 @inject IRelayManager RelayManager
 @inject IMessageService MessageService
 @inject ICryptoService CryptoService
-@inject IJSRuntime JS
 
 <Card>
 	<h2>Create an account</h2>
@@ -22,8 +21,6 @@
 	<div class="qr-code-container">
 		@if (string.IsNullOrEmpty(TempPubKey))
 		{
-
-
 			@if (!CodeLoading)
 			{
 				<img src="data:image/jpeg;base64,@ImageData" class="qr-code" />
@@ -68,8 +65,9 @@
 		else
 		{
 			CodeLoading = true;
+			StateHasChanged();
 			//1. Generate temporary key pair
-			_ = GenerateTemporaryKeyPair();
+			await GenerateTemporaryKeyPair();
 			//2. QR Code is presented to user containing a link to mobile login page with public key & selected relay where they will continue.
 			//3. In the mean time lets start polling the nostr relay for collecting the confirmation
 		}

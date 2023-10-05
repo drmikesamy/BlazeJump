@@ -1,0 +1,27 @@
+﻿@using BlazeJump.Common.Services.Notification;
+@inject INotificationService NotificationService
+
+<div class="loading-modal @(NotificationService.Loading ? "visible" : "")">
+	<div class="qr-code qr-code-loading">
+		<div class="wave"></div>
+		<div class="wave"></div>
+		<div class="wave"></div>
+		<div class="wave"></div>
+		<div class="wave"></div>
+		<div class="wave"></div>
+		<div class="wave"></div>
+		<div class="wave"></div>
+		<div class="wave"></div>
+	</div>
+</div>
+
+@code{
+	protected override async Task OnInitializedAsync()
+	{
+		NotificationService.UpdateState += UpdateState;
+	}
+	public void UpdateState(object sender, EventArgs args)
+	{
+		StateHasChanged();
+	}
+}

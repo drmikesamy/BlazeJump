@@ -3,9 +3,12 @@
 @using BlazeJump.Common.Pages;
 @using BlazeJump.Common.Pages.Components
 @using BlazeJump.Common.Services.Database;
+@using BlazeJump.Common.Services.Notification;
 @inherits LayoutComponentBase
 @inject IBlazeDbService DbService;
+@inject INotificationService NotificationService;
 
+<Loading></Loading>
 <nav class="primary-nav">
 	<div class="primary-nav-left">
 		<h1>@UniqueName</h1>
@@ -37,8 +40,4 @@
 		new MenuItem { Title = "Relays", LinkRoute = "relays" },
 		new MenuItem { Title = "Profile", LinkRoute = "profile" }
 	};
-	protected override async void OnInitialized()
-	{
-		await DbService.InitDatabaseAsync();
-	}
 }
