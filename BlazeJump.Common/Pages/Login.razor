@@ -11,13 +11,15 @@
 @using System.IO;
 @using QRCoder;
 @using System.Runtime.InteropServices;
+@using System.Web;
 @inject IRelayManager RelayManager
 @inject IMessageService MessageService
 @inject ICryptoService CryptoService
 
 <Card>
-	<h2>Create an account</h2>
-	<p>Scan QR Code with your phone to create your account</p>
+	<h2>Log in or create an account</h2>
+	<p>Scan QR Code with your phone to log in or create a new account</p>
+	<button>I'm already on my phone</button>
 	<div class="qr-code-container">
 		@if (string.IsNullOrEmpty(TempPubKey))
 		{
@@ -65,9 +67,12 @@
 		else
 		{
 			CodeLoading = true;
-			StateHasChanged();
 			//1. Generate temporary key pair
-			await GenerateTemporaryKeyPair();
+			await Task.Run(async () =>
+				{
+					await GenerateTemporaryKeyPair();
+				});
+			CodeLoading = false;
 			//2. QR Code is presented to user containing a link to mobile login page with public key & selected relay where they will continue.
 			//3. In the mean time lets start polling the nostr relay for collecting the confirmation
 		}
@@ -76,11 +81,7 @@
 	public async Task GenerateTemporaryKeyPair()
 	{
 		KeyPair = await CryptoService.GenerateKeyPair();
-		var url = $"https://192.168.0.15/login/{KeyPair.PublicKey}/{RelayManager.RelayConnections.First().Key}";
+		var url = $"https://192.168.0.15/login/{KeyPair.PublicKey}/{HttpUtility.UrlEncode(RelayManager.RelayConnections.First().Key)}";
 		ImageData = QRCode.GenerateQRCode(url);
-		CodeLoading = false;
-		StateHasChanged();
 	}
-
-
 }

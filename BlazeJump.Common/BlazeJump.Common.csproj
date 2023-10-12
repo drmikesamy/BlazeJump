@@ -30,4 +30,8 @@
 		<PackageReference Include="QRCoder" Version="1.4.3" />
 		<PackageReference Include="SQLitePCLRaw.bundle_e_sqlite3" Version="2.1.4" />
 	</ItemGroup>
+
+	<ItemGroup>
+	  <Folder Include="wwwroot\jsInterop\" />
+	</ItemGroup>
 </Project>

@@ -3,11 +3,13 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.4.33205.214
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BlazeJump.Common", "BlazeJump.Common\BlazeJump.Common.csproj", "{D34249B3-E652-4600-9CFA-6C90099A9610}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BlazeJump.Common", "BlazeJump.Common\BlazeJump.Common.csproj", "{D34249B3-E652-4600-9CFA-6C90099A9610}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BlazeJump.Web", "BlazeJump.Web\BlazeJump.Web.csproj", "{30DEA447-1A0F-4E13-B840-83B7D56944E2}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BlazeJump.Web", "BlazeJump.Web\BlazeJump.Web.csproj", "{30DEA447-1A0F-4E13-B840-83B7D56944E2}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BlazeJump.Native", "BlazeJump.Native\BlazeJump.Native.csproj", "{E1A9F7A6-82B6-492B-9063-81112E9B6592}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BlazeJump.Native", "BlazeJump.Native\BlazeJump.Native.csproj", "{E1A9F7A6-82B6-492B-9063-81112E9B6592}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BlazeJump.Native.TestRunner", "BlazeJump.Native.TestRunner\BlazeJump.Native.TestRunner.csproj", "{6F76B42E-55C4-4A28-AD7C-D015AC0CD8F5}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -29,6 +31,12 @@ Global
 		{E1A9F7A6-82B6-492B-9063-81112E9B6592}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{E1A9F7A6-82B6-492B-9063-81112E9B6592}.Release|Any CPU.Build.0 = Release|Any CPU
 		{E1A9F7A6-82B6-492B-9063-81112E9B6592}.Release|Any CPU.Deploy.0 = Release|Any CPU
+		{6F76B42E-55C4-4A28-AD7C-D015AC0CD8F5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6F76B42E-55C4-4A28-AD7C-D015AC0CD8F5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6F76B42E-55C4-4A28-AD7C-D015AC0CD8F5}.Debug|Any CPU.Deploy.0 = Debug|Any CPU
+		{6F76B42E-55C4-4A28-AD7C-D015AC0CD8F5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6F76B42E-55C4-4A28-AD7C-D015AC0CD8F5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6F76B42E-55C4-4A28-AD7C-D015AC0CD8F5}.Release|Any CPU.Deploy.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

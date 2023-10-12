@@ -1,21 +1,22 @@
 ﻿using BlazeJump.Common.Models;
 using BlazeJump.Common.Models.SubtleCrypto;
-using Microsoft.JSInterop;
-using Newtonsoft.Json;
 using BlazeJump.Common.Services.Crypto.Bindings;
+using Microsoft.JSInterop;
+using System.Security.Cryptography;
 
 namespace BlazeJump.Common.Services.Crypto
 {
 	public class CryptoService : ICryptoService
 	{
-		private IJSRuntime _jsRuntime;
 		public string ECDHPublicKey { get; set; } = "";
 		public string ECDHPrivateKey { get; set; } = "";
 
+		private IJSRuntime _jsRuntime;
 		public CryptoService(IJSRuntime jsRuntime)
 		{
 			_jsRuntime = jsRuntime;
 		}
+
 		public byte[] GeneratePrivateKey()
 		{
 			Random rand = new Random();
@@ -60,20 +61,55 @@ namespace BlazeJump.Common.Services.Crypto
 				id = 0
 			};
 
-			var signed = await _jsRuntime.InvokeAsync<NEvent>("nostr.signEvent", eventToSign);
+			var signed = new NEvent();
 			return signed;
 		}
 
-		public async Task<string> Encrypt(string pubKey, string plainText)
+		public async Task<string> AesEncrypt(string plainText, string theirPublicKey, string myPrivateKey)
 		{
-			var encrypted = await _jsRuntime.InvokeAsync<string>("nostr.nip04.encrypt", pubKey, plainText);
+			byte[] encryptedData;
+
+			var theirPublicKeyBytes = Convert.FromHexString(theirPublicKey);
+			var myPrivateKeyBytes = Convert.FromHexString(myPrivateKey);
+			var sharedPoint = SecP256k1.EcdhSerialized(theirPublicKeyBytes, myPrivateKeyBytes);
+			var sharedX = sharedPoint[1..];
+			var encrypted = await _jsRuntime.InvokeAsync<string>("blazeJump.aesEncrypt", sharedX, plainText);
 			return encrypted;
 		}
 
-		public async Task<string> Decrypt(string pubKey, string cipherText)
-		{
-			var decrypted = await _jsRuntime.InvokeAsync<string>("nostr.nip04.decrypt");
-			return decrypted;
-		}
+		//public async Task<string> Decrypt(string cipherText, string theirPublicKey, string ourPrivateKey)
+		//{
+		//	string plaintext = null;
+
+		//	var theirPublicKeyBytes = Convert.FromHexString(theirPublicKey);
+		//	var myPrivateKeyBytes = Convert.FromHexString(userKeyPair.PrivateKey);
+		//	var sharedPoint = SecP256k1.EcdhSerialized(theirPublicKeyBytes, myPrivateKeyBytes);
+		//	var sharedX = sharedPoint[1..];
+
+		//	Random rand = new Random();
+		//	byte[] iv = new byte[16];
+		//	rand.NextBytes(iv);
+
+		//	using (Aes aesAlg = Aes.Create())
+		//	{
+		//		aesAlg.Key = sharedX;
+
+		//		ICryptoTransform decryptor = aesAlg.CreateDecryptor(aesAlg.Key, aesAlg.IV);
+		//		var cipherTextBytes = Convert.FromBase64String(cipherText);
+
+		//		using (MemoryStream msDecrypt = new MemoryStream(cipherTextBytes))
+		//		{
+		//			using (CryptoStream csDecrypt = new CryptoStream(msDecrypt, decryptor, CryptoStreamMode.Read))
+		//			{
+		//				using (StreamReader srDecrypt = new StreamReader(csDecrypt))
+		//				{
+		//					plaintext = srDecrypt.ReadToEnd();
+		//				}
+		//			}
+		//		}
+		//	}
+
+		//	return plaintext;
+		//}
 	}
 }
