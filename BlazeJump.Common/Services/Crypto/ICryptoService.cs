@@ -9,9 +9,7 @@ namespace BlazeJump.Common.Services.Crypto
         string ECDHPrivateKey { get; set; }
         Task<Secp256k1KeyPair> GenerateKeyPair();
         Task<NEvent> SignEvent(NEvent nEvent);
-		Task<string> AesEncrypt(string plainText, string theirPublicKey, string myPrivateKey);
-		//Task<string> Encrypt(string pubKey, string plainText);
-		//Task<string> Decrypt(string pubKey, string cipherText);
-
+        Tuple<string, byte[]> AesEncrypt(string plainText, string theirPublicKey, string myPrivateKey);
+		string AesDecrypt(string base64CipherText, string theirPublicKey, string myPrivateKey, byte[] iv);
 	}
 }

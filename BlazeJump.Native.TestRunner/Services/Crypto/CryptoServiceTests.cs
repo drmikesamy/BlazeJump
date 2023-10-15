@@ -8,9 +8,9 @@ namespace BlazeJump.Native.TestRunner.Services.Crypto
 	public class CryptoServiceTests
 	{
 		private CryptoService _cryptoService { get; set; }
-		public CryptoServiceTests(IJSRuntime jsRuntime)
+		public CryptoServiceTests()
 		{
-			_cryptoService = new CryptoService(jsRuntime);
+			_cryptoService = new CryptoService();
 		}
 
 		[Fact]
@@ -36,20 +36,25 @@ namespace BlazeJump.Native.TestRunner.Services.Crypto
 		public async Task Encrypt_ShouldReturnEncryptedText()
 		{
 			// Arrange
-			var plainText = "Hello world";
+			var plainText = "Hello world 4637";
 
 			var myKeyPair = await _cryptoService.GenerateKeyPair();
-			var theirKeyPair = await _cryptoService.GenerateKeyPair();
-
-			var theirPublicKey = theirKeyPair.PublicKey;
+			var myPublicKey = myKeyPair.PublicKey;
 			var myPrivateKey = myKeyPair.PrivateKey;
 
+			var theirKeyPair = await _cryptoService.GenerateKeyPair();
+			var theirPublicKey = theirKeyPair.PublicKey;
+			var theirPrivateKey = theirKeyPair.PrivateKey;
+
 			// Act
-			var encryptedText = await _cryptoService.AesEncrypt(plainText, theirPublicKey, myPrivateKey);
+			var encryptedText = _cryptoService.AesEncrypt(plainText, theirPublicKey, myPrivateKey);
+			var decryptedText = _cryptoService.AesDecrypt(encryptedText.Item1, myPublicKey, theirPrivateKey, encryptedText.Item2);
 
 			// Assert
 			Assert.NotNull(encryptedText);
-			Assert.NotEqual(plainText, encryptedText);
+			Assert.NotNull(decryptedText);
+			Assert.NotEqual(plainText, encryptedText.Item1);
+			Assert.Equal(plainText, decryptedText);
 		}
 
 		//[Fact]

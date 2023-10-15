@@ -13,6 +13,7 @@ namespace BlazeJump.Native.TestRunner
 			try
 			{
 				JavaSystem.LoadLibrary("secp256k1");
+				JavaSystem.LoadLibrary("tinyaes");
 			}
 			catch (UnsatisfiedLinkError e)
 			{

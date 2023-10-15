@@ -3,6 +3,7 @@ using BlazeJump.Common.Models.SubtleCrypto;
 using BlazeJump.Common.Services.Crypto;
 using BlazeJump.Common.Services.Crypto.Bindings;
 using BlazeJump.Helpers;
+using Microsoft.JSInterop;
 using Newtonsoft.Json;
 using System.Security.Cryptography;
 

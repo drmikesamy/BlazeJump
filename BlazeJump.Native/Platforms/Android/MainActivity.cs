@@ -14,6 +14,7 @@ namespace BlazeJump.Native
 			try
 			{
 				JavaSystem.LoadLibrary("secp256k1");
+				JavaSystem.LoadLibrary("tinyaes");
 			}
 			catch (UnsatisfiedLinkError e)
 			{

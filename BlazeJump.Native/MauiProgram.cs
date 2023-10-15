@@ -2,6 +2,7 @@
 using BlazeJump.Common.Data;
 using BlazeJump.Common.Services.Connections;
 using BlazeJump.Common.Services.Crypto;
+using BlazeJump.Native.Services.Crypto;
 using BlazeJump.Common.Services.Database;
 using BlazeJump.Common.Services.Message;
 using BlazeJump.Common.Services.Notification;
@@ -33,7 +34,7 @@ namespace BlazeJump.Native
 
 			builder.Services.AddScoped<IUserProfileService, UserProfileService>();
 			builder.Services.AddScoped<IMessageService, MessageService>();
-			builder.Services.AddScoped<ICryptoService, CryptoService>();
+			builder.Services.AddScoped<ICryptoService, NativeCryptoService>();
 			builder.Services.AddScoped<IRelayManager, RelayManager>();
 			builder.Services.AddScoped<INotificationService, NotificationService>();
 			builder.Services.AddSingleton<IBlazeDbService, BlazeDbService>();

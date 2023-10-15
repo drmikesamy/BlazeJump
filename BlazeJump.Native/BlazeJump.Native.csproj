@@ -48,12 +48,17 @@
         <!-- Raw Assets (also remove the "Resources\Raw" prefix) -->
         <MauiAsset Include="Resources\Raw\**" LogicalName="%(RecursiveDir)%(Filename)%(Extension)" />
     </ItemGroup>
+
+    <ItemGroup>
+      <None Remove="Resources\lib\x86_64\libtinyaes.so" />
+    </ItemGroup>
 	
     <ItemGroup>
       <AndroidNativeLibrary Include="Resources\lib\arm64-v8a\libsecp256k1.so" />
       <AndroidNativeLibrary Include="Resources\lib\armeabi-v7a\libsecp256k1.so" />
       <AndroidNativeLibrary Include="Resources\lib\x86\libsecp256k1.so" />
       <AndroidNativeLibrary Include="Resources\lib\x86_64\libsecp256k1.so" />
+	  <AndroidNativeLibrary Include="Resources\lib\x86_64\libtinyaes.so" />
     </ItemGroup>
 
     <ItemGroup>
@@ -62,5 +67,9 @@
 
     <ItemGroup>
       <ProjectReference Include="..\BlazeJump.Common\BlazeJump.Common.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <RazorComponent Include="Resources\lib\x86_64\libtinyaes.so" />
     </ItemGroup>
 </Project>
