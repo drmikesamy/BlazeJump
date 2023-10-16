@@ -17,5 +17,6 @@
 
 	<ItemGroup>
 		<NativeFileReference Include="..\BlazeJump.Common\Runtimes\secp256k1.o" />
+		<NativeFileReference Include="..\BlazeJump.Common\Runtimes\libtinyaes.o" />
 	</ItemGroup>
 </Project>

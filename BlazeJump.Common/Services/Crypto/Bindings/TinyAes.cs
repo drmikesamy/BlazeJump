@@ -1,4 +1,5 @@
-﻿using System;
+﻿using BlazeJump.Helpers;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices;
@@ -40,7 +41,7 @@ namespace BlazeJump.Common.Services.Crypto.Bindings
 
 		public static byte[]? Encrypt(string message, byte[] key, byte[] iv)
 		{
-			byte[] messageBytes = Encoding.UTF8.GetBytes(message);
+			byte[] messageBytes = Encoding.UTF8.GetBytes(message).Pad();
 			uint messageLength = ((uint)messageBytes.Length);
 
 			var ctx = new AES_ctx();
@@ -58,7 +59,7 @@ namespace BlazeJump.Common.Services.Crypto.Bindings
 			AES_init_ctx_iv(ref ctx, key, iv);
 			AES_CBC_decrypt_buffer(ref ctx, cipherBytes, cipherLength);
 
-			return cipherBytes;
+			return cipherBytes.Unpad();
 		}
 	}
 	// The struct definition must match the native one

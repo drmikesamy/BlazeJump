@@ -120,13 +120,14 @@ namespace BlazeJump.Common.Services.Message
 		{
 			return _dbService.Context.Events.Where(selector).ToList();
 		}
-
+#if ANDROID
 		public async Task SendNEvent(NEvent nEvent, string subscriptionHash)
 		{
 			var signedNEvent = await _cryptoService.SignEvent(nEvent);
 			await _relayManager.SendNEvent(signedNEvent, new List<string> { "wss://relay.damus.io" }, subscriptionHash);
 			sendMessageQueue.TryAdd(signedNEvent.Id, signedNEvent);
 		}
+#endif
 		public async Task<NEvent> GetNewNEvent(KindEnum kind, string message, string? parentId = null)
 		{
 			return new NEvent

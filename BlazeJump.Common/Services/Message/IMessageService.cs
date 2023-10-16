@@ -8,7 +8,9 @@ namespace BlazeJump.Common.Services.Message
 		Task<List<NEvent>> FetchNEventsByFilter(Filter filter, bool fetchStats = false, bool fullFetch = false);
 		Task<List<User>> FetchProfiles(List<string> pubKeys);
         List<NEvent> FetchMessagesFromDb(Func<NEvent, bool> selector);
-        Task SendNEvent(NEvent nEvent, string subscriptionHash);
+#if ANDROID
+		Task SendNEvent(NEvent nEvent, string subscriptionHash);
+#endif
 		Task<NEvent> GetNewNEvent(KindEnum kind, string message, string? parentId = null);
 	}
 }

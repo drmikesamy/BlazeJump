@@ -68,9 +68,9 @@
 		{
 			CodeLoading = true;
 			//1. Generate temporary key pair
-			await Task.Run(async () =>
+			await Task.Run(() =>
 				{
-					await GenerateTemporaryKeyPair();
+					GenerateTemporaryKeyPair();
 				});
 			CodeLoading = false;
 			//2. QR Code is presented to user containing a link to mobile login page with public key & selected relay where they will continue.
@@ -78,10 +78,10 @@
 		}
 	}
 
-	public async Task GenerateTemporaryKeyPair()
+	public void GenerateTemporaryKeyPair()
 	{
-		KeyPair = await CryptoService.GenerateKeyPair();
+		KeyPair = CryptoService.GenerateKeyPair();
 		var url = $"https://192.168.0.15/login/{KeyPair.PublicKey}/{HttpUtility.UrlEncode(RelayManager.RelayConnections.First().Key)}";
-		ImageData = QRCode.GenerateQRCode(url);
+		ImageData = BlazeJump.Common.Helpers.QRCode.GenerateQRCode(url);
 	}
 }

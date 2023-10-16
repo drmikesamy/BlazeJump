@@ -1,15 +1,10 @@
-﻿using BlazeJump.Common.Models;
-using BlazeJump.Common.Models.SubtleCrypto;
+﻿using BlazeJump.Common.Models.SubtleCrypto;
 using BlazeJump.Common.Services.Crypto.Bindings;
-using Microsoft.JSInterop;
-using Microsoft.VisualBasic;
-using Newtonsoft.Json.Linq;
-using System.Security.Cryptography;
 using System.Text;
 
 namespace BlazeJump.Common.Services.Crypto
 {
-	public class CryptoService : ICryptoService
+	public partial class CryptoService : ICryptoService
 	{
 		public string ECDHPublicKey { get; set; } = "";
 		public string ECDHPrivateKey { get; set; } = "";
@@ -33,7 +28,7 @@ namespace BlazeJump.Common.Services.Crypto
 			}
 			
 		}
-		public async Task<Secp256k1KeyPair> GenerateKeyPair()
+		public Secp256k1KeyPair GenerateKeyPair()
 		{
 			var secpKeyPair = new Secp256k1KeyPair();
 
@@ -49,30 +44,12 @@ namespace BlazeJump.Common.Services.Crypto
 			return secpKeyPair;
 		}
 
-		public async Task<NEvent> SignEvent(NEvent nEvent)
-		{
-			var eventToSign = new
-			{
-				kind = nEvent.Kind,
-				content = nEvent.Content,
-				tags = nEvent.Tags,
-				pubkey = nEvent.Pubkey,
-				created_at = nEvent.Created_At,
-				id = 0
-			};
-
-			var signed = new NEvent();
-			return signed;
-		}
-
 		public Tuple<string, byte[]> AesEncrypt(string plainText, string theirPublicKey, string myPrivateKey)
 		{
 			byte[] sharedPoint = GetSharedSecret(theirPublicKey, myPrivateKey);
-			string sharedPointString = Convert.ToBase64String(sharedPoint);
 			Random rand = new Random();
 			byte[] iv = new byte[16];
 			rand.NextBytes(iv);
-			string ivString = Convert.ToHexString(iv);
 			var encrypted = TinyAes.Encrypt(plainText, sharedPoint, iv);
 			return new Tuple<string, byte[]>(Convert.ToBase64String(encrypted), iv);
 		}
@@ -80,7 +57,6 @@ namespace BlazeJump.Common.Services.Crypto
 		public string AesDecrypt(string base64CipherText, string theirPublicKey, string myPrivateKey, byte[] iv)
 		{
 			byte[] sharedPoint = GetSharedSecret(theirPublicKey, myPrivateKey);
-			string sharedPointString = Convert.ToBase64String(sharedPoint);
 			var decrypted = TinyAes.Decrypt(base64CipherText, sharedPoint, iv);
 			return Encoding.UTF8.GetString(decrypted);
 		}

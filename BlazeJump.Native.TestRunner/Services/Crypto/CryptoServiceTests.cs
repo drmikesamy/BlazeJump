@@ -14,14 +14,14 @@ namespace BlazeJump.Native.TestRunner.Services.Crypto
 		}
 
 		[Fact]
-		public async Task GenerateSecp256K1KeyPair_ShouldGenerateValidKeyPair()
+		public void GenerateSecp256K1KeyPair_ShouldGenerateValidKeyPair()
 		{
 			// Arrange
 			var expectedPublicKeyLength = 64;
 			var expectedPrivateKeyLength = 64;
 
 			// Act
-			var keyPair = await _cryptoService.GenerateKeyPair();
+			var keyPair = _cryptoService.GenerateKeyPair();
 			var publicKey = keyPair.PublicKey;
 			var privateKey = keyPair.PrivateKey;
 
@@ -33,16 +33,16 @@ namespace BlazeJump.Native.TestRunner.Services.Crypto
 		}
 
 		[Fact]
-		public async Task Encrypt_ShouldReturnEncryptedText()
+		public void WebEncryptDecrypt_ShouldEncryptAndDecryptString()
 		{
 			// Arrange
-			var plainText = "Hello world 4637";
+			var plainText = "This data is not a multiple of 16 bytes length";
 
-			var myKeyPair = await _cryptoService.GenerateKeyPair();
+			var myKeyPair = _cryptoService.GenerateKeyPair();
 			var myPublicKey = myKeyPair.PublicKey;
 			var myPrivateKey = myKeyPair.PrivateKey;
 
-			var theirKeyPair = await _cryptoService.GenerateKeyPair();
+			var theirKeyPair = _cryptoService.GenerateKeyPair();
 			var theirPublicKey = theirKeyPair.PublicKey;
 			var theirPrivateKey = theirKeyPair.PrivateKey;
 
@@ -56,6 +56,32 @@ namespace BlazeJump.Native.TestRunner.Services.Crypto
 			Assert.NotEqual(plainText, encryptedText.Item1);
 			Assert.Equal(plainText, decryptedText);
 		}
+#if ANDROID
+		[Fact]
+		public void NativeEncryptDecrypt_ShouldEncryptAndDecryptString()
+		{
+			// Arrange
+			var plainText = "This data is not a multiple of 16 bytes length";
+
+			var myKeyPair = _cryptoService.GenerateKeyPair();
+			var myPublicKey = myKeyPair.PublicKey;
+			var myPrivateKey = myKeyPair.PrivateKey;
+
+			var theirKeyPair = _cryptoService.GenerateKeyPair();
+			var theirPublicKey = theirKeyPair.PublicKey;
+			var theirPrivateKey = theirKeyPair.PrivateKey;
+
+			// Act
+			var encryptedText = _cryptoService.Encrypt(plainText, theirPublicKey, myPrivateKey);
+			var decryptedText = _cryptoService.Decrypt(encryptedText.Item1, myPublicKey, theirPrivateKey, encryptedText.Item2);
+
+			// Assert
+			Assert.NotNull(encryptedText);
+			Assert.NotNull(decryptedText);
+			Assert.NotEqual(plainText, encryptedText.Item1);
+			Assert.Equal(plainText, decryptedText);
+		}
+#endif
 
 		//[Fact]
 		//public async Task SignEvent_ShouldReturnSignedEvent()
