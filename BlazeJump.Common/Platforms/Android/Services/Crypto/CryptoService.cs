@@ -28,7 +28,7 @@ namespace BlazeJump.Common.Services.Crypto
 			await SecureStorage.Default.SetAsync("PublicKey", keyPair.PublicKey);
 			await SecureStorage.Default.SetAsync("PrivateKey", keyPair.PrivateKey);
 		}
-		public Tuple<string, string> Encrypt(string message, string theirPublicKey, string myPrivateKey)
+		public Tuple<string, string> NativeAesEncrypt(string message, string theirPublicKey, string myPrivateKey, string? ivOverride = null)
 		{
 			byte[] encryptedData;
 			var sharedPoint = GetSharedSecret(theirPublicKey, myPrivateKey);
@@ -38,7 +38,15 @@ namespace BlazeJump.Common.Services.Crypto
 				aesAlg.GenerateIV();
 				aesAlg.Mode = CipherMode.CBC;
 				aesAlg.KeySize = 256;
-				byte[] iv = aesAlg.IV;
+				byte[] iv = new byte[16];
+				if (ivOverride != null)
+				{
+					iv = Convert.FromBase64String(ivOverride);
+				}
+				else
+				{
+					iv = aesAlg.IV;
+				}
 				aesAlg.Padding = PaddingMode.PKCS7;
 				aesAlg.BlockSize = 128;
 				ICryptoTransform encryptor = aesAlg.CreateEncryptor(sharedPoint, iv);
@@ -58,7 +66,7 @@ namespace BlazeJump.Common.Services.Crypto
 			}
 		}
 
-		public string Decrypt(string cipherText, string theirPublicKey, string myPrivateKey, string ivString)
+		public string NativeAesDecrypt(string cipherText, string theirPublicKey, string myPrivateKey, string ivString)
 		{
 			byte[] cipherBytes = Convert.FromBase64String(cipherText);
 

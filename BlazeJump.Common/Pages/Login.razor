@@ -6,47 +6,51 @@
 @using BlazeJump.Common.Services.Connections;
 @using BlazeJump.Common.Services.Crypto;
 @using BlazeJump.Common.Services.Message;
+@using BlazeJump.Common.Services.Notification;
 @using System.Drawing.Imaging;
 @using System.Drawing;
 @using System.IO;
 @using QRCoder;
 @using System.Runtime.InteropServices;
 @using System.Web;
+@using BlazeJump.Common.Enums;
 @inject IRelayManager RelayManager
 @inject IMessageService MessageService
 @inject ICryptoService CryptoService
-
+@inject INotificationService NotificationService
 <Card>
-	<h2>Log in or create an account</h2>
-	<p>Scan QR Code with your phone to log in or create a new account</p>
-	<button>I'm already on my phone</button>
-	<div class="qr-code-container">
-		@if (string.IsNullOrEmpty(TempPubKey))
-		{
-			@if (!CodeLoading)
+	@if (NotificationService.Platform == PlatformEnum.Web)
+	{
+		<h2>Log in using your phone</h2>
+		<p>Scan QR Code with your phone to log in or create a new account</p>
+		<div class="qr-code-container">
+			@if (string.IsNullOrEmpty(TempPubKey))
 			{
-				<img src="data:image/jpeg;base64,@ImageData" class="qr-code" />
+				@if (!CodeLoading)
+				{
+					<img src="data:image/jpeg;base64,@ImageData" class="qr-code" />
+				}
+				else
+				{
+					<div class="qr-code qr-code-loading">
+						<div class="wave"></div>
+						<div class="wave"></div>
+						<div class="wave"></div>
+						<div class="wave"></div>
+						<div class="wave"></div>
+						<div class="wave"></div>
+						<div class="wave"></div>
+						<div class="wave"></div>
+						<div class="wave"></div>
+					</div>
+				}
 			}
-			else
-			{
-				<div class="qr-code qr-code-loading">
-					<div class="wave"></div>
-					<div class="wave"></div>
-					<div class="wave"></div>
-					<div class="wave"></div>
-					<div class="wave"></div>
-					<div class="wave"></div>
-					<div class="wave"></div>
-					<div class="wave"></div>
-					<div class="wave"></div>
-				</div>
-			}
-		}
-		else
-		{
+		</div>
+	}
+	else
+	{
 
-		}
-	</div>
+	}
 </Card>
 
 @code {

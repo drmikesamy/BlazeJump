@@ -44,18 +44,26 @@ namespace BlazeJump.Common.Services.Crypto
 			return secpKeyPair;
 		}
 
-		public Tuple<string, byte[]> AesEncrypt(string plainText, string theirPublicKey, string myPrivateKey)
+		public Tuple<string, string> AesEncrypt(string plainText, string theirPublicKey, string myPrivateKey, string? ivOverride = null)
 		{
 			byte[] sharedPoint = GetSharedSecret(theirPublicKey, myPrivateKey);
-			Random rand = new Random();
 			byte[] iv = new byte[16];
-			rand.NextBytes(iv);
+			if (ivOverride != null)
+			{
+				iv = Convert.FromBase64String(ivOverride);
+			}
+			else
+			{
+				Random rand = new Random();
+				rand.NextBytes(iv);
+			}
 			var encrypted = TinyAes.Encrypt(plainText, sharedPoint, iv);
-			return new Tuple<string, byte[]>(Convert.ToBase64String(encrypted), iv);
+			return new Tuple<string, string>(Convert.ToBase64String(encrypted), Convert.ToBase64String(iv));
 		}
 
-		public string AesDecrypt(string base64CipherText, string theirPublicKey, string myPrivateKey, byte[] iv)
+		public string AesDecrypt(string base64CipherText, string theirPublicKey, string myPrivateKey, string ivString)
 		{
+			byte[] iv = Convert.FromBase64String(ivString);
 			byte[] sharedPoint = GetSharedSecret(theirPublicKey, myPrivateKey);
 			var decrypted = TinyAes.Decrypt(base64CipherText, sharedPoint, iv);
 			return Encoding.UTF8.GetString(decrypted);

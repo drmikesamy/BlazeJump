@@ -68,11 +68,11 @@ nav.primary-nav {
 
 @font-face {
   font-family: "Open Sans";
-  src: url("/_content/BlazeJump.Common/css/fonts/open-sans/OpenSans-Regular.ttf");
+  src: url("/css/fonts/open-sans/OpenSans-Regular.ttf");
 }
 @font-face {
   font-family: "Arsenal";
-  src: url("/_content/BlazeJump.Common/css/fonts/arsenal/Arsenal-Regular.ttf");
+  src: url("/css/fonts/arsenal/Arsenal-Regular.ttf");
 }
 h1,
 h2,
