@@ -15,7 +15,6 @@ BlazeJump is a bare bones Nostr client written in C#. It currently supports Web 
   * Event Tags
 * Enums for Event Kind, Message Types, Relay Connection Status, and Tags
 * JSON converters to serialise and deserialise Nostr protocol json into Plain Old Class Objects
-* BlazeJump can generate RSA keys using SubtleCrypto, and it has support for the Nos2x browser plugin
 * Automapper support for easy mapping
 * Has separation of concerns with separate services for connections, crypto, database, messages and user profiles
 
