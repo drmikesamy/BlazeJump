@@ -32,7 +32,7 @@ namespace BlazeJump.Common.Services.Message
 		public async Task<List<NEvent>> FetchNEventsByFilter(Filter filter, bool fetchStats = false, bool fullFetch = false)
 		{
 			var subscriptionHash = Guid.NewGuid().ToString();
-			var rawMessages = await _relayManager.QueryRelays(new List<string> { "wss://relay.damus.io" }, subscriptionHash, filter);
+			var rawMessages = await _relayManager.QueryRelays(new List<string> { "wss://relay.damus.io" }, subscriptionHash, filter, 500);
 			var nMessages = rawMessages.Select(rawMessage => JsonConvert.DeserializeObject<NMessage>(rawMessage));
 			var nEvents = nMessages.Where(m => m?.MessageType == MessageTypeEnum.Event).Select(m => m?.Event).ToList();
 
@@ -61,7 +61,7 @@ namespace BlazeJump.Common.Services.Message
 				EventId = new List<string> { nEventId }
 			};
 			var subscriptionHash = Guid.NewGuid().ToString();
-			var rawMessages = await _relayManager.QueryRelays(new List<string> { "wss://relay.damus.io" }, subscriptionHash, filter);
+			var rawMessages = await _relayManager.QueryRelays(new List<string> { "wss://relay.damus.io" }, subscriptionHash, filter, 500);
 			return rawMessages.Count();
 		}
 		public async Task<List<User>> FetchProfiles(List<string> pubKeys)

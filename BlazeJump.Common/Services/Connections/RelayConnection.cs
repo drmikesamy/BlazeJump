@@ -25,8 +25,6 @@ namespace BlazeJump.Common.Services.Connections
 			ActiveSubscriptions = new Dictionary<string, bool>();
 			_webSocketCancellationTokenSource = new CancellationTokenSource();
 			_webSocketCancellationToken = _webSocketCancellationTokenSource.Token;
-			_listenerCancellationTokenSource = new CancellationTokenSource();
-			_listenerCancellationToken = _listenerCancellationTokenSource.Token;
 			Messages = new List<string>();
 			WebSocket = new ClientWebSocket();
 		}
@@ -36,6 +34,9 @@ namespace BlazeJump.Common.Services.Connections
 			{
 				Console.WriteLine($"Already connected to relay: {_uri}.");
 				return;
+			}else if(WebSocket.State == WebSocketState.Aborted ) {
+				WebSocket.Dispose();
+				WebSocket = new ClientWebSocket();
 			}
 			try
 			{
@@ -65,11 +66,11 @@ namespace BlazeJump.Common.Services.Connections
 
 			await WebSocket.SendAsync(dataToSend, WebSocketMessageType.Text, true, _webSocketCancellationToken);
 		}
-		public async Task<List<string>> MessageLoop()
+		public async Task<List<string>> MessageLoop(int timeout)
 		{
 			var messages = new List<string>();
 			Console.WriteLine($"setting up listener for {_uri}");
-			await foreach (var rawMessage in ReceiveLoop())
+			await foreach (var rawMessage in ReceiveLoop(timeout))
 			{
 				if (rawMessage == null || rawMessage == "")
 				{
@@ -96,28 +97,33 @@ namespace BlazeJump.Common.Services.Connections
 			return messages;
 		}
 
-		private async IAsyncEnumerable<string> ReceiveLoop()
+		private async IAsyncEnumerable<string> ReceiveLoop(int timeout)
 		{
+			var canceled = false;
 			var buffer = new ArraySegment<byte>(new byte[2048]);
+			_listenerCancellationTokenSource = new CancellationTokenSource(timeout);
+			_listenerCancellationToken = _listenerCancellationTokenSource.Token;
 			while (true)
 			{
 				WebSocketReceiveResult result;
 				using var ms = new MemoryStream();
-				do
+				try
 				{
-					result = await WebSocket.ReceiveAsync(buffer, _webSocketCancellationToken);
-					ms.Write(buffer.Array!, buffer.Offset, result.Count);
-				} while (!result.EndOfMessage);
-
+					do
+					{
+						result = await WebSocket.ReceiveAsync(buffer, _listenerCancellationToken);
+						ms.Write(buffer.Array!, buffer.Offset, result.Count);
+					} while (!result.EndOfMessage);
+				}
+				catch (OperationCanceledException ex)
+				{
+					canceled = true;
+				}
 				ms.Seek(0, SeekOrigin.Begin);
-
 				yield return Encoding.UTF8.GetString(ms.ToArray());
-
-				if (result.MessageType == WebSocketMessageType.Close || _listenerCancellationToken.IsCancellationRequested)
+				if(canceled)
 				{
 					_listenerCancellationTokenSource.Dispose();
-					_listenerCancellationTokenSource = new CancellationTokenSource();
-					_listenerCancellationToken = _listenerCancellationTokenSource.Token;
 					break;
 				}
 			}
