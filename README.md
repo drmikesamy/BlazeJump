@@ -5,8 +5,8 @@ BlazeJump is a bare bones Nostr client written in C#. It currently supports Web 
 ## Features
 
 * In-browser SQLite DB Context to manage user and message data
-* In-browser Secp256k1 C library (from [bitcoin-core/](https://github.com/bitcoin-core/secp256k1) for communication with a signer phone.
-* In-browser Tiny-AES
+* Fast Secp256k1 C library that works in browser (WASM) and on Android app (from [bitcoin-core/](https://github.com/bitcoin-core/secp256k1))
+* Fast Tiny-AES-C library that works in browser (WASM) and on Android app (from [kokke](https://github.com/kokke/tiny-AES-c))
 * Strong types for:
   * Events
   * Messages
