@@ -7,6 +7,7 @@
 @inherits LayoutComponentBase
 @inject IBlazeDbService DbService;
 @inject INotificationService NotificationService;
+@inject NavigationManager NavigationManager;
 
 <Loading></Loading>
 <nav class="primary-nav">
@@ -25,7 +26,7 @@
 		</nav>
 	</div>
 </nav>
-<div class="background-container" style="@_backgroundMeshCss">
+<div class="background-container">
 	<div class="content-container">
 		@Body
 	</div>
@@ -33,7 +34,21 @@
 
 @code {
 	public string? UniqueName { get; set; }
-	private string _backgroundMeshCss { get; set; } = string.Empty;
+	protected override void OnInitialized()
+	{
+		NotificationService.DeepLinkReceived += RouteDeepLink;
+		if (!string.IsNullOrEmpty(NotificationService.PreviousDeepLink))
+		{
+			RouteDeepLink(null, new() { Data = NotificationService.PreviousDeepLink });
+		}
+	}
+	public void RouteDeepLink(object? sender, DeepLinkReceivedEventArgs e)
+	{
+		var uri = new Uri(e.Data);
+		var pubKey = uri.Host;
+		var relay = uri.Query;
+		NavigationManager.NavigateTo($"Login/{pubKey}/{relay}");
+	}
 	public List<MenuItem> MainMenu = new List<MenuItem>
 	{
 		new MenuItem { Title = "Home", LinkRoute = "" },

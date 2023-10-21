@@ -85,7 +85,7 @@
 	public void GenerateTemporaryKeyPair()
 	{
 		KeyPair = CryptoService.GenerateKeyPair();
-		var url = $"https://192.168.0.15/login/{KeyPair.PublicKey}/{HttpUtility.UrlEncode(RelayManager.RelayConnections.First().Key)}";
+		var url = $"nostrconnect://{KeyPair.PublicKey}?relay={HttpUtility.UrlEncode(RelayManager.RelayConnections.First().Key)}";
 		ImageData = BlazeJump.Common.Helpers.QRCode.GenerateQRCode(url);
 	}
 }

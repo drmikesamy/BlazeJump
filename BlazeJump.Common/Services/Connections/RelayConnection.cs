@@ -4,6 +4,7 @@ using BlazeJump.Common.Pages;
 using Newtonsoft.Json;
 using System;
 using System.Net.WebSockets;
+using System.Runtime.InteropServices;
 using System.Text;
 
 namespace BlazeJump.Common.Services.Connections
@@ -66,11 +67,11 @@ namespace BlazeJump.Common.Services.Connections
 
 			await WebSocket.SendAsync(dataToSend, WebSocketMessageType.Text, true, _webSocketCancellationToken);
 		}
-		public async Task<List<string>> MessageLoop(int timeout)
+		public async Task<List<string>> MessageLoop(int timeout, bool keepAlive)
 		{
 			var messages = new List<string>();
 			Console.WriteLine($"setting up listener for {_uri}");
-			await foreach (var rawMessage in ReceiveLoop(timeout))
+			await foreach (var rawMessage in ReceiveLoop(timeout, keepAlive))
 			{
 				if (rawMessage == null || rawMessage == "")
 				{
@@ -97,11 +98,11 @@ namespace BlazeJump.Common.Services.Connections
 			return messages;
 		}
 
-		private async IAsyncEnumerable<string> ReceiveLoop(int timeout)
+		private async IAsyncEnumerable<string> ReceiveLoop(int timeout, bool keepAlive)
 		{
 			var canceled = false;
 			var buffer = new ArraySegment<byte>(new byte[2048]);
-			_listenerCancellationTokenSource = new CancellationTokenSource(timeout);
+			_listenerCancellationTokenSource = keepAlive ? new CancellationTokenSource() : new CancellationTokenSource(timeout);
 			_listenerCancellationToken = _listenerCancellationTokenSource.Token;
 			while (true)
 			{
@@ -113,6 +114,10 @@ namespace BlazeJump.Common.Services.Connections
 					{
 						result = await WebSocket.ReceiveAsync(buffer, _listenerCancellationToken);
 						ms.Write(buffer.Array!, buffer.Offset, result.Count);
+						if(result.MessageType == WebSocketMessageType.Close)
+						{
+							canceled = true;
+						}
 					} while (!result.EndOfMessage);
 				}
 				catch (OperationCanceledException ex)

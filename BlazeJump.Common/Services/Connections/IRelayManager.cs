@@ -7,7 +7,7 @@ namespace BlazeJump.Common.Services.Connections
         Dictionary<string, RelayConnection> RelayConnections { get; set; }
 		Task OpenConnection(string uri);
         void CloseConnection(string uri);
-		Task<List<string>> QueryRelays(List<string> uris, string subscriptionId, Filter filter, int timeout);
+		Task<List<string>> QueryRelays(List<string> uris, string subscriptionId, Filter filter, int timeout = 15000, bool keepAlive = false);
 		Task SendNEvent(NEvent nEvent, List<string> uris, string subscriptionHash);
 	}
 }

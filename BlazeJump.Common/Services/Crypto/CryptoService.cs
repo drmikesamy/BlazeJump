@@ -11,7 +11,6 @@ namespace BlazeJump.Common.Services.Crypto
 		public CryptoService()
 		{
 		}
-
 		public byte[] GeneratePrivateKey()
 		{
 			Random rand = new Random();
@@ -43,7 +42,6 @@ namespace BlazeJump.Common.Services.Crypto
 
 			return secpKeyPair;
 		}
-
 		public Tuple<string, string> AesEncrypt(string plainText, string theirPublicKey, string myPrivateKey, string? ivOverride = null)
 		{
 			byte[] sharedPoint = GetSharedSecret(theirPublicKey, myPrivateKey);
@@ -60,7 +58,6 @@ namespace BlazeJump.Common.Services.Crypto
 			var encrypted = TinyAes.Encrypt(plainText, sharedPoint, iv);
 			return new Tuple<string, string>(Convert.ToBase64String(encrypted), Convert.ToBase64String(iv));
 		}
-
 		public string AesDecrypt(string base64CipherText, string theirPublicKey, string myPrivateKey, string ivString)
 		{
 			byte[] iv = Convert.FromBase64String(ivString);
@@ -68,7 +65,6 @@ namespace BlazeJump.Common.Services.Crypto
 			var decrypted = TinyAes.Decrypt(base64CipherText, sharedPoint, iv);
 			return Encoding.UTF8.GetString(decrypted);
 		}
-
 		private byte[] GetSharedSecret(string theirPublicKey, string myPrivateKey)
 		{
 			var myPrivateKeyBytes = Convert.FromHexString(myPrivateKey);
@@ -81,5 +77,16 @@ namespace BlazeJump.Common.Services.Crypto
 			theirPublicKeyBytesDecompressed64 = theirPublicKeyBytesDecompressed[1..];
 			return SecP256k1.EcdhSerialized(theirPublicKeyBytesDecompressed64, myPrivateKeyBytes);
 		}
+		public async Task SignerPhoneHandshake()
+		{
+			//web - generates temporary keypair and put into QR code
+			//web - starts listening for phone confirmation on nostr network
+			//phone - scan QR code and go to URL which launches app to specific route with web pubkey
+			//phone - generates temporary keypair, generates shared secret, encrypts response message, signs it and publishes it to nostr network
+			//web - receives message from phone, event triggered to show LOGGED IN to web user
+			//web - user sends a messge: message is stringified, encrypted using temp shared secret, published as ethereal message
+			//phone - receives message, decrypts it, signs it, and publishes it
+		}
+
 	}
 }

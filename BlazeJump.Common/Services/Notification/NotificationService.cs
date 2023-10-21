@@ -4,6 +4,13 @@ namespace BlazeJump.Common.Services.Notification
 {
 	public class NotificationService : INotificationService
 	{
+		public event EventHandler<DeepLinkReceivedEventArgs>? DeepLinkReceived;
+		public void OnDeepLinkReceived(string data)
+		{
+			PreviousDeepLink = data;
+			DeepLinkReceived?.Invoke(this, new() { Data = data });
+		}
+		public string? PreviousDeepLink {  get; set; }
 		public event EventHandler? UpdateState;
 		private bool _loading { get; set; } = false;
 		public PlatformEnum Platform { get; set; } = PlatformEnum.Web;
@@ -30,5 +37,9 @@ namespace BlazeJump.Common.Services.Notification
 				}
 			}
 		}
+	}
+	public class DeepLinkReceivedEventArgs : EventArgs
+	{
+		public required string Data { get; set; }
 	}
 }
