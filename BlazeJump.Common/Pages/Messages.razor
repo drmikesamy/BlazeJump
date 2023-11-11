@@ -100,7 +100,7 @@
 	public async Task SendNEvent()
 	{
 	var newNEvent = await MessageService.GetNewNEvent(Enums.KindEnum.Text, NewNEventInput, null);
-	await MessageService.SendNEvent(newNEvent, ActiveSubscriptions.Keys.First());
+	await MessageService.SendNEvent(newNEvent);
 	}
 #endif
 }

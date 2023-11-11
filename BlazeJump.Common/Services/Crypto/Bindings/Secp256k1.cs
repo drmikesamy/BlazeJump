@@ -1,6 +1,6 @@
 ﻿// Copied and modified from NethermindEth/secp256-bindings commit 03f5a8d2ce9e087df627a7db974ac025e6cd5ef4 under MIT License. Copyright (c) 2023 Nethermind.
 
-using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 
@@ -36,7 +36,12 @@ public static class SecP256k1
 
 	[DllImport(LibraryName)]
 	public static extern int secp256k1_ecdsa_recoverable_signature_serialize_compact(IntPtr context, byte[] compactSignature, out int recoveryId, byte[] signature);
-
+	[DllImport(LibraryName)]
+	public static unsafe extern int secp256k1_xonly_pubkey_parse(IntPtr context, void* serializedPublicKey, byte[] inputPubKey32);
+	[DllImport(LibraryName)]
+	public static extern int secp256k1_schnorrsig_sign(IntPtr ctx, byte[] sig, ref int nonce_is_negated, byte[] msg32, byte[] seckey, IntPtr noncefp, IntPtr ndata);
+	[DllImport(LibraryName)]
+	public static unsafe extern int secp256k1_schnorrsig_verify(IntPtr ctx, byte[] sig, byte[] msg32, int length, void* pubkey);
 	[DllImport(LibraryName)]
 	public static unsafe extern int secp256k1_ecdsa_recoverable_signature_parse_compact(IntPtr context, void* signature, void* compactSignature, int recoveryId);
 
@@ -133,38 +138,44 @@ public static class SecP256k1
 
 		return compactSignature;
 	}
+	public static byte[]? SchnorrSign(byte[] messageHash, byte[] privateKey)
+	{
+		if (messageHash.Length != 32)
+			throw new ArgumentException($"{nameof(messageHash)} must be 32 bytes");
 
-	// public static unsafe bool RecoverKeyFromCompact(Span<byte> output, byte[] messageHash, Span<byte> recoverableSignature, bool compressed)
-	// {
-	//     Span<byte> publicKey = stackalloc byte[64];
-	//     int expectedLength = compressed ? 33 : 65;
-	//     if (output.Length != expectedLength)
-	//     {
-	//         throw new ArgumentException($"{nameof(output)} length should be {expectedLength}");
-	//     }
-	//
-	//     fixed (byte*
-	//         pubKeyPtr = &MemoryMarshal.GetReference(publicKey),
-	//         recoverableSignaturePtr = &MemoryMarshal.GetReference(recoverableSignature),
-	//         serializedPublicKeyPtr = &MemoryMarshal.GetReference(output))
-	//     {
-	//         if (!secp256k1_ecdsa_recover(Context, pubKeyPtr, recoverableSignaturePtr, messageHash))
-	//         {
-	//             return false;
-	//         }
-	//         
-	//         uint flags = compressed ? Secp256K1EcCompressed : Secp256K1EcUncompressed;
-	//         
-	//         uint outputSize = (uint) output.Length;
-	//         if (!secp256k1_ec_pubkey_serialize(
-	//             Context, serializedPublicKeyPtr, ref outputSize, pubKeyPtr, flags))
-	//         {
-	//             return false;
-	//         }
-	//
-	//         return true;
-	//     }
-	// }
+		if (privateKey.Length != 32)
+			throw new ArgumentException($"{nameof(privateKey)} must be 32 bytes");
+
+		int nonce_is_negated = 0;
+		var sigOut = new byte[64];
+		return secp256k1_schnorrsig_sign(Context, sigOut, ref nonce_is_negated, messageHash, privateKey, IntPtr.Zero, (IntPtr)null) == 1 ? sigOut : null;
+	}
+	public static unsafe bool SchnorrVerify(byte[] signature, byte[] messageHash, byte[] publicKeyBytes)
+	{
+		if (signature.Length != 64)
+			throw new ArgumentException($"{nameof(signature)} must be 64 bytes");
+
+		if (messageHash.Length != 32)
+			throw new ArgumentException($"{nameof(messageHash)} must be 32 bytes");
+
+		if (publicKeyBytes.Length != 32)
+			throw new ArgumentException($"{nameof(publicKeyBytes)} must be 32 bytes");
+
+		Span<byte> serialisedPublicKey = stackalloc byte[64];
+
+		fixed (byte* pubKeyPtr = &MemoryMarshal.GetReference(serialisedPublicKey))
+		{
+			if (secp256k1_xonly_pubkey_parse(Context, pubKeyPtr, publicKeyBytes) != 1)
+			{
+				throw new ArgumentException($"{nameof(publicKeyBytes)} couldn't be parsed");
+			}
+
+			var v = secp256k1_schnorrsig_verify(Context, signature, messageHash, 32, pubKeyPtr);
+			//return v == 1;
+		}
+		var bloop = serialisedPublicKey.ToArray();
+		return false;
+	}
 
 	public static unsafe bool RecoverKeyFromCompact(Span<byte> output, byte[] messageHash, Span<byte> compactSignature, int recoveryId, bool compressed)
 	{

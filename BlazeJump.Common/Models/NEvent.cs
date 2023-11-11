@@ -3,10 +3,11 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 using Newtonsoft.Json.Serialization;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Runtime.CompilerServices;
 
 namespace BlazeJump.Common.Models
 {
-	//[JsonConverter(typeof(NEventConverter))]
+	[JsonConverter(typeof(NEventConverter))]
 	[JsonObject(NamingStrategyType = typeof(SnakeCaseNamingStrategy))]
 	public class NEvent
     {
@@ -75,6 +76,19 @@ namespace BlazeJump.Common.Models
         public int ReplyCount { get; set; } = 0;
         [JsonIgnore]
         public int ReactionCount { get; set; } = 0;
+        [JsonIgnore]
+        public bool Verified { get; set; } = false;
+        public NEvent GetSignableNEvent()
+        {
+			return new NEvent
+            {
+                Pubkey = this.Pubkey,
+                Created_At = this.Created_At,
+                Kind = this.Kind,
+                Tags = this.Tags,
+                Content = this.Content,
+            };
+        }
     }
 
 }

@@ -1,5 +1,6 @@
 ﻿using BlazeJump.Common.Models.SubtleCrypto;
 using BlazeJump.Common.Services.Crypto.Bindings;
+using BlazeJump.Helpers;
 using System.Text;
 
 namespace BlazeJump.Common.Services.Crypto
@@ -76,6 +77,20 @@ namespace BlazeJump.Common.Services.Crypto
 			byte[] theirPublicKeyBytesDecompressed64 = new byte[64];
 			theirPublicKeyBytesDecompressed64 = theirPublicKeyBytesDecompressed[1..];
 			return SecP256k1.EcdhSerialized(theirPublicKeyBytesDecompressed64, myPrivateKeyBytes);
+		}
+		public bool Verify(string signature, string message, string publicKey, string nEventId)
+		{
+			var messageHashBytes = message.SHA256Hash();
+			var messageHashString = messageHashBytes.ToHashString();
+			if(messageHashString != nEventId.ToLower())
+			{
+				return false;
+			}
+
+			var signatureBytes = Convert.FromHexString(signature);
+			var publicKeyBytes = Convert.FromHexString(publicKey);
+			var v = SecP256k1.SchnorrVerify(signatureBytes, messageHashBytes, publicKeyBytes);
+			return v;
 		}
 		public async Task SignerPhoneHandshake()
 		{

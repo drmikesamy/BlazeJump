@@ -7,6 +7,8 @@ using BlazeJump.Common.Services.Crypto;
 using System.Linq;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using BlazeJump.Common.Models.NostrConnect;
+using BlazeJump.Common.Services.UserProfile;
 
 namespace BlazeJump.Common.Services.Message
 {
@@ -119,25 +121,46 @@ namespace BlazeJump.Common.Services.Message
 		{
 			return _dbService.Context.Events.Where(selector).ToList();
 		}
-#if ANDROID
-		public async Task SendNEvent(NEvent nEvent, string subscriptionHash)
+		public bool VerifyNEvent(NEvent nEvent)
 		{
+			var signableEvent = nEvent.GetSignableNEvent();
+			var serialisedNEvent = JsonConvert.SerializeObject(signableEvent);
+			var verified = _cryptoService.Verify(nEvent.Sig, serialisedNEvent, nEvent.Pubkey, nEvent.Id);
+			return verified;
+		}
+#if ANDROID
+		public async Task SendNEvent(NEvent nEvent)
+		{
+			var subscriptionHash = Guid.NewGuid().ToString();
 			var signedNEvent = await _cryptoService.SignEvent(nEvent);
 			await _relayManager.SendNEvent(signedNEvent, new List<string> { "wss://relay.damus.io" }, subscriptionHash);
 			sendMessageQueue.TryAdd(signedNEvent.Id, signedNEvent);
 		}
-#endif
+		public async Task SendNostrConnectReply(string theirPubKey)
+		{
+			var subscriptionHash = Guid.NewGuid().ToString();
+			var message = new NostrConnectResponse
+			{
+				Id = subscriptionHash,
+				Result = "Connected"
+			};
+			var nEvent = await GetNewNEvent(KindEnum.NostrConnect, JsonConvert.SerializeObject(message));
+			var signedNEvent = await _cryptoService.SignEvent(nEvent);
+			await _relayManager.SendNEvent(signedNEvent, new List<string> { "wss://relay.damus.io" }, subscriptionHash);
+			sendMessageQueue.TryAdd(signedNEvent.Id, signedNEvent);
+		}
 		public async Task<NEvent> GetNewNEvent(KindEnum kind, string message, string? parentId = null)
 		{
 			return new NEvent
 			{
 				Id = "0",
-				Pubkey = "",
+				Pubkey = _cryptoService.ECDHPublicKey,
 				Kind = kind,
 				Content = message,
 				ParentNEventId = null,
 				Created_At = DateTimeOffset.UtcNow.ToUnixTimeSeconds(),
 			};
 		}
+#endif
 	}
 }

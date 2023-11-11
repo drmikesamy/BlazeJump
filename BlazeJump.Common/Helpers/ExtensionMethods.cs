@@ -13,7 +13,7 @@ namespace BlazeJump.Helpers
 		}
 		public static string ToHashString(this byte[] inputBytes)
 		{
-				return BitConverter.ToString(inputBytes).Replace("-", "");
+				return BitConverter.ToString(inputBytes).Replace("-", "").ToLower();
 		}
 		public static byte[] SHA256Hash(this string inputString)
 		{

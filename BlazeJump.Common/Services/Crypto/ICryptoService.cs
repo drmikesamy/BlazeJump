@@ -10,5 +10,6 @@ namespace BlazeJump.Common.Services.Crypto
         Secp256k1KeyPair GenerateKeyPair();
         Tuple<string, string> AesEncrypt(string plainText, string theirPublicKey, string myPrivateKey, string? ivOverride = null);
 		string AesDecrypt(string base64CipherText, string theirPublicKey, string myPrivateKey, string ivString);
+        bool Verify(string signature, string message, string publicKey, string nEventId);
 	}
 }

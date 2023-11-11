@@ -1,6 +1,7 @@
 ﻿@using BlazeJump.Common.Enums;
 @using BlazeJump.Common.Models;
 @using BlazeJump.Common.Services.Message;
+@using BlazeJump.Common.Services.Crypto;
 @using BlazeJump.Helpers;
 @inject IMessageService MessageService
 @inject NavigationManager NavManager
@@ -20,7 +21,15 @@
 			@ParseEmbeds.ParseEmbedsFromContent(Message.Content).FirstOrDefault()
 			<p>@(Message.Content ?? "(No content)")</p>
 			<p class="stats-line">
-				<a @onclick=ViewMessage style="cursor: pointer">@Message.ReplyCount comments</a>
+				<a @onclick=ViewMessage style="cursor: pointer">@Message.ReplyCount comments</a> |
+				@if (Message.Verified)
+				{
+					<span>Verified</span>
+				}
+				else
+				{
+					<a @onclick="() => VerifyMessage(Message)" style="cursor: pointer">Verify</a>
+				}
 			</p>
 		</div>
 	</article>
@@ -38,5 +47,10 @@
 	public async Task ViewMessage()
 	{
 		NavManager.NavigateTo($"event/{Message.Id}");
+	}
+	public void VerifyMessage(NEvent message)
+	{
+		message.Verified = MessageService.VerifyNEvent(Message);
+		StateHasChanged();
 	}
 }

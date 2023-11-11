@@ -97,12 +97,13 @@ namespace BlazeJump.Common.Services.Crypto
 				}
 			}
 		}
-		public async Task<NEvent> SignEvent(NEvent nEvent, string? myPrivateKey = null)
+		public async Task<NEvent> SignEvent(NEvent nEvent, string? myPublicKey = null, string? myPrivateKey = null)
 		{
-			if(myPrivateKey == null)
+			if(myPrivateKey == null || myPublicKey == null)
 			{
 				var keyPair = await GetUserKeyPair();
 				myPrivateKey = keyPair.PrivateKey;
+				myPublicKey = keyPair.PublicKey;
 			}
 
 			var eventToSign = new
@@ -110,7 +111,7 @@ namespace BlazeJump.Common.Services.Crypto
 				kind = nEvent.Kind,
 				content = nEvent.Content,
 				tags = nEvent.Tags,
-				pubkey = nEvent.Pubkey,
+				pubkey = myPublicKey,
 				created_at = nEvent.Created_At,
 				id = 0
 			};
@@ -118,7 +119,7 @@ namespace BlazeJump.Common.Services.Crypto
 			var eventHashString = eventHash.ToHashString();
 			nEvent.Id = eventHashString;
 			var privateKeyBytes = Convert.FromHexString(myPrivateKey);
-			var signature = SecP256k1.SignCompact(eventHash, privateKeyBytes, out var recoveryKey);
+			var signature = SecP256k1.SchnorrSign(eventHash, privateKeyBytes);
 			nEvent.Sig = Convert.ToHexString(signature);
 			return nEvent;
 		}

@@ -5,8 +5,11 @@ namespace BlazeJump.Common.Mappers
 {
 	public class NEventProfile : Profile
 	{
-		public NEventProfile() {
+		public NEventProfile()
+		{
 			CreateMap<NEvent, NEvent>();
+			CreateMap<SignableNEvent, NEvent>();
+			CreateMap<NEvent, SignableNEvent>();
 		}
 	}
 }

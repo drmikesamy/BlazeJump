@@ -35,7 +35,7 @@ namespace BlazeJump.Native
 			builder.Services.AddScoped<IMessageService, MessageService>();
 			builder.Services.AddScoped<ICryptoService, CryptoService>();
 			builder.Services.AddScoped<IRelayManager, RelayManager>();
-			builder.Services.AddScoped<INotificationService, NotificationService>();
+			builder.Services.AddSingleton<INotificationService, NotificationService>();
 			builder.Services.AddSingleton<IBlazeDbService, BlazeDbService>();
 			builder.Services.AddDbContextFactory<BlazeDbContext>(opts => opts.UseSqlite("Filename=app.db"));
 

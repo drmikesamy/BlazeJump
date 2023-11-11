@@ -9,6 +9,6 @@ namespace BlazeJump.Common.Services.Crypto
 		Task GenerateAndStoreUserKeyPair();
 		Tuple<string, string> NativeAesEncrypt(string plainText, string theirPublicKey, string myPrivateKey, string? ivOverride = null);
 		string NativeAesDecrypt(string cipherText, string theirPublicKey, string myPrivateKey, string ivString);
-		Task<NEvent> SignEvent(NEvent nEvent, string? myPrivateKey = null);
+		Task<NEvent> SignEvent(NEvent nEvent, string? myPublicKey = null, string? myPrivateKey = null);
 	}
 }

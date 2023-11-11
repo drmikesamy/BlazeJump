@@ -1,6 +1,7 @@
 using BlazeJump.Common.Models;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using System.Text.RegularExpressions;
 
 namespace BlazeJump.Common.Enums
 {
@@ -8,7 +9,7 @@ namespace BlazeJump.Common.Enums
 	{
 		public override bool CanConvert(Type objectType)
 		{
-			return (objectType == typeof(NMessage));
+			return (objectType == typeof(NEvent));
 		}
 
 		public override bool CanRead
@@ -26,13 +27,67 @@ namespace BlazeJump.Common.Enums
 			JArray ja = new JArray();
 			NEvent nEvent = (NEvent)value;
 
-			ja.Add(nEvent.Id);
-			ja.Add(nEvent.Pubkey);
-			ja.Add(nEvent.Created_At);
-			ja.Add(nEvent.Kind);
-			ja.Add(nEvent.Tags);
-			ja.Add(nEvent.Content);
-			ja.Add(nEvent.Sig);
+			//	[
+			//  0,
+			//  < pubkey, as a lowercase hex string>,
+			//  < created_at, as a number >,
+			//  < kind, as a number >,
+			//  < tags, as an array of arrays of non - null strings >,
+			//  < content, as a string>
+			//]
+
+			if (!String.IsNullOrEmpty(nEvent.Id))
+			{
+				ja.Add(nEvent.Id);
+			}
+			else
+			{
+				ja.Add(0);
+			}
+			if (!String.IsNullOrEmpty(nEvent.Pubkey))
+			{
+				ja.Add(nEvent.Pubkey);
+			}
+			if (nEvent.Created_At != 0)
+			{
+				ja.Add(nEvent.Created_At);
+			}
+			if (nEvent.Kind != null)
+			{
+				ja.Add(nEvent.Kind);
+			}
+			if (nEvent.Tags != null & nEvent.Tags.Count() > 0)
+			{
+				JArray tagListJa = new JArray();
+				foreach (var tag in nEvent.Tags)
+				{
+					JArray tagJa = new JArray();
+					tagJa.Add(tag.Key.ToString());
+					tagJa.Add(tag.Value ?? "");
+					if (tag.Value2 != null)
+					{
+						tagJa.Add(tag.Value2);
+					}
+					if (tag.Value3 != null)
+					{
+						tagJa.Add(tag.Value3);
+					}
+					if (tag.Value4 != null)
+					{
+						tagJa.Add(tag.Value4);
+					}
+					tagListJa.Add(tagJa);
+				}
+				ja.Add(tagListJa);
+			}
+			if (!String.IsNullOrEmpty(nEvent.Content))
+			{
+				ja.Add(nEvent.Content);
+			}
+			if (!String.IsNullOrEmpty(nEvent.Sig))
+			{
+				ja.Add(nEvent.Sig);
+			}
 
 			ja.WriteTo(writer);
 		}

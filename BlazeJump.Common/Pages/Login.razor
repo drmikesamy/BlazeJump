@@ -7,6 +7,7 @@
 @using BlazeJump.Common.Services.Crypto;
 @using BlazeJump.Common.Services.Message;
 @using BlazeJump.Common.Services.Notification;
+@using BlazeJump.Common.Services.UserProfile;
 @using System.Drawing.Imaging;
 @using System.Drawing;
 @using System.IO;
@@ -18,6 +19,7 @@
 @inject IMessageService MessageService
 @inject ICryptoService CryptoService
 @inject INotificationService NotificationService
+@inject IUserProfileService UserProfileService
 <Card>
 	@if (NotificationService.Platform == PlatformEnum.Web)
 	{
@@ -47,9 +49,10 @@
 			}
 		</div>
 	}
-	else
+	else if (TempPubKey != null && TempRelay != null)
 	{
-
+		<p>Received connect request from pubkey: @TempPubKey</p>
+		<p>Send to: @TempRelay</p>
 	}
 </Card>
 
@@ -63,23 +66,27 @@
 	public bool CodeLoading { get; set; } = false;
 	protected override async Task OnInitializedAsync()
 	{
-		if (TempPubKey != null && TempRelay != null)
-		{
-			//We are on the phone that just took the QR snap. Generate the account keypair and encrypt it using the TempPubKey, and send it to the TempRelay
+#if ANDROID
+	if (TempPubKey != null && TempRelay != null)
+	{
+		var keyPair = await CryptoService.GetUserKeyPair();
+		if(keyPair.PublicKey == null || keyPair.PrivateKey == null){
+			await CryptoService.GenerateAndStoreUserKeyPair();
+		}
+		MessageService.SendNostrConnectReply(keyPair.PublicKey);
+	}
+#else
+		CodeLoading = true;
+		//1. Generate temporary key pair
+		await Task.Run(() =>
+			{
+				GenerateTemporaryKeyPair();
+			});
+		CodeLoading = false;
+		//2. QR Code is presented to user containing a link to mobile login page with public key & selected relay where they will continue.
+		//3. In the mean time lets start polling the nostr relay for collecting the confirmation
 
-		}
-		else
-		{
-			CodeLoading = true;
-			//1. Generate temporary key pair
-			await Task.Run(() =>
-				{
-					GenerateTemporaryKeyPair();
-				});
-			CodeLoading = false;
-			//2. QR Code is presented to user containing a link to mobile login page with public key & selected relay where they will continue.
-			//3. In the mean time lets start polling the nostr relay for collecting the confirmation
-		}
+#endif
 	}
 
 	public void GenerateTemporaryKeyPair()

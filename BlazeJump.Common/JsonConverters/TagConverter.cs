@@ -41,10 +41,18 @@ namespace BlazeJump.Common.Enums
 			EventTag tag = (EventTag)value;
 			ja.Add(tag.Key.ToString());
 			ja.Add(tag.Value ?? "");
-			ja.Add(tag.Value2 ?? "");
-			ja.Add(tag.Value3 ?? "");
-			ja.Add(tag.Value4 ?? "");
-
+			if(tag.Value2 != null)
+			{
+				ja.Add(tag.Value2);
+			}
+			if(tag.Value3 != null)
+			{
+				ja.Add(tag.Value3);
+			}
+			if(tag.Value4 != null)
+			{
+				ja.Add(tag.Value4);
+			}
 			ja.WriteTo(writer);
 		}
 	}

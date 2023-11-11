@@ -18,6 +18,7 @@
         PublicChatReserved = 45,
         ReplaceableEventsReserved = 10000,
         RelayListMetadata = 10002,
-        EphemeralEventsReserved = 20000
+        EphemeralEventsReserved = 20000,
+        NostrConnect = 24133
     }
 }
