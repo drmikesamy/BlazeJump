@@ -1,5 +1,5 @@
 ﻿using BlazeJump.Common.Models;
-using BlazeJump.Common.Models.SubtleCrypto;
+using BlazeJump.Common.Models.Crypto;
 using BlazeJump.Common.Services.Crypto;
 using BlazeJump.Common.Services.Crypto.Bindings;
 using BlazeJump.Helpers;
@@ -11,27 +11,26 @@ namespace BlazeJump.Common.Services.Crypto
 {
 	public partial class CryptoService : ICryptoService
 	{
-		public async Task<Secp256k1KeyPair> GetUserKeyPair()
+		public async Task GetUserKeyPair()
 		{
-			var publicKeyString = await SecureStorage.Default.GetAsync("PublicKey");
-			var privateKeyString = await SecureStorage.Default.GetAsync("PrivateKey");
-
-			return new Secp256k1KeyPair
+			if(_keyPair.PublicKey == null)
 			{
-				PublicKey = publicKeyString,
-				PrivateKey = privateKeyString
-			};
+				await GenerateAndStoreUserKeyPair();
+			}
+
+			_keyPair.PublicKey = await SecureStorage.Default.GetAsync("PublicKey");
+			_keyPair.PrivateKey = await SecureStorage.Default.GetAsync("PrivateKey");
 		}
 		public async Task GenerateAndStoreUserKeyPair()
 		{
-			var keyPair = GenerateKeyPair();
-			await SecureStorage.Default.SetAsync("PublicKey", keyPair.PublicKey);
-			await SecureStorage.Default.SetAsync("PrivateKey", keyPair.PrivateKey);
+			GenerateKeyPair();
+			await SecureStorage.Default.SetAsync("PublicKey", _keyPair.PublicKey);
+			await SecureStorage.Default.SetAsync("PrivateKey", _keyPair.PrivateKey);
 		}
-		public Tuple<string, string> NativeAesEncrypt(string message, string theirPublicKey, string myPrivateKey, string? ivOverride = null)
+		public Tuple<string, string> NativeAesEncrypt(string message, string theirPublicKey, string? ivOverride = null)
 		{
 			byte[] encryptedData;
-			var sharedPoint = GetSharedSecret(theirPublicKey, myPrivateKey);
+			var sharedPoint = GetSharedSecret(theirPublicKey);
 
 			using (Aes aesAlg = Aes.Create())
 			{		
@@ -66,11 +65,11 @@ namespace BlazeJump.Common.Services.Crypto
 			}
 		}
 
-		public string NativeAesDecrypt(string cipherText, string theirPublicKey, string myPrivateKey, string ivString)
+		public string NativeAesDecrypt(string cipherText, string theirPublicKey, string ivString)
 		{
 			byte[] cipherBytes = Convert.FromBase64String(cipherText);
 
-			var sharedPoint = GetSharedSecret(theirPublicKey, myPrivateKey);
+			var sharedPoint = GetSharedSecret(theirPublicKey);
 
 			byte[] iv = Convert.FromBase64String(ivString);
 
@@ -96,32 +95,6 @@ namespace BlazeJump.Common.Services.Crypto
 					}
 				}
 			}
-		}
-		public async Task<NEvent> SignEvent(NEvent nEvent, string? myPublicKey = null, string? myPrivateKey = null)
-		{
-			if(myPrivateKey == null || myPublicKey == null)
-			{
-				var keyPair = await GetUserKeyPair();
-				myPrivateKey = keyPair.PrivateKey;
-				myPublicKey = keyPair.PublicKey;
-			}
-
-			var eventToSign = new
-			{
-				kind = nEvent.Kind,
-				content = nEvent.Content,
-				tags = nEvent.Tags,
-				pubkey = myPublicKey,
-				created_at = nEvent.Created_At,
-				id = 0
-			};
-			var eventHash = JsonConvert.SerializeObject(eventToSign).SHA256Hash();
-			var eventHashString = eventHash.ToHashString();
-			nEvent.Id = eventHashString;
-			var privateKeyBytes = Convert.FromHexString(myPrivateKey);
-			var signature = SecP256k1.SchnorrSign(eventHash, privateKeyBytes);
-			nEvent.Sig = Convert.ToHexString(signature);
-			return nEvent;
 		}
 	}
 }

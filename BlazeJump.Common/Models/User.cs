@@ -1,4 +1,4 @@
-using BlazeJump.Common.Models.SubtleCrypto;
+using BlazeJump.Common.Models.Crypto;
 using System.ComponentModel.DataAnnotations;
 
 namespace BlazeJump.Common.Models

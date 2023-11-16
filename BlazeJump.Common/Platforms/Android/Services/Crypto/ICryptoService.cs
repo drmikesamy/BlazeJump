@@ -1,14 +1,13 @@
 ﻿using BlazeJump.Common.Models;
-using BlazeJump.Common.Models.SubtleCrypto;
+using BlazeJump.Common.Models.Crypto;
 
 namespace BlazeJump.Common.Services.Crypto
 {
     public partial interface ICryptoService
     {
-		Task<Secp256k1KeyPair> GetUserKeyPair();
+		Task GetUserKeyPair();
 		Task GenerateAndStoreUserKeyPair();
-		Tuple<string, string> NativeAesEncrypt(string plainText, string theirPublicKey, string myPrivateKey, string? ivOverride = null);
-		string NativeAesDecrypt(string cipherText, string theirPublicKey, string myPrivateKey, string ivString);
-		Task<NEvent> SignEvent(NEvent nEvent, string? myPublicKey = null, string? myPrivateKey = null);
+		Tuple<string, string> NativeAesEncrypt(string plainText, string theirPublicKey, string? ivOverride = null);
+		string NativeAesDecrypt(string cipherText, string theirPublicKey, string ivString);
 	}
 }

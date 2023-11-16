@@ -1,5 +1,5 @@
 ﻿using BlazeJump.Common.Models;
-using BlazeJump.Common.Models.SubtleCrypto;
+using BlazeJump.Common.Models.Crypto;
 using BlazeJump.Common.Services.Crypto;
 using BlazeJump.Common.Services.Database;
 

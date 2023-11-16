@@ -1,7 +1,7 @@
 ﻿@page "/Login"
 @page "/Login/{TempPubKey}/{TempRelay}"
 @using BlazeJump.Common.Helpers;
-@using BlazeJump.Common.Models.SubtleCrypto;
+@using BlazeJump.Common.Models.Crypto;
 @using BlazeJump.Common.Pages.Components
 @using BlazeJump.Common.Services.Connections;
 @using BlazeJump.Common.Services.Crypto;
@@ -69,11 +69,8 @@
 #if ANDROID
 	if (TempPubKey != null && TempRelay != null)
 	{
-		var keyPair = await CryptoService.GetUserKeyPair();
-		if(keyPair.PublicKey == null || keyPair.PrivateKey == null){
-			await CryptoService.GenerateAndStoreUserKeyPair();
-		}
-		MessageService.SendNostrConnectReply(keyPair.PublicKey);
+		await CryptoService.GetUserKeyPair();
+		await MessageService.SendNostrConnectReply(TempPubKey);
 	}
 #else
 		CodeLoading = true;
@@ -91,7 +88,7 @@
 
 	public void GenerateTemporaryKeyPair()
 	{
-		KeyPair = CryptoService.GenerateKeyPair();
+		CryptoService.GenerateKeyPair();
 		var url = $"nostrconnect://{KeyPair.PublicKey}?relay={HttpUtility.UrlEncode(RelayManager.RelayConnections.First().Key)}";
 		ImageData = BlazeJump.Common.Helpers.QRCode.GenerateQRCode(url);
 	}

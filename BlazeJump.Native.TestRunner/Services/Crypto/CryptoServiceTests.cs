@@ -2,6 +2,7 @@
 using BlazeJump.Common.Models;
 using BlazeJump.Common.Services.Crypto;
 using Microsoft.JSInterop;
+using Newtonsoft.Json;
 
 namespace BlazeJump.Native.TestRunner.Services.Crypto
 {
@@ -18,18 +19,13 @@ namespace BlazeJump.Native.TestRunner.Services.Crypto
 		{
 			// Arrange
 			var expectedPublicKeyLength = 64;
-			var expectedPrivateKeyLength = 64;
 
 			// Act
 			var keyPair = _cryptoService.GenerateKeyPair();
-			var publicKey = keyPair.PublicKey;
-			var privateKey = keyPair.PrivateKey;
 
 			// Assert
-			Assert.NotNull(publicKey);
-			Assert.NotNull(privateKey);
-			Assert.Equal(expectedPublicKeyLength, publicKey.Length);
-			Assert.Equal(expectedPrivateKeyLength, privateKey.Length);
+			Assert.NotNull(_cryptoService.PublicKey);
+			Assert.Equal(expectedPublicKeyLength, _cryptoService.PublicKey.Length);
 		}
 
 		[Fact]
@@ -37,18 +33,17 @@ namespace BlazeJump.Native.TestRunner.Services.Crypto
 		{
 			// Arrange
 			var plainText = "This data is not a multiple of 16 bytes length";
-
-			var myKeyPair = _cryptoService.GenerateKeyPair();
-			var myPublicKey = myKeyPair.PublicKey;
-			var myPrivateKey = myKeyPair.PrivateKey;
-
-			var theirKeyPair = _cryptoService.GenerateKeyPair();
-			var theirPublicKey = theirKeyPair.PublicKey;
-			var theirPrivateKey = theirKeyPair.PrivateKey;
+			//Generate their keypair
+			var theirCryptoService = new CryptoService();
+			theirCryptoService.GenerateKeyPair();
+			var theirPublicKey = theirCryptoService.PublicKey;
+			//Generate my keypair
+			_cryptoService.GenerateKeyPair();
+			var myPublicKey = _cryptoService.PublicKey;
 
 			// Act
-			var encryptedText = _cryptoService.AesEncrypt(plainText, theirPublicKey, myPrivateKey);
-			var decryptedText = _cryptoService.AesDecrypt(encryptedText.Item1, myPublicKey, theirPrivateKey, encryptedText.Item2);
+			var encryptedText = theirCryptoService.AesEncrypt(plainText, myPublicKey);
+			var decryptedText = _cryptoService.AesDecrypt(encryptedText.Item1, theirPublicKey, encryptedText.Item2);
 
 			// Assert
 			Assert.NotNull(encryptedText);
@@ -62,18 +57,17 @@ namespace BlazeJump.Native.TestRunner.Services.Crypto
 		{
 			// Arrange
 			var plainText = "This data is not a multiple of 16 bytes length";
-
-			var myKeyPair = _cryptoService.GenerateKeyPair();
-			var myPublicKey = myKeyPair.PublicKey;
-			var myPrivateKey = myKeyPair.PrivateKey;
-
-			var theirKeyPair = _cryptoService.GenerateKeyPair();
-			var theirPublicKey = theirKeyPair.PublicKey;
-			var theirPrivateKey = theirKeyPair.PrivateKey;
+			//Generate their keypair
+			var theirCryptoService = new CryptoService();
+			theirCryptoService.GenerateKeyPair();
+			var theirPublicKey = theirCryptoService.PublicKey;
+			//Generate my keypair
+			_cryptoService.GenerateKeyPair();
+			var myPublicKey = _cryptoService.PublicKey;
 
 			// Act
-			var encryptedText = _cryptoService.NativeAesEncrypt(plainText, theirPublicKey, myPrivateKey);
-			var decryptedText = _cryptoService.NativeAesDecrypt(encryptedText.Item1, myPublicKey, theirPrivateKey, encryptedText.Item2);
+			var encryptedText = theirCryptoService.NativeAesEncrypt(plainText, myPublicKey);
+			var decryptedText = _cryptoService.NativeAesDecrypt(encryptedText.Item1, theirPublicKey, encryptedText.Item2);
 
 			// Assert
 			Assert.NotNull(encryptedText);
@@ -86,14 +80,13 @@ namespace BlazeJump.Native.TestRunner.Services.Crypto
 		{
 			// Arrange
 			var plainText = "This data is not a multiple of 16 bytes length";
-
-			var myKeyPair = _cryptoService.GenerateKeyPair();
-			var myPublicKey = myKeyPair.PublicKey;
-			var myPrivateKey = myKeyPair.PrivateKey;
-
-			var theirKeyPair = _cryptoService.GenerateKeyPair();
-			var theirPublicKey = theirKeyPair.PublicKey;
-			var theirPrivateKey = theirKeyPair.PrivateKey;
+			//Generate their keypair
+			var theirCryptoService = new CryptoService();
+			theirCryptoService.GenerateKeyPair();
+			var theirPublicKey = theirCryptoService.PublicKey;
+			//Generate my keypair
+			_cryptoService.GenerateKeyPair();
+			var myPublicKey = _cryptoService.PublicKey;
 
 			Random rand = new Random();
 			byte[] ivBytes = new byte[16];
@@ -101,11 +94,11 @@ namespace BlazeJump.Native.TestRunner.Services.Crypto
 			var iv = Convert.ToBase64String(ivBytes);
 
 			// Act
-			var encryptedText = _cryptoService.NativeAesEncrypt(plainText, theirPublicKey, myPrivateKey, iv);
-			var decryptedText = _cryptoService.NativeAesDecrypt(encryptedText.Item1, myPublicKey, theirPrivateKey, encryptedText.Item2);
+			var encryptedText = theirCryptoService.AesEncrypt(plainText, myPublicKey, iv);
+			var decryptedText = _cryptoService.AesDecrypt(encryptedText.Item1, theirPublicKey, encryptedText.Item2);
 
-			var encryptedTextNative = _cryptoService.NativeAesEncrypt(plainText, theirPublicKey, myPrivateKey, iv);
-			var decryptedTextNative = _cryptoService.NativeAesDecrypt(encryptedTextNative.Item1, myPublicKey, theirPrivateKey, encryptedTextNative.Item2);
+			var encryptedTextNative = theirCryptoService.NativeAesEncrypt(plainText, myPublicKey, iv);
+			var decryptedTextNative = _cryptoService.NativeAesDecrypt(encryptedText.Item1, theirPublicKey, encryptedText.Item2);
 
 			// Assert
 			Assert.NotNull(encryptedText);
@@ -125,36 +118,25 @@ namespace BlazeJump.Native.TestRunner.Services.Crypto
 		}
 #endif
 
-		//[Fact]
-		//public async Task SignEvent_ShouldReturnSignedEvent()
-		//{
-		//	// Arrange
+		[Fact]
+		public async Task Sign_ShouldReturnValidSignature()
+		{
+			// Arrange
 
-		//	var keyPair = await _cryptoService.GenerateKeyPair();
+			_cryptoService.GenerateKeyPair();
 
-		//	var nEvent = new NEvent
-		//	{
-		//		Kind = KindEnum.Text,
-		//		Content = "Hello world",
-		//		Pubkey = keyPair.PublicKey,
-		//		Created_At = ((DateTimeOffset)DateTime.UtcNow).ToUnixTimeSeconds()
-		//	};
-		//	var expectedIdLength = 64;
-		//	var expectedSigLength = 128;		
+			var testString = "test string";
 
-		//	// Act
-		//	var signedEvent = await _cryptoService.SignEvent(nEvent);
+			var expectedSigLength = 128;
 
-		//	// Assert
-		//	Assert.NotNull(signedEvent);
-		//	Assert.Equal(nEvent.Kind, signedEvent.Kind);
-		//	Assert.Equal(nEvent.Content, signedEvent.Content);
-		//	Assert.Equal(nEvent.Pubkey, signedEvent.Pubkey);
-		//	Assert.Equal(nEvent.Created_At, signedEvent.Created_At);
-		//	Assert.NotNull(signedEvent.Id);
-		//	Assert.NotNull(signedEvent.Sig);
-		//	Assert.Equal(expectedIdLength, signedEvent.Id.Length);
-		//	Assert.Equal(expectedSigLength, signedEvent.Sig.Length);
-		//}
+			// Act
+			var signature = _cryptoService.Sign(testString);
+
+			// Assert
+			Assert.NotNull(signature);
+			Assert.Equal(expectedSigLength, signature.Length);
+
+			var validSignature = _cryptoService.Verify(signature, testString, _cryptoService.PublicKey);
+		}
 	}
 }

@@ -9,6 +9,8 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using BlazeJump.Common.Models.NostrConnect;
 using BlazeJump.Common.Services.UserProfile;
+using BlazeJump.Common.Models.Crypto;
+using System.Reflection.Metadata;
 
 namespace BlazeJump.Common.Services.Message
 {
@@ -121,20 +123,33 @@ namespace BlazeJump.Common.Services.Message
 		{
 			return _dbService.Context.Events.Where(selector).ToList();
 		}
+		public bool SignNEvent(ref NEvent nEvent)
+		{
+#if ANDROID
+			_cryptoService.GetUserKeyPair();
+#else
+			_cryptoService.GenerateKeyPair();
+#endif
+			var signableEvent = nEvent.GetSignableNEvent();
+			var serialisedNEvent = JsonConvert.SerializeObject(signableEvent);
+			var signature = _cryptoService.Sign(serialisedNEvent);
+			nEvent.Sig = signature;
+			return true;
+		}
 		public bool VerifyNEvent(NEvent nEvent)
 		{
 			var signableEvent = nEvent.GetSignableNEvent();
 			var serialisedNEvent = JsonConvert.SerializeObject(signableEvent);
-			var verified = _cryptoService.Verify(nEvent.Sig, serialisedNEvent, nEvent.Pubkey, nEvent.Id);
+			var verified = _cryptoService.Verify(nEvent.Sig, serialisedNEvent, nEvent.Pubkey);
 			return verified;
 		}
 #if ANDROID
 		public async Task SendNEvent(NEvent nEvent)
 		{
 			var subscriptionHash = Guid.NewGuid().ToString();
-			var signedNEvent = await _cryptoService.SignEvent(nEvent);
-			await _relayManager.SendNEvent(signedNEvent, new List<string> { "wss://relay.damus.io" }, subscriptionHash);
-			sendMessageQueue.TryAdd(signedNEvent.Id, signedNEvent);
+			SignNEvent(ref nEvent);
+			await _relayManager.SendNEvent(nEvent, new List<string> { "wss://relay.damus.io" }, subscriptionHash);
+			sendMessageQueue.TryAdd(nEvent.Id, nEvent);
 		}
 		public async Task SendNostrConnectReply(string theirPubKey)
 		{
@@ -145,16 +160,16 @@ namespace BlazeJump.Common.Services.Message
 				Result = "Connected"
 			};
 			var nEvent = await GetNewNEvent(KindEnum.NostrConnect, JsonConvert.SerializeObject(message));
-			var signedNEvent = await _cryptoService.SignEvent(nEvent);
-			await _relayManager.SendNEvent(signedNEvent, new List<string> { "wss://relay.damus.io" }, subscriptionHash);
-			sendMessageQueue.TryAdd(signedNEvent.Id, signedNEvent);
+			SignNEvent(ref nEvent);
+			await _relayManager.SendNEvent(nEvent, new List<string> { "wss://relay.damus.io" }, subscriptionHash);
+			sendMessageQueue.TryAdd(nEvent.Id, nEvent);
 		}
 		public async Task<NEvent> GetNewNEvent(KindEnum kind, string message, string? parentId = null)
 		{
 			return new NEvent
 			{
 				Id = "0",
-				Pubkey = _cryptoService.ECDHPublicKey,
+				Pubkey = _cryptoService.PublicKey,
 				Kind = kind,
 				Content = message,
 				ParentNEventId = null,

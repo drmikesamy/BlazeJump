@@ -1,5 +1,5 @@
 ﻿using BlazeJump.Common.Models;
-using BlazeJump.Common.Models.SubtleCrypto;
+using BlazeJump.Common.Models.Crypto;
 
 namespace BlazeJump.Common.Services.UserProfile
 {

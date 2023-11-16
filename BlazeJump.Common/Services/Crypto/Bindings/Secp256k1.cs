@@ -12,7 +12,7 @@ public static class SecP256k1
 
 	static SecP256k1()
 	{
-		Context = CreateContext();
+		Context = CreateContext(Secp256K1ContextSign | Secp256K1ContextVerify);
 	}
 
 #pragma warning disable CA1401 // P/Invokes should not be visible
@@ -37,11 +37,11 @@ public static class SecP256k1
 	[DllImport(LibraryName)]
 	public static extern int secp256k1_ecdsa_recoverable_signature_serialize_compact(IntPtr context, byte[] compactSignature, out int recoveryId, byte[] signature);
 	[DllImport(LibraryName)]
-	public static unsafe extern int secp256k1_xonly_pubkey_parse(IntPtr context, void* serializedPublicKey, byte[] inputPubKey32);
+	public static unsafe extern int secp256k1_xonly_pubkey_parse(IntPtr context, IntPtr serializedPublicKey, byte[] inputPubKey32);
 	[DllImport(LibraryName)]
 	public static extern int secp256k1_schnorrsig_sign(IntPtr ctx, byte[] sig, ref int nonce_is_negated, byte[] msg32, byte[] seckey, IntPtr noncefp, IntPtr ndata);
 	[DllImport(LibraryName)]
-	public static unsafe extern int secp256k1_schnorrsig_verify(IntPtr ctx, byte[] sig, byte[] msg32, int length, void* pubkey);
+	public static extern int secp256k1_schnorrsig_verify(IntPtr ctx, IntPtr sig, IntPtr msg32, int length, IntPtr pubkey);
 	[DllImport(LibraryName)]
 	public static unsafe extern int secp256k1_ecdsa_recoverable_signature_parse_compact(IntPtr context, void* signature, void* compactSignature, int recoveryId);
 
@@ -79,9 +79,13 @@ public static class SecP256k1
 
 	private static readonly IntPtr Context;
 
-	private static IntPtr CreateContext()
+	private static IntPtr CreateContext(uint flags)
 	{
-		return secp256k1_context_create(Secp256K1ContextSign | Secp256K1ContextVerify);
+		return secp256k1_context_create(flags);
+	}
+	private static IntPtr DestroyContext()
+	{
+		return secp256k1_context_destroy(Context);
 	}
 
 	public static bool VerifyPrivateKey(byte[] privateKey)
@@ -161,20 +165,27 @@ public static class SecP256k1
 		if (publicKeyBytes.Length != 32)
 			throw new ArgumentException($"{nameof(publicKeyBytes)} must be 32 bytes");
 
-		Span<byte> serialisedPublicKey = stackalloc byte[64];
+		IntPtr pubKeyPtr = Marshal.AllocHGlobal(32);
+		Marshal.Copy(publicKeyBytes, 0, pubKeyPtr, 32);
+		IntPtr sig64_ptr = Marshal.AllocHGlobal(64);
+		Marshal.Copy(signature, 0, sig64_ptr, 64);
+		IntPtr msg32_ptr = Marshal.AllocHGlobal(32);
+		Marshal.Copy(messageHash, 0, msg32_ptr, 32);
 
-		fixed (byte* pubKeyPtr = &MemoryMarshal.GetReference(serialisedPublicKey))
+
+		if (secp256k1_xonly_pubkey_parse(Context, pubKeyPtr, publicKeyBytes) != 1)
 		{
-			if (secp256k1_xonly_pubkey_parse(Context, pubKeyPtr, publicKeyBytes) != 1)
-			{
-				throw new ArgumentException($"{nameof(publicKeyBytes)} couldn't be parsed");
-			}
-
-			var v = secp256k1_schnorrsig_verify(Context, signature, messageHash, 32, pubKeyPtr);
-			//return v == 1;
+			throw new ArgumentException($"{nameof(publicKeyBytes)} couldn't be parsed");
 		}
-		var bloop = serialisedPublicKey.ToArray();
-		return false;
+
+		var v = secp256k1_schnorrsig_verify(Context, sig64_ptr, msg32_ptr, 32, pubKeyPtr);
+
+		Marshal.FreeHGlobal(pubKeyPtr);
+		Marshal.FreeHGlobal(sig64_ptr);
+		Marshal.FreeHGlobal(msg32_ptr);
+
+		return v == 1;
+
 	}
 
 	public static unsafe bool RecoverKeyFromCompact(Span<byte> output, byte[] messageHash, Span<byte> compactSignature, int recoveryId, bool compressed)
