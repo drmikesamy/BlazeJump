@@ -33,15 +33,6 @@ namespace BlazeJump.Native
 		}
 		public MainActivity()
 		{
-			try
-			{
-				JavaSystem.LoadLibrary("secp256k1");
-				JavaSystem.LoadLibrary("tinyaes");
-			}
-			catch (UnsatisfiedLinkError e)
-			{
-				Console.WriteLine(e.Message);
-			}
 		}
 	}
 }

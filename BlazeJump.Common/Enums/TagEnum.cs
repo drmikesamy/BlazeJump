@@ -11,6 +11,7 @@
 		nonce = 6,
 		subject = 7,
 		d = 8,
-		expiration = 9
+		expiration = 9,
+		q = 10
 	}
 }

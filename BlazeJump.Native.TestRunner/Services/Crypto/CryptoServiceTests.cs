@@ -25,7 +25,7 @@ namespace BlazeJump.Native.TestRunner.Services.Crypto
 
 			// Assert
 			Assert.NotNull(_cryptoService.PublicKey);
-			Assert.Equal(expectedPublicKeyLength, _cryptoService.PublicKey.Length);
+			Assert.Equal(expectedPublicKeyLength, _cryptoService.XOnlyPublicKey.Length);
 		}
 
 		[Fact]

@@ -1,58 +1,39 @@
+using NBitcoin.Secp256k1;
 namespace BlazeJump.Common.Models.Crypto
 {
 	public class Secp256k1KeyPair
 	{
-		private byte[] _privateKeyBytes { get; set; }
-		private byte[] _publicKeyBytes { get; set; }
-		private string _privateKey { get; set; }
-		private string _publicKey { get; set; }
-		public byte[] PrivateKeyBytes
+		public string PrivateKeyString
 		{
 			get
 			{
-				return _privateKeyBytes;
+				return Convert.ToHexString(PrivateKey.sec.ToBytes());
 			}
 			set
 			{
-				_privateKeyBytes = value;
-				_privateKey = Convert.ToHexString(value);
+				var privateKeyBytes = Convert.FromHexString(value);
+				if(privateKeyBytes != null && privateKeyBytes.Length == 32) {
+					PrivateKey = ECPrivKey.Create(privateKeyBytes);
+					PublicKey = PrivateKey.CreatePubKey();
+				}
 			}
 		}
-		public byte[] PublicKeyBytes
+		public string PublicKeyString
 		{
 			get
 			{
-				return _publicKeyBytes;
-			}
-			set
-			{
-				_publicKeyBytes = value;
-				_publicKey = Convert.ToHexString(value);
-			}
+				return Convert.ToHexString(PublicKey.ToBytes());
+			}	
 		}
-		public string PrivateKey
+		public string XOnlyPublicKeyString
 		{
 			get
 			{
-				return _privateKey;
-			}
-			set
-			{
-				_privateKey = value;
-				_privateKeyBytes = Convert.FromHexString(value);
+				return Convert.ToHexString(XOnlyPublicKey.ToBytes());
 			}
 		}
-		public string PublicKey
-		{
-			get
-			{
-				return _publicKey;
-			}
-			set
-			{
-				_publicKey = value;
-				_publicKeyBytes = Convert.FromHexString(value);
-			}
-		}
+		public ECPrivKey PrivateKey { get; set; }
+		public ECPubKey PublicKey { get; set; }
+		public ECXOnlyPubKey XOnlyPublicKey { get; set; }
 	}
 }
