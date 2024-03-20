@@ -49,6 +49,9 @@
 		NotificationService.Loading = true;
 		await Load();
 		NotificationService.Loading = false;
+
+		CryptoService.GenerateKeyPair();
+		var result = await CryptoService.AesEncrypt("test", CryptoService.PublicKey);
 	}
 
 	public async Task Load(DateTime? endDate = null, bool append = false)

@@ -56,30 +56,27 @@ namespace BlazeJump.Common.Enums
 			{
 				ja.Add(nEvent.Kind);
 			}
-			if (nEvent.Tags != null & nEvent.Tags.Count() > 0)
+			JArray tagListJa = new JArray();
+			foreach (var tag in nEvent.Tags)
 			{
-				JArray tagListJa = new JArray();
-				foreach (var tag in nEvent.Tags)
+				JArray tagJa = new JArray();
+				tagJa.Add(tag.Key.ToString());
+				tagJa.Add(tag.Value ?? "");
+				if (tag.Value2 != null)
 				{
-					JArray tagJa = new JArray();
-					tagJa.Add(tag.Key.ToString());
-					tagJa.Add(tag.Value ?? "");
-					if (tag.Value2 != null)
-					{
-						tagJa.Add(tag.Value2);
-					}
-					if (tag.Value3 != null)
-					{
-						tagJa.Add(tag.Value3);
-					}
-					if (tag.Value4 != null)
-					{
-						tagJa.Add(tag.Value4);
-					}
-					tagListJa.Add(tagJa);
+					tagJa.Add(tag.Value2);
 				}
-				ja.Add(tagListJa);
+				if (tag.Value3 != null)
+				{
+					tagJa.Add(tag.Value3);
+				}
+				if (tag.Value4 != null)
+				{
+					tagJa.Add(tag.Value4);
+				}
+				tagListJa.Add(tagJa);
 			}
+			ja.Add(tagListJa);
 			if (!String.IsNullOrEmpty(nEvent.Content))
 			{
 				ja.Add(nEvent.Content);

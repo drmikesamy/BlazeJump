@@ -1,11 +1,4 @@
-﻿using BlazeJump.Common.Models;
-using BlazeJump.Common.Models.Crypto;
-using BlazeJump.Common.Services.Crypto;
-using BlazeJump.Common.Services.Crypto.Bindings;
-using BlazeJump.Helpers;
-using Newtonsoft.Json;
-using System.Security.Cryptography;
-using System.Text;
+﻿using System.Security.Cryptography;
 
 namespace BlazeJump.Common.Services.Crypto
 {
@@ -18,14 +11,13 @@ namespace BlazeJump.Common.Services.Crypto
 				await GenerateAndStoreUserKeyPair();
 			}
 
-			_keyPair.PublicKey = await SecureStorage.Default.GetAsync("PublicKey");
-			_keyPair.PrivateKey = await SecureStorage.Default.GetAsync("PrivateKey");
+			_keyPair.PrivateKeyString = await SecureStorage.Default.GetAsync("PrivateKey");
 		}
 		public async Task GenerateAndStoreUserKeyPair()
 		{
 			GenerateKeyPair();
-			await SecureStorage.Default.SetAsync("PublicKey", _keyPair.PublicKey);
-			await SecureStorage.Default.SetAsync("PrivateKey", _keyPair.PrivateKey);
+			await SecureStorage.Default.SetAsync("PublicKey", _keyPair.PublicKeyString);
+			await SecureStorage.Default.SetAsync("PrivateKey", _keyPair.PrivateKeyString);
 		}
 		public Tuple<string, string> NativeAesEncrypt(string message, string theirPublicKey, string? ivOverride = null)
 		{
