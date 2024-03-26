@@ -56,8 +56,4 @@
     <ItemGroup>
       <ProjectReference Include="..\BlazeJump.Common\BlazeJump.Common.csproj" />
     </ItemGroup>
-
-    <ItemGroup>
-      <Folder Include="Resources\lib\" />
-    </ItemGroup>
 </Project>

@@ -4,13 +4,10 @@ using BlazeJump.Common.Services.Connections;
 using BlazeJump.Common.Services.Database;
 using AutoMapper;
 using BlazeJump.Common.Services.Crypto;
-using System.Linq;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using BlazeJump.Common.Models.NostrConnect;
 using BlazeJump.Common.Services.UserProfile;
-using BlazeJump.Common.Models.Crypto;
-using System.Reflection.Metadata;
 
 namespace BlazeJump.Common.Services.Message
 {
@@ -19,17 +16,19 @@ namespace BlazeJump.Common.Services.Message
 		private IRelayManager _relayManager;
 		private IBlazeDbService _dbService;
 		private ICryptoService _cryptoService;
+		private IUserProfileService _userProfileService;
 		private IMapper _mapper;
 		private Dictionary<string, NEvent> sendMessageQueue = new Dictionary<string, NEvent>();
 		public List<NEvent> NEvents { get; set; }
 
 		public List<string> Users { get; set; } = new List<string>();
 
-		public MessageService(IBlazeDbService dbService, IRelayManager relayManager, ICryptoService cryptoService, IMapper mapper)
+		public MessageService(IBlazeDbService dbService, IRelayManager relayManager, ICryptoService cryptoService, IUserProfileService userProfileService, IMapper mapper)
 		{
 			_dbService = dbService;
 			_relayManager = relayManager;
 			_cryptoService = cryptoService;
+			_userProfileService = userProfileService;
 			_mapper = mapper;
 		}
 		public async Task<List<NEvent>> FetchNEventsByFilter(Filter filter, bool fetchStats = false, bool fullFetch = false)
@@ -125,11 +124,7 @@ namespace BlazeJump.Common.Services.Message
 		}
 		public bool SignNEvent(ref NEvent nEvent)
 		{
-#if ANDROID
-			_cryptoService.GetUserKeyPair();
-#else
-			_cryptoService.GenerateKeyPair();
-#endif
+			_cryptoService.GetNewSecp256k1KeyPair();
 			var signableEvent = nEvent.GetSignableNEvent();
 			var serialisedNEvent = JsonConvert.SerializeObject(signableEvent);
 			var signature = _cryptoService.Sign(serialisedNEvent);
@@ -143,7 +138,6 @@ namespace BlazeJump.Common.Services.Message
 			var verified = _cryptoService.Verify(nEvent.Sig, serialisedNEvent, nEvent.Pubkey);
 			return verified;
 		}
-#if ANDROID
 		public async Task SendNEvent(NEvent nEvent)
 		{
 			var subscriptionHash = Guid.NewGuid().ToString();
@@ -169,13 +163,12 @@ namespace BlazeJump.Common.Services.Message
 			return new NEvent
 			{
 				Id = "0",
-				Pubkey = _cryptoService.PublicKey,
+				Pubkey = _userProfileService.NPubKey,
 				Kind = kind,
 				Content = message,
 				ParentNEventId = null,
 				Created_At = DateTimeOffset.UtcNow.ToUnixTimeSeconds(),
 			};
 		}
-#endif
 	}
 }

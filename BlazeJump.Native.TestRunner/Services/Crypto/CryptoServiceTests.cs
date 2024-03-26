@@ -8,10 +8,10 @@ namespace BlazeJump.Native.TestRunner.Services.Crypto
 {
 	public class CryptoServiceTests
 	{
-		private CryptoService _cryptoService { get; set; }
-		public CryptoServiceTests()
+		private ICryptoService _cryptoService { get; set; }
+		public CryptoServiceTests(ICryptoService cryptoService)
 		{
-			_cryptoService = new CryptoService();
+			_cryptoService = cryptoService;
 		}
 
 		[Fact]
@@ -29,21 +29,21 @@ namespace BlazeJump.Native.TestRunner.Services.Crypto
 		}
 
 		[Fact]
-		public void WebEncryptDecrypt_ShouldEncryptAndDecryptString()
+		public async Task WebEncryptDecrypt_ShouldEncryptAndDecryptString()
 		{
 			// Arrange
 			var plainText = "This data is not a multiple of 16 bytes length";
 			//Generate their keypair
-			var theirCryptoService = new CryptoService();
-			theirCryptoService.GenerateKeyPair();
-			var theirPublicKey = theirCryptoService.PublicKey;
+			_cryptoService.GenerateKeyPair();
+			var theirPublicKey = _cryptoService.XOnlyPublicKey;
+
 			//Generate my keypair
 			_cryptoService.GenerateKeyPair();
-			var myPublicKey = _cryptoService.PublicKey;
+			var myPublicKey = _cryptoService.XOnlyPublicKey;
 
 			// Act
-			var encryptedText = theirCryptoService.AesEncrypt(plainText, myPublicKey);
-			var decryptedText = _cryptoService.AesDecrypt(encryptedText.Item1, theirPublicKey, encryptedText.Item2);
+			var encryptedText = await _cryptoService.AesEncrypt(plainText, myPublicKey);
+			var decryptedText = await _cryptoService.AesDecrypt(encryptedText.Item1, theirPublicKey, encryptedText.Item2);
 
 			// Assert
 			Assert.NotNull(encryptedText);
@@ -51,22 +51,20 @@ namespace BlazeJump.Native.TestRunner.Services.Crypto
 			Assert.NotEqual(plainText, encryptedText.Item1);
 			Assert.Equal(plainText, decryptedText);
 		}
-#if ANDROID
 		[Fact]
 		public void NativeEncryptDecrypt_ShouldEncryptAndDecryptString()
 		{
 			// Arrange
 			var plainText = "This data is not a multiple of 16 bytes length";
 			//Generate their keypair
-			var theirCryptoService = new CryptoService();
-			theirCryptoService.GenerateKeyPair();
-			var theirPublicKey = theirCryptoService.PublicKey;
+			_cryptoService.GenerateKeyPair();
+			var theirPublicKey = _cryptoService.PublicKey;
 			//Generate my keypair
 			_cryptoService.GenerateKeyPair();
 			var myPublicKey = _cryptoService.PublicKey;
 
 			// Act
-			var encryptedText = theirCryptoService.NativeAesEncrypt(plainText, myPublicKey);
+			var encryptedText = _cryptoService.NativeAesEncrypt(plainText, myPublicKey);
 			var decryptedText = _cryptoService.NativeAesDecrypt(encryptedText.Item1, theirPublicKey, encryptedText.Item2);
 
 			// Assert
@@ -76,14 +74,13 @@ namespace BlazeJump.Native.TestRunner.Services.Crypto
 			Assert.Equal(plainText, decryptedText);
 		}
 		[Fact]
-		public void NativeAndWebCombinedEncryptDecrypt_ResultsShouldBeIdentical()
+		public async Task NativeAndWebCombinedEncryptDecrypt_ResultsShouldBeIdentical()
 		{
 			// Arrange
 			var plainText = "This data is not a multiple of 16 bytes length";
 			//Generate their keypair
-			var theirCryptoService = new CryptoService();
-			theirCryptoService.GenerateKeyPair();
-			var theirPublicKey = theirCryptoService.PublicKey;
+			_cryptoService.GenerateKeyPair();
+			var theirPublicKey = _cryptoService.PublicKey;
 			//Generate my keypair
 			_cryptoService.GenerateKeyPair();
 			var myPublicKey = _cryptoService.PublicKey;
@@ -94,10 +91,10 @@ namespace BlazeJump.Native.TestRunner.Services.Crypto
 			var iv = Convert.ToBase64String(ivBytes);
 
 			// Act
-			var encryptedText = theirCryptoService.AesEncrypt(plainText, myPublicKey, iv);
-			var decryptedText = _cryptoService.AesDecrypt(encryptedText.Item1, theirPublicKey, encryptedText.Item2);
+			var encryptedText = await _cryptoService.AesEncrypt(plainText, myPublicKey, iv);
+			var decryptedText = await _cryptoService.AesDecrypt(encryptedText.Item1, theirPublicKey, encryptedText.Item2);
 
-			var encryptedTextNative = theirCryptoService.NativeAesEncrypt(plainText, myPublicKey, iv);
+			var encryptedTextNative = _cryptoService.NativeAesEncrypt(plainText, myPublicKey, iv);
 			var decryptedTextNative = _cryptoService.NativeAesDecrypt(encryptedText.Item1, theirPublicKey, encryptedText.Item2);
 
 			// Assert
@@ -116,7 +113,6 @@ namespace BlazeJump.Native.TestRunner.Services.Crypto
 			Assert.Equal(encryptedText, encryptedTextNative);
 			Assert.Equal(decryptedText, decryptedTextNative);
 		}
-#endif
 
 		[Fact]
 		public async Task Sign_ShouldReturnValidSignature()

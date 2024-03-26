@@ -1,28 +1,31 @@
-﻿using System.Security.Cryptography;
+﻿using BlazeJump.Common.Services.Crypto;
+using NBitcoin.Secp256k1;
+using System.Security.Cryptography;
 
-namespace BlazeJump.Common.Services.Crypto
+namespace BlazeJump.Native.Services.Crypto
 {
-	public partial class CryptoService : ICryptoService
+	public class NativeCryptoService : CryptoService, ICryptoService
 	{
-		public async Task GetUserKeyPair()
+		public async Task<string> GetUserPublicKey()
 		{
-			if(_keyPair.PublicKey == null)
+			var publicKey = await SecureStorage.Default.GetAsync("PublicKey");
+			if (publicKey == null)
 			{
 				await GenerateAndStoreUserKeyPair();
+				return await SecureStorage.Default.GetAsync("PublicKey");
 			}
-
-			_keyPair.PrivateKeyString = await SecureStorage.Default.GetAsync("PrivateKey");
+			return publicKey;
 		}
-		public async Task GenerateAndStoreUserKeyPair()
+		private async Task GenerateAndStoreUserKeyPair()
 		{
-			GenerateKeyPair();
-			await SecureStorage.Default.SetAsync("PublicKey", _keyPair.PublicKeyString);
-			await SecureStorage.Default.SetAsync("PrivateKey", _keyPair.PrivateKeyString);
+			var newKeyPair = GetNewSecp256k1KeyPair();
+			await SecureStorage.Default.SetAsync("PublicKey", Convert.ToHexString(newKeyPair.XOnlyPublicKey.ToBytes()));
+			await SecureStorage.Default.SetAsync("PrivateKey", Convert.ToHexString(newKeyPair.PrivateKey.sec.ToBytes()));
 		}
-		public Tuple<string, string> NativeAesEncrypt(string message, string theirPublicKey, string? ivOverride = null)
+		public override async Task<Tuple<string, string>> AesEncrypt(string message, string theirPublicKey, string? ivOverride = null)
 		{
 			byte[] encryptedData;
-			var sharedPoint = GetSharedSecret(theirPublicKey);
+			var sharedPoint = await GetSharedSecret(theirPublicKey);
 
 			using (Aes aesAlg = Aes.Create())
 			{		
@@ -57,11 +60,11 @@ namespace BlazeJump.Common.Services.Crypto
 			}
 		}
 
-		public string NativeAesDecrypt(string cipherText, string theirPublicKey, string ivString)
+		public override async Task<string> AesDecrypt(string cipherText, string theirPublicKey, string ivString)
 		{
 			byte[] cipherBytes = Convert.FromBase64String(cipherText);
 
-			var sharedPoint = GetSharedSecret(theirPublicKey);
+			var sharedPoint = await GetSharedSecret(theirPublicKey);
 
 			byte[] iv = Convert.FromBase64String(ivString);
 
@@ -87,6 +90,10 @@ namespace BlazeJump.Common.Services.Crypto
 					}
 				}
 			}
+		}
+		protected override async Task<ECPrivKey> GetPrivateKey()
+		{
+			return ECPrivKey.Create(Convert.FromHexString(await SecureStorage.Default.GetAsync("PrivateKey")));
 		}
 	}
 }

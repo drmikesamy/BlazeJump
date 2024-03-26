@@ -3,37 +3,11 @@ namespace BlazeJump.Common.Models.Crypto
 {
 	public class Secp256k1KeyPair
 	{
-		public string PrivateKeyString
-		{
-			get
-			{
-				return Convert.ToHexString(PrivateKey.sec.ToBytes());
-			}
-			set
-			{
-				var privateKeyBytes = Convert.FromHexString(value);
-				if(privateKeyBytes != null && privateKeyBytes.Length == 32) {
-					PrivateKey = ECPrivKey.Create(privateKeyBytes);
-					PublicKey = PrivateKey.CreatePubKey();
-				}
-			}
+		public Secp256k1KeyPair(ECPrivKey privateKey, ECXOnlyPubKey publicKey) { 
+			PrivateKey = privateKey;
+			XOnlyPublicKey = publicKey;
 		}
-		public string PublicKeyString
-		{
-			get
-			{
-				return Convert.ToHexString(PublicKey.ToBytes());
-			}	
-		}
-		public string XOnlyPublicKeyString
-		{
-			get
-			{
-				return Convert.ToHexString(XOnlyPublicKey.ToBytes());
-			}
-		}
-		public ECPrivKey PrivateKey { get; set; }
-		public ECPubKey PublicKey { get; set; }
-		public ECXOnlyPubKey XOnlyPublicKey { get; set; }
+		public ECPrivKey PrivateKey { get; private set; }
+		public ECXOnlyPubKey XOnlyPublicKey { get; private set; }
 	}
 }

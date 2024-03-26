@@ -1,6 +1,8 @@
 ﻿using BlazeJump.Common.Models.Crypto;
 using BlazeJump.Helpers;
+using Microsoft.AspNetCore.Components.Web.Virtualization;
 using Microsoft.JSInterop;
+using Microsoft.Maui.Platform;
 using NBitcoin.Secp256k1;
 using System.Text;
 
@@ -8,39 +10,34 @@ namespace BlazeJump.Common.Services.Crypto
 {
 	public partial class CryptoService : ICryptoService
 	{
-		private Secp256k1KeyPair _keyPair { get; set; } = new();
-		public string PublicKey => _keyPair.PublicKeyString;
-		public string XOnlyPublicKey => _keyPair.XOnlyPublicKeyString;
+		public ECXOnlyPubKey EtherealPublicKey => _etherealKeyPair.XOnlyPublicKey;
+		private Secp256k1KeyPair _etherealKeyPair { get; set; }
+
 		private readonly IJSRuntime _jsRuntime;
+
+		public CryptoService()
+		{
+		}
 		public CryptoService(IJSRuntime jsRuntime)
 		{
 			_jsRuntime = jsRuntime;
-
-			GenerateKeyPair();
 		}
-		public bool GeneratePrivateKey()
+		public void CreateEtherealKeyPair()
+		{
+			_etherealKeyPair = GetNewSecp256k1KeyPair();
+		}
+		public Secp256k1KeyPair GetNewSecp256k1KeyPair()
 		{
 			Random rand = new Random();
-			byte[] privateKey = new byte[32];
-			rand.NextBytes(privateKey);
-			_keyPair.PrivateKey = ECPrivKey.Create(privateKey);
-			return true;
+			byte[] privateKeyGen = new byte[32];
+			rand.NextBytes(privateKeyGen);
+			var privateKey = ECPrivKey.Create(privateKeyGen);
+			var publicKey = privateKey.CreateXOnlyPubKey();
+			return new Secp256k1KeyPair(privateKey, publicKey);
 		}
-		public bool GenerateKeyPair()
+		public virtual async Task<Tuple<string, string>> AesEncrypt(string plainText, string theirPublicKey, string? ivOverride = null)
 		{
-			var validPrivateKey = GeneratePrivateKey();
-
-			if (!validPrivateKey)
-			{
-				return false;
-			}
-			_keyPair.PublicKey = _keyPair.PrivateKey.CreatePubKey();
-			_keyPair.XOnlyPublicKey = _keyPair.PrivateKey.CreateXOnlyPubKey();
-			return true;
-		}
-		public async Task<Tuple<string, string>> AesEncrypt(string plainText, string theirPublicKey, string? ivOverride = null)
-		{
-			byte[] sharedPoint = GetSharedSecret(theirPublicKey);
+			byte[] sharedPoint = await GetSharedSecret(theirPublicKey);
 			byte[] iv = new byte[16];
 			if (ivOverride != null)
 			{
@@ -56,31 +53,34 @@ namespace BlazeJump.Common.Services.Crypto
 			var encrypted = await _jsRuntime.InvokeAsync<string>("aesEncrypt", paddedTextBytes, sharedPoint, iv);
 			return new Tuple<string, string>(encrypted.ToString(), ivString);
 		}
-		public async Task<string> AesDecrypt(string base64CipherText, string theirPublicKey, string ivString)
+		public virtual async Task<string> AesDecrypt(string base64CipherText, string theirPublicKey, string ivString)
 		{
-			byte[] sharedPoint = GetSharedSecret(theirPublicKey);
+			byte[] sharedPoint = await GetSharedSecret(theirPublicKey);
 			var sharedPointString = Convert.ToBase64String(sharedPoint);
 			var decrypted = await _jsRuntime.InvokeAsync<string>("aesDecrypt", base64CipherText, sharedPointString, ivString);
 			return decrypted;
 		}
-		private byte[] GetSharedSecret(string theirPublicKey)
+		protected async Task<byte[]> GetSharedSecret(string theirPublicKey)
 		{
 			var theirPublicKeyBytes = Convert.FromHexString(theirPublicKey);
 			var theirPubKey = ECPubKey.Create(theirPublicKeyBytes);
-			return theirPubKey.GetSharedPubkey(_keyPair.PrivateKey).ToBytes();
+			var ourPrivKey = await GetPrivateKey();
+			return theirPubKey.GetSharedPubkey(ourPrivKey).ToBytes()[1..];
+		}
+		protected virtual async Task<ECPrivKey> GetPrivateKey()
+		{
+			return _etherealKeyPair.PrivateKey;
 		}
 		public string Sign(string message)
 		{
 			var messageHashBytes = message.SHA256Hash();
-			return _keyPair.PrivateKey.SignBIP340(messageHashBytes).ToString();
+			return _etherealKeyPair.PrivateKey.SignBIP340(messageHashBytes).ToString();
 		}
 		public bool Verify(string signature, string message, string publicKey)
 		{
 			var messageHashBytes = message.SHA256Hash();
 			var signatureBytes = Convert.FromHexString(signature);
-			var sigString = Convert.ToHexString(messageHashBytes);
 			var publicKeyBytes = Convert.FromHexString(publicKey);
-
 			var pubKey = ECXOnlyPubKey.Create(publicKeyBytes);
 			SecpSchnorrSignature schnorrSignature;
 			SecpSchnorrSignature.TryCreate(signatureBytes, out schnorrSignature);

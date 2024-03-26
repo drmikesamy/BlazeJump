@@ -40,11 +40,7 @@
 		</div>
 		<div>
 			<label for="public-key">Public Key:</label>
-			<input type="text" id="public-key" name="public-key" @bind="UserProfileService.Secp256k1Keys.PublicKey">
-		</div>
-		<div>
-			<label for="private-key">Private Key:</label>
-			<input type="text" id="private-key" name="private-key" @bind="UserProfileService.Secp256k1Keys.PrivateKey">
+			<input type="text" id="public-key" name="public-key" @bind="UserProfileService.NPubKey">
 		</div>
 		<div>
 			<button type="button">Generate New Keys</button>

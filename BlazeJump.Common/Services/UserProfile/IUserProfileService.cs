@@ -5,7 +5,6 @@ namespace BlazeJump.Common.Services.UserProfile
 {
     public interface IUserProfileService
     {
-        Secp256k1KeyPair Secp256k1Keys { get; set; }
         User User { get; set; }
         Dictionary<string, User> UserList { get; set; }
 		string NPubKey { get; set; }

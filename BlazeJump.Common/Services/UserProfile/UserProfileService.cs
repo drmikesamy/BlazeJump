@@ -15,7 +15,6 @@ namespace BlazeJump.Common.Services.UserProfile
         }
         public User User { get; set; } = new User();
 		public bool IsLoggedIn { get; set; }
-        public Secp256k1KeyPair Secp256k1Keys { get; set; } = new();
 		public Dictionary<string, User> UserList { get; set; } = new Dictionary<string, User>();
         public string NPubKey { get; set; } = string.Empty;
 

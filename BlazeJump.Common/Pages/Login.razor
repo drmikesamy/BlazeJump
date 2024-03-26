@@ -69,7 +69,6 @@
 #if ANDROID
 	if (TempPubKey != null && TempRelay != null)
 	{
-		await CryptoService.GetUserKeyPair();
 		await MessageService.SendNostrConnectReply(TempPubKey);
 	}
 #else
@@ -88,8 +87,8 @@
 
 	public void GenerateTemporaryKeyPair()
 	{
-		CryptoService.GenerateKeyPair();
-		var url = $"nostrconnect://{CryptoService.PublicKey}?relay={HttpUtility.UrlEncode(RelayManager.RelayConnections.First().Key)}";
+		CryptoService.CreateEtherealKeyPair();
+		var url = $"nostrconnect://{CryptoService.EtherealPublicKey}?relay={HttpUtility.UrlEncode(RelayManager.RelayConnections.First().Key)}";
 		ImageData = BlazeJump.Common.Helpers.QRCode.GenerateQRCode(url);
 	}
 }
