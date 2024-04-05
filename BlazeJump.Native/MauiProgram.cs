@@ -1,15 +1,14 @@
 ﻿using AutoMapper;
-using BlazeJump.Common.Data;
 using BlazeJump.Common.Services.Connections;
 using BlazeJump.Common.Services.Crypto;
 using BlazeJump.Native.Services.Crypto;
-using BlazeJump.Common.Services.Database;
 using BlazeJump.Common.Services.Message;
 using BlazeJump.Common.Services.Notification;
 using BlazeJump.Common.Services.UserProfile;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using System.Reflection;
+using ZXing.Net.Maui.Controls;
+using BlazeJump.Common.Services.Identity;
 
 namespace BlazeJump.Native
 {
@@ -20,6 +19,7 @@ namespace BlazeJump.Native
 			var builder = MauiApp.CreateBuilder();
 			builder
 				.UseMauiApp<App>()
+				.UseBarcodeReader()
 				.ConfigureFonts(fonts =>
 				{
 					fonts.AddFont("OpenSans-Regular.ttf", "OpenSansRegular");
@@ -28,7 +28,7 @@ namespace BlazeJump.Native
 			builder.Services.AddMauiBlazorWebView();
 
 #if DEBUG
-		builder.Services.AddBlazorWebViewDeveloperTools();
+			builder.Services.AddBlazorWebViewDeveloperTools();
 		builder.Logging.AddDebug();
 #endif
 
@@ -36,10 +36,8 @@ namespace BlazeJump.Native
 			builder.Services.AddScoped<IMessageService, MessageService>();
 			builder.Services.AddScoped<ICryptoService, NativeCryptoService>();
 			builder.Services.AddScoped<IRelayManager, RelayManager>();
-			builder.Services.AddSingleton<INotificationService, NotificationService>();
-			builder.Services.AddSingleton<IBlazeDbService, BlazeDbService>();
-			builder.Services.AddDbContextFactory<BlazeDbContext>(opts => opts.UseSqlite("Filename=app.db"));
-
+			builder.Services.AddScoped<INotificationService, NotificationService>();
+			builder.Services.AddScoped<IIdentityService, IdentityService>();
 			var mapperConfig = new MapperConfiguration(cfg =>
 			{
 				cfg.AddMaps(Assembly.GetExecutingAssembly());

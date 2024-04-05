@@ -2,6 +2,7 @@
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:local="clr-namespace:BlazeJump.Native"
+             xmlns:pages="clr-namespace:BlazeJump.Common.Pages;assembly=BlazeJump.Common"
              x:Class="BlazeJump.Native.MainPage"
              BackgroundColor="{DynamicResource PageBackgroundColor}">
 
@@ -10,5 +11,4 @@
             <RootComponent Selector="#app" ComponentType="{x:Type local:Main}" />
         </BlazorWebView.RootComponents>
     </BlazorWebView>
-
 </ContentPage>

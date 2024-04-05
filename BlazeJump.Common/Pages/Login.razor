@@ -7,6 +7,7 @@
 @using BlazeJump.Common.Services.Crypto;
 @using BlazeJump.Common.Services.Message;
 @using BlazeJump.Common.Services.Notification;
+@using BlazeJump.Common.Services.Identity;
 @using BlazeJump.Common.Services.UserProfile;
 @using System.Drawing.Imaging;
 @using System.Drawing;
@@ -15,47 +16,52 @@
 @using System.Runtime.InteropServices;
 @using System.Web;
 @using BlazeJump.Common.Enums;
+@using Newtonsoft.Json;
 @inject IRelayManager RelayManager
 @inject IMessageService MessageService
 @inject ICryptoService CryptoService
 @inject INotificationService NotificationService
+@inject IIdentityService IdentityService
 @inject IUserProfileService UserProfileService
-<Card>
-	@if (NotificationService.Platform == PlatformEnum.Web)
-	{
-		<h2>Log in using your phone</h2>
-		<p>Scan QR Code with your phone to log in or create a new account</p>
-		<div class="qr-code-container">
-			@if (string.IsNullOrEmpty(TempPubKey))
+<div class="background-container">
+	<div class="content-container">
+		<Card>
+			@if (IdentityService.Platform == PlatformEnum.Web)
 			{
-				@if (!CodeLoading)
-				{
-					<img src="data:image/jpeg;base64,@ImageData" class="qr-code" />
-				}
-				else
-				{
-					<div class="qr-code qr-code-loading">
-						<div class="wave"></div>
-						<div class="wave"></div>
-						<div class="wave"></div>
-						<div class="wave"></div>
-						<div class="wave"></div>
-						<div class="wave"></div>
-						<div class="wave"></div>
-						<div class="wave"></div>
-						<div class="wave"></div>
-					</div>
-				}
+				<h2>Log in using your phone</h2>
+				<p>Scan QR Code with your phone to log in or create a new account</p>
+				<div class="qr-code-container">
+					@if (string.IsNullOrEmpty(TempPubKey))
+					{
+						@if (!CodeLoading)
+						{
+							<img src="data:image/jpeg;base64,@ImageData" class="qr-code" />
+						}
+						else
+						{
+							<div class="qr-code qr-code-loading">
+								<div class="wave"></div>
+								<div class="wave"></div>
+								<div class="wave"></div>
+								<div class="wave"></div>
+								<div class="wave"></div>
+								<div class="wave"></div>
+								<div class="wave"></div>
+								<div class="wave"></div>
+								<div class="wave"></div>
+							</div>
+						}
+					}
+				</div>
 			}
-		</div>
-	}
-	else if (TempPubKey != null && TempRelay != null)
-	{
-		<p>Received connect request from pubkey: @TempPubKey</p>
-		<p>Send to: @TempRelay</p>
-	}
-</Card>
-
+			else if (TempPubKey != null && TempRelay != null)
+			{
+				<p>Received connect request from pubkey: @TempPubKey</p>
+				<p>Send to: @TempRelay</p>
+			}
+		</Card>
+	</div>
+</div>
 @code {
 	public string? ImageData { get; set; }
 	public Secp256k1KeyPair? KeyPair { get; set; }
@@ -69,7 +75,7 @@
 #if ANDROID
 	if (TempPubKey != null && TempRelay != null)
 	{
-		await MessageService.SendNostrConnectReply(TempPubKey);
+	await MessageService.SendNostrConnectReply(TempPubKey);
 	}
 #else
 		CodeLoading = true;
@@ -88,7 +94,12 @@
 	public void GenerateTemporaryKeyPair()
 	{
 		CryptoService.CreateEtherealKeyPair();
-		var url = $"nostrconnect://{CryptoService.EtherealPublicKey}?relay={HttpUtility.UrlEncode(RelayManager.RelayConnections.First().Key)}";
-		ImageData = BlazeJump.Common.Helpers.QRCode.GenerateQRCode(url);
+		var payload = new QrConnectEventArgs
+			{
+				Relay = HttpUtility.UrlEncode(RelayManager.RelayConnections.First().Key),
+				Pubkey = Convert.ToHexString(CryptoService.EtherealPublicKey.ToBytes())
+			};
+		var payloadString = JsonConvert.SerializeObject(payload);
+		ImageData = BlazeJump.Common.Helpers.QRCode.GenerateQRCode(payloadString);
 	}
 }

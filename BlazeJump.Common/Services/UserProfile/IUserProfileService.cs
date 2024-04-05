@@ -11,7 +11,6 @@ namespace BlazeJump.Common.Services.UserProfile
 		bool IsLoggedIn { get; set; }
         Task Init();
 		void ChangeProfilePicture(string imageUrl);
-        void SaveChanges(User user);
         Task Login();
         Task Logout();
         Task Register();

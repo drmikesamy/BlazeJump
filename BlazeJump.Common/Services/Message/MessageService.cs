@@ -1,7 +1,6 @@
 ﻿using BlazeJump.Common.Enums;
 using BlazeJump.Common.Models;
 using BlazeJump.Common.Services.Connections;
-using BlazeJump.Common.Services.Database;
 using AutoMapper;
 using BlazeJump.Common.Services.Crypto;
 using Newtonsoft.Json;
@@ -14,7 +13,6 @@ namespace BlazeJump.Common.Services.Message
 	public class MessageService : IMessageService
 	{
 		private IRelayManager _relayManager;
-		private IBlazeDbService _dbService;
 		private ICryptoService _cryptoService;
 		private IUserProfileService _userProfileService;
 		private IMapper _mapper;
@@ -23,9 +21,8 @@ namespace BlazeJump.Common.Services.Message
 
 		public List<string> Users { get; set; } = new List<string>();
 
-		public MessageService(IBlazeDbService dbService, IRelayManager relayManager, ICryptoService cryptoService, IUserProfileService userProfileService, IMapper mapper)
+		public MessageService(IRelayManager relayManager, ICryptoService cryptoService, IUserProfileService userProfileService, IMapper mapper)
 		{
-			_dbService = dbService;
 			_relayManager = relayManager;
 			_cryptoService = cryptoService;
 			_userProfileService = userProfileService;
@@ -102,25 +99,6 @@ namespace BlazeJump.Common.Services.Message
 				}
 			}
 			return profiles;
-		}
-
-		private async Task AddMessagesToDb(List<NEvent> rawMessages)
-		{
-			try
-			{
-				await _dbService.Context.Events.AddRangeAsync(rawMessages);
-			}
-			catch (Exception e)
-			{
-				var logMessageForException = rawMessages == null ? "null" : rawMessages.ToString();
-				Console.WriteLine($"Incompatible message type in message: {logMessageForException}");
-				Console.WriteLine($"Exception message: {e.Message}");
-			}
-		}
-
-		public List<NEvent> FetchMessagesFromDb(Func<NEvent, bool> selector)
-		{
-			return _dbService.Context.Events.Where(selector).ToList();
 		}
 		public bool SignNEvent(ref NEvent nEvent)
 		{

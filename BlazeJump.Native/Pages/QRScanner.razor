@@ -1,0 +1,25 @@
+﻿@page "/Connect"
+@using BlazeJump.Common.Services.Identity;
+@inject IIdentityService _identityService;
+@inject NavigationManager NavigationManager;
+
+<p>WAITING</p>
+
+@if(eventArgs != null){
+	<p>Relay: @eventArgs.Relay</p>
+	<p>Pubkey: @eventArgs.Pubkey</p>
+}
+
+@code {
+	private QrConnectEventArgs eventArgs { get; set; }
+	protected override async Task OnInitializedAsync()
+	{
+		App.Current.MainPage.Navigation.PushAsync(new MauiPages.QRScanner(_identityService));
+		_identityService.QrConnectReceived += ActionQrCode;
+	}
+	private void ActionQrCode(object sender, QrConnectEventArgs e){
+		eventArgs = e;
+		App.Current.MainPage.Navigation.PopAsync();
+		NavigationManager.NavigateTo($"connect");
+	}
+}

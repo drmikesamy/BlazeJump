@@ -1,14 +1,12 @@
-﻿@using BlazeJump.Common.Data;
-@using BlazeJump.Common.Models;
+﻿@using BlazeJump.Common.Models;
 @using BlazeJump.Common.Pages;
 @using BlazeJump.Common.Pages.Components
-@using BlazeJump.Common.Services.Database;
-@using BlazeJump.Common.Services.Notification;
+@using BlazeJump.Common.Services.Identity;
+@using BlazeJump.Common.Enums;
 @using System.Web;
 @inherits LayoutComponentBase
-@inject IBlazeDbService DbService;
-@inject INotificationService NotificationService;
 @inject NavigationManager NavigationManager;
+@inject IIdentityService _identityService;
 
 <Loading></Loading>
 <nav class="primary-nav">
@@ -22,36 +20,26 @@
 				{
 					<li><NavLink href="@menuItem.LinkRoute">@menuItem.Title</NavLink></li>
 				}
-				<li><LoginLink /></li>
+				@if (_identityService.Platform == PlatformEnum.Web)
+				{
+					<li><LoginLink /></li>
+				}
+				else
+				{
+					<li><NavLink href="connect">QR Connect</NavLink></li>
+				}
 			</ul>
 		</nav>
 	</div>
 </nav>
-<div class="background-container">
-	<div class="content-container">
-		@Body
-	</div>
-</div>
+
+@Body
+
 
 @code {
 	public string? UniqueName { get; set; }
 	protected override void OnInitialized()
 	{
-		NotificationService.DeepLinkReceived += RouteDeepLink;
-		if (!string.IsNullOrEmpty(NotificationService.PreviousDeepLink))
-		{
-			RouteDeepLink(null, new() { Data = NotificationService.PreviousDeepLink });
-		}
-	}
-	public void RouteDeepLink(object sender, DeepLinkReceivedEventArgs e)
-	{
-		var uri = new Uri(e.Data);
-		var pubKey = uri.Host;
-		var relay = HttpUtility.ParseQueryString(uri.Query)["relay"].ToString();
-		var relayEntities = HttpUtility.UrlEncode(relay);
-
-		NavigationManager.NavigateTo($"Login/{pubKey}/{relayEntities}");
-
 	}
 	public List<MenuItem> MainMenu = new List<MenuItem>
 	{

@@ -1,17 +1,14 @@
 ﻿using BlazeJump.Common.Models;
 using BlazeJump.Common.Models.Crypto;
 using BlazeJump.Common.Services.Crypto;
-using BlazeJump.Common.Services.Database;
 
 namespace BlazeJump.Common.Services.UserProfile
 {
     public class UserProfileService : IUserProfileService
     {
         private ICryptoService _cryptoService;
-        private IBlazeDbService _dbService;
-        public UserProfileService(ICryptoService cryptoService, IBlazeDbService dbService) {
+        public UserProfileService(ICryptoService cryptoService) {
             _cryptoService = cryptoService;
-            _dbService = dbService;
         }
         public User User { get; set; } = new User();
 		public bool IsLoggedIn { get; set; }
@@ -40,19 +37,6 @@ namespace BlazeJump.Common.Services.UserProfile
         public Task Register()
         {
             throw new NotImplementedException();
-        }
-
-        public void SaveChanges(User user)
-        {
-            var existingRecord = _dbService.Context.Set<User>().Select(u => u.Id);
-            if (existingRecord != null)
-            {
-				_dbService.Context.Set<User>().Add(user);
-            }
-            else
-            {
-				_dbService.Context.Set<User>().Update(user);
-			}
         }
     }
 }

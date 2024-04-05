@@ -1,16 +1,13 @@
 using AutoMapper;
-using BlazeJump.Common.Data;
 using BlazeJump.Common.Services.Connections;
 using BlazeJump.Common.Services.Crypto;
-using BlazeJump.Common.Services.Database;
+using BlazeJump.Common.Services.Identity;
 using BlazeJump.Common.Services.Message;
 using BlazeJump.Common.Services.Notification;
 using BlazeJump.Common.Services.UserProfile;
 using BlazeJump.Web;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Options;
 using Microsoft.JSInterop;
 using System.Reflection;
 
@@ -29,8 +26,7 @@ builder.Services.AddScoped<ICryptoService, CryptoService>(
 	});
 builder.Services.AddScoped<IRelayManager, RelayManager>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
-builder.Services.AddSingleton<IBlazeDbService, BlazeDbService>();
-builder.Services.AddDbContextFactory<BlazeDbContext>(opts => opts.UseSqlite("Filename=app.db"));
+builder.Services.AddScoped<IIdentityService, IdentityService>();
 
 var mapperConfig = new MapperConfiguration(cfg =>
 {
