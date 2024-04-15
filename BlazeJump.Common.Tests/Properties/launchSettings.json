@@ -1,0 +1,12 @@
+{
+  "profiles": {
+    "BlazeJump.Common.Tests": {
+      "commandName": "Project",
+      "launchBrowser": true,
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      },
+      "applicationUrl": "https://localhost:58371;http://localhost:58372"
+    }
+  }
+}

@@ -1,5 +1,4 @@
 ﻿@page "/Login"
-@page "/Login/{TempPubKey}/{TempRelay}"
 @using BlazeJump.Common.Helpers;
 @using BlazeJump.Common.Models.Crypto;
 @using BlazeJump.Common.Pages.Components
@@ -72,12 +71,6 @@
 	public bool CodeLoading { get; set; } = false;
 	protected override async Task OnInitializedAsync()
 	{
-#if ANDROID
-	if (TempPubKey != null && TempRelay != null)
-	{
-	await MessageService.SendNostrConnectReply(TempPubKey);
-	}
-#else
 		CodeLoading = true;
 		//1. Generate temporary key pair
 		await Task.Run(() =>
@@ -87,19 +80,19 @@
 		CodeLoading = false;
 		//2. QR Code is presented to user containing a link to mobile login page with public key & selected relay where they will continue.
 		//3. In the mean time lets start polling the nostr relay for collecting the confirmation
-
-#endif
 	}
 
-	public void GenerateTemporaryKeyPair()
+	public async Task GenerateTemporaryKeyPair()
 	{
 		CryptoService.CreateEtherealKeyPair();
 		var payload = new QrConnectEventArgs
 			{
 				Relay = HttpUtility.UrlEncode(RelayManager.RelayConnections.First().Key),
-				Pubkey = Convert.ToHexString(CryptoService.EtherealPublicKey.ToBytes())
+				Pubkey = Convert.ToHexString(CryptoService.EtherealPublicKey.ToXOnlyPubKey().ToBytes())
 			};
 		var payloadString = JsonConvert.SerializeObject(payload);
 		ImageData = BlazeJump.Common.Helpers.QRCode.GenerateQRCode(payloadString);
+		var response = await IdentityService.FetchLoginScanResponse(payload);
+		response = response;
 	}
 }

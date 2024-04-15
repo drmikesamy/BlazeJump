@@ -1,7 +1,6 @@
 ﻿using AutoMapper;
 using BlazeJump.Common.Services.Connections;
 using BlazeJump.Common.Services.Crypto;
-using BlazeJump.Native.Services.Crypto;
 using BlazeJump.Common.Services.Message;
 using BlazeJump.Common.Services.Notification;
 using BlazeJump.Common.Services.UserProfile;
@@ -34,7 +33,9 @@ namespace BlazeJump.Native
 
 			builder.Services.AddScoped<IUserProfileService, UserProfileService>();
 			builder.Services.AddScoped<IMessageService, MessageService>();
-			builder.Services.AddScoped<ICryptoService, NativeCryptoService>();
+#if ANDROID
+		builder.Services.AddScoped<ICryptoService, NativeCryptoService>();
+#endif
 			builder.Services.AddScoped<IRelayManager, RelayManager>();
 			builder.Services.AddScoped<INotificationService, NotificationService>();
 			builder.Services.AddScoped<IIdentityService, IdentityService>();

@@ -10,8 +10,8 @@ namespace BlazeJump.Common.Services.Crypto
 {
 	public partial class CryptoService : ICryptoService
 	{
-		public ECXOnlyPubKey EtherealPublicKey => _etherealKeyPair.XOnlyPublicKey;
-		private Secp256k1KeyPair _etherealKeyPair { get; set; }
+		public ECPubKey EtherealPublicKey => _etherealKeyPair?.PublicKey;
+		protected Secp256k1KeyPair? _etherealKeyPair { get; set; }
 
 		private readonly IJSRuntime _jsRuntime;
 
@@ -32,12 +32,12 @@ namespace BlazeJump.Common.Services.Crypto
 			byte[] privateKeyGen = new byte[32];
 			rand.NextBytes(privateKeyGen);
 			var privateKey = ECPrivKey.Create(privateKeyGen);
-			var publicKey = privateKey.CreateXOnlyPubKey();
+			var publicKey = privateKey.CreatePubKey();
 			return new Secp256k1KeyPair(privateKey, publicKey);
 		}
-		public virtual async Task<Tuple<string, string>> AesEncrypt(string plainText, string theirPublicKey, string? ivOverride = null)
+		public virtual async Task<Tuple<string, string>> AesEncrypt(string plainText, string theirPublicKey, string? ivOverride = null, bool ethereal = true)
 		{
-			byte[] sharedPoint = await GetSharedSecret(theirPublicKey);
+			byte[] sharedPoint = await GetSharedSecret(theirPublicKey, ethereal);
 			byte[] iv = new byte[16];
 			if (ivOverride != null)
 			{
@@ -53,28 +53,28 @@ namespace BlazeJump.Common.Services.Crypto
 			var encrypted = await _jsRuntime.InvokeAsync<string>("aesEncrypt", paddedTextBytes, sharedPoint, iv);
 			return new Tuple<string, string>(encrypted.ToString(), ivString);
 		}
-		public virtual async Task<string> AesDecrypt(string base64CipherText, string theirPublicKey, string ivString)
+		public virtual async Task<string> AesDecrypt(string base64CipherText, string theirPublicKey, string ivString, bool ethereal = true)
 		{
-			byte[] sharedPoint = await GetSharedSecret(theirPublicKey);
+			byte[] sharedPoint = await GetSharedSecret(theirPublicKey, ethereal);
 			var sharedPointString = Convert.ToBase64String(sharedPoint);
 			var decrypted = await _jsRuntime.InvokeAsync<string>("aesDecrypt", base64CipherText, sharedPointString, ivString);
 			return decrypted;
 		}
-		protected async Task<byte[]> GetSharedSecret(string theirPublicKey)
+		protected async Task<byte[]> GetSharedSecret(string theirPublicKey, bool ethereal)
 		{
 			var theirPublicKeyBytes = Convert.FromHexString(theirPublicKey);
 			var theirPubKey = ECPubKey.Create(theirPublicKeyBytes);
-			var ourPrivKey = await GetPrivateKey();
+			var ourPrivKey = await GetPrivateKey(ethereal);
 			return theirPubKey.GetSharedPubkey(ourPrivKey).ToBytes()[1..];
 		}
-		protected virtual async Task<ECPrivKey> GetPrivateKey()
+		protected virtual async Task<ECPrivKey> GetPrivateKey(bool ethereal)
 		{
 			return _etherealKeyPair.PrivateKey;
 		}
-		public string Sign(string message)
+		public string Sign(string message, bool ethereal = true)
 		{
 			var messageHashBytes = message.SHA256Hash();
-			return _etherealKeyPair.PrivateKey.SignBIP340(messageHashBytes).ToString();
+			return Convert.ToHexString(_etherealKeyPair.PrivateKey.SignBIP340(messageHashBytes).ToBytes());
 		}
 		public bool Verify(string signature, string message, string publicKey)
 		{

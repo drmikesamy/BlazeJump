@@ -36,3 +36,5 @@ var mapperConfig = new MapperConfiguration(cfg =>
 IMapper mapper = mapperConfig.CreateMapper();
 builder.Services.AddSingleton(mapper);
 await builder.Build().RunAsync();
+
+public partial class Program { }

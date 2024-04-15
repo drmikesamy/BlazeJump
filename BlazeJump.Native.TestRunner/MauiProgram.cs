@@ -14,12 +14,6 @@ public static class MauiProgram
 					typeof(MauiProgram).Assembly
 		}})
 		.UseVisualRunner();
-		builder.Services.AddScoped<ICryptoService, CryptoService>(
-			(ctx) =>
-			{
-				var jsRuntime = ctx.GetService<IJSRuntime>();
-				return new CryptoService(jsRuntime);
-			});
 		return builder.Build();
 	}
 }

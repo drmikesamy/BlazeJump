@@ -13,8 +13,7 @@ namespace BlazeJump.Common.Services.Connections
 	{
 		public CancellationTokenSource _webSocketCancellationTokenSource;
 		public CancellationToken _webSocketCancellationToken;
-		public CancellationTokenSource _listenerCancellationTokenSource;
-		public CancellationToken _listenerCancellationToken;
+
 		private readonly string _uri;
 		public Dictionary<string, bool> ActiveSubscriptions { get; set; }
 		public ClientWebSocket WebSocket { get; set; }
@@ -67,30 +66,19 @@ namespace BlazeJump.Common.Services.Connections
 
 			await WebSocket.SendAsync(dataToSend, WebSocketMessageType.Text, true, _webSocketCancellationToken);
 		}
-		public async Task<List<string>> MessageLoop(int timeout, bool keepAlive)
+		public async Task<List<string>> MessageLoop(int timeout)
 		{
 			var messages = new List<string>();
 			Console.WriteLine($"setting up listener for {_uri}");
-			await foreach (var rawMessage in ReceiveLoop(timeout, keepAlive))
+			var listenerCancellationTokenSource = new CancellationTokenSource(timeout);
+			await foreach (var rawMessage in ReceiveLoop(listenerCancellationTokenSource))
 			{
 				if (rawMessage == null || rawMessage == "")
 				{
 					continue;
 				}
 				Console.WriteLine($"Message received from {_uri}");
-				if (!rawMessage.StartsWith("[\"EVENT"))
-				{
-					var abbreviatedRawMessage = rawMessage.Count() < 100 ? rawMessage : rawMessage.Substring(0, 100);
-
-					var subscriptionId = ActiveSubscriptions.Keys.FirstOrDefault(s => abbreviatedRawMessage.Contains(s));
-
-					if (subscriptionId != null)
-					{
-						await UnSubscribeAsync(subscriptionId);
-						break;
-					}
-				}
-				else
+				if (rawMessage.StartsWith("[\"EVENT"))
 				{
 					messages.Add(rawMessage);
 				}
@@ -98,12 +86,10 @@ namespace BlazeJump.Common.Services.Connections
 			return messages;
 		}
 
-		private async IAsyncEnumerable<string> ReceiveLoop(int timeout, bool keepAlive)
+		private async IAsyncEnumerable<string> ReceiveLoop(CancellationTokenSource cancellationTokenSource)
 		{
 			var canceled = false;
 			var buffer = new ArraySegment<byte>(new byte[2048]);
-			_listenerCancellationTokenSource = keepAlive ? new CancellationTokenSource() : new CancellationTokenSource(timeout);
-			_listenerCancellationToken = _listenerCancellationTokenSource.Token;
 			while (true)
 			{
 				WebSocketReceiveResult result;
@@ -112,7 +98,7 @@ namespace BlazeJump.Common.Services.Connections
 				{
 					do
 					{
-						result = await WebSocket.ReceiveAsync(buffer, _listenerCancellationToken);
+						result = await WebSocket.ReceiveAsync(buffer, cancellationTokenSource.Token);
 						ms.Write(buffer.Array!, buffer.Offset, result.Count);
 						if(result.MessageType == WebSocketMessageType.Close)
 						{
@@ -125,10 +111,18 @@ namespace BlazeJump.Common.Services.Connections
 					canceled = true;
 				}
 				ms.Seek(0, SeekOrigin.Begin);
-				yield return Encoding.UTF8.GetString(ms.ToArray());
+				var rawMessage = Encoding.UTF8.GetString(ms.ToArray());
+				yield return rawMessage;
 				if(canceled)
 				{
-					_listenerCancellationTokenSource.Dispose();
+					Console.WriteLine($"Timeout, unsubscribing from {_uri}");
+					var abbreviatedRawMessage = rawMessage.Count() < 100 ? rawMessage : rawMessage.Substring(0, 100);
+					var subscriptionId = ActiveSubscriptions.Keys.FirstOrDefault(s => abbreviatedRawMessage.Contains(s));
+					if (subscriptionId != null)
+					{
+						await UnSubscribeAsync(subscriptionId);
+					}
+					cancellationTokenSource.Dispose();
 					break;
 				}
 			}
@@ -173,7 +167,7 @@ namespace BlazeJump.Common.Services.Connections
 			}
 			await Task.WhenAll(unsubscribeTasks);
 
-			_listenerCancellationTokenSource.Cancel();
+			_webSocketCancellationTokenSource.Cancel();
 			WebSocket.Dispose();
 			WebSocket = new ClientWebSocket();
 		}

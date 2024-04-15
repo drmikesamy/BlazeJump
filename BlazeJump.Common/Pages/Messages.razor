@@ -100,11 +100,4 @@
 			}
 		}
 	}
-#if ANDROID
-	public async Task SendNEvent()
-	{
-	var newNEvent = await MessageService.GetNewNEvent(Enums.KindEnum.Text, NewNEventInput, null);
-	await MessageService.SendNEvent(newNEvent);
-	}
-#endif
 }

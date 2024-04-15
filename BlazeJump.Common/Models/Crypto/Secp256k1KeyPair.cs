@@ -3,11 +3,11 @@ namespace BlazeJump.Common.Models.Crypto
 {
 	public class Secp256k1KeyPair
 	{
-		public Secp256k1KeyPair(ECPrivKey privateKey, ECXOnlyPubKey publicKey) { 
+		public Secp256k1KeyPair(ECPrivKey privateKey, ECPubKey publicKey) { 
 			PrivateKey = privateKey;
-			XOnlyPublicKey = publicKey;
+			PublicKey = publicKey;
 		}
 		public ECPrivKey PrivateKey { get; private set; }
-		public ECXOnlyPubKey XOnlyPublicKey { get; private set; }
+		public ECPubKey PublicKey { get; private set; }
 	}
 }

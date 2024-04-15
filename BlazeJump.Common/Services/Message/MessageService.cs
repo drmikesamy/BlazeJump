@@ -100,9 +100,12 @@ namespace BlazeJump.Common.Services.Message
 			}
 			return profiles;
 		}
-		public bool SignNEvent(ref NEvent nEvent)
+		private bool SignNEvent(ref NEvent nEvent)
 		{
-			_cryptoService.GetNewSecp256k1KeyPair();
+			if(_cryptoService.EtherealPublicKey == null)
+			{
+				_cryptoService.CreateEtherealKeyPair();
+			}
 			var signableEvent = nEvent.GetSignableNEvent();
 			var serialisedNEvent = JsonConvert.SerializeObject(signableEvent);
 			var signature = _cryptoService.Sign(serialisedNEvent);
@@ -116,27 +119,15 @@ namespace BlazeJump.Common.Services.Message
 			var verified = _cryptoService.Verify(nEvent.Sig, serialisedNEvent, nEvent.Pubkey);
 			return verified;
 		}
-		public async Task SendNEvent(NEvent nEvent)
+		public async Task SendNEvent(KindEnum kind, string message)
 		{
+			var nEvent = await GetNewNEvent(kind, message);
 			var subscriptionHash = Guid.NewGuid().ToString();
 			SignNEvent(ref nEvent);
 			await _relayManager.SendNEvent(nEvent, new List<string> { "wss://relay.damus.io" }, subscriptionHash);
 			sendMessageQueue.TryAdd(nEvent.Id, nEvent);
 		}
-		public async Task SendNostrConnectReply(string theirPubKey)
-		{
-			var subscriptionHash = Guid.NewGuid().ToString();
-			var message = new NostrConnectResponse
-			{
-				Id = subscriptionHash,
-				Result = "Connected"
-			};
-			var nEvent = await GetNewNEvent(KindEnum.NostrConnect, JsonConvert.SerializeObject(message));
-			SignNEvent(ref nEvent);
-			await _relayManager.SendNEvent(nEvent, new List<string> { "wss://relay.damus.io" }, subscriptionHash);
-			sendMessageQueue.TryAdd(nEvent.Id, nEvent);
-		}
-		public async Task<NEvent> GetNewNEvent(KindEnum kind, string message, string? parentId = null)
+		private async Task<NEvent> GetNewNEvent(KindEnum kind, string message, string? parentId = null)
 		{
 			return new NEvent
 			{

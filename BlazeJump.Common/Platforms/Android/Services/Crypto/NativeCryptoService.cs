@@ -1,8 +1,7 @@
-﻿using BlazeJump.Common.Services.Crypto;
-using NBitcoin.Secp256k1;
+﻿using NBitcoin.Secp256k1;
 using System.Security.Cryptography;
 
-namespace BlazeJump.Native.Services.Crypto
+namespace BlazeJump.Common.Services.Crypto
 {
 	public class NativeCryptoService : CryptoService, ICryptoService
 	{
@@ -19,16 +18,16 @@ namespace BlazeJump.Native.Services.Crypto
 		private async Task GenerateAndStoreUserKeyPair()
 		{
 			var newKeyPair = GetNewSecp256k1KeyPair();
-			await SecureStorage.Default.SetAsync("PublicKey", Convert.ToHexString(newKeyPair.XOnlyPublicKey.ToBytes()));
+			await SecureStorage.Default.SetAsync("PublicKey", Convert.ToHexString(newKeyPair.PublicKey.ToBytes()));
 			await SecureStorage.Default.SetAsync("PrivateKey", Convert.ToHexString(newKeyPair.PrivateKey.sec.ToBytes()));
 		}
-		public override async Task<Tuple<string, string>> AesEncrypt(string message, string theirPublicKey, string? ivOverride = null)
+		public override async Task<Tuple<string, string>> AesEncrypt(string message, string theirPublicKey, string? ivOverride = null, bool ethereal = true)
 		{
 			byte[] encryptedData;
-			var sharedPoint = await GetSharedSecret(theirPublicKey);
+			var sharedPoint = (await GetSharedSecret(theirPublicKey, ethereal));
 
 			using (Aes aesAlg = Aes.Create())
-			{		
+			{
 				aesAlg.GenerateIV();
 				aesAlg.Mode = CipherMode.CBC;
 				aesAlg.KeySize = 256;
@@ -60,17 +59,17 @@ namespace BlazeJump.Native.Services.Crypto
 			}
 		}
 
-		public override async Task<string> AesDecrypt(string cipherText, string theirPublicKey, string ivString)
+		public override async Task<string> AesDecrypt(string cipherText, string theirPublicKey, string ivString, bool ethereal = true)
 		{
 			byte[] cipherBytes = Convert.FromBase64String(cipherText);
 
-			var sharedPoint = await GetSharedSecret(theirPublicKey);
+			var sharedPoint = (await GetSharedSecret(theirPublicKey, ethereal));
 
 			byte[] iv = Convert.FromBase64String(ivString);
 
 			using (Aes aesAlg = Aes.Create())
 			{
-				
+
 				aesAlg.Mode = CipherMode.CBC;
 				aesAlg.KeySize = 256;
 				aesAlg.Padding = PaddingMode.PKCS7;
@@ -91,9 +90,9 @@ namespace BlazeJump.Native.Services.Crypto
 				}
 			}
 		}
-		protected override async Task<ECPrivKey> GetPrivateKey()
+		protected override async Task<ECPrivKey> GetPrivateKey(bool ethereal)
 		{
-			return ECPrivKey.Create(Convert.FromHexString(await SecureStorage.Default.GetAsync("PrivateKey")));
+			return ethereal ? _etherealKeyPair.PrivateKey : ECPrivKey.Create(Convert.FromHexString(await SecureStorage.Default.GetAsync("PrivateKey")));
 		}
 	}
 }

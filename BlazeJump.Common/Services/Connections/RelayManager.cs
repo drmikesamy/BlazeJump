@@ -30,7 +30,7 @@ namespace BlazeJump.Common.Services.Connections
 				connection.Cancel();
 			}
 		}
-		public async Task<List<string>> QueryRelays(List<string> uris, string subscriptionId, Filter filter, int timeout = 15000, bool keepAlive = false)
+		public async Task<List<string>> QueryRelays(List<string> uris, string subscriptionId, Filter filter, int timeout = 15000)
 		{
 			var connectionTasks = new List<Task>();
 
@@ -42,7 +42,7 @@ namespace BlazeJump.Common.Services.Connections
 				{
 					await OpenConnection(uri);
 					await RelayConnections[uri].SubscribeAsync(subscriptionId, filter);
-					var connectionMessages = await RelayConnections[uri].MessageLoop(timeout, keepAlive);
+					var connectionMessages = await RelayConnections[uri].MessageLoop(timeout);
 					if(connectionMessages != null)
 						messages.AddRange(connectionMessages);
 				});

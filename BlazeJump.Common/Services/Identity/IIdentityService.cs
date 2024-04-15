@@ -1,9 +1,5 @@
 ﻿using BlazeJump.Common.Enums;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using BlazeJump.Common.Models;
 
 namespace BlazeJump.Common.Services.Identity
 {
@@ -11,6 +7,7 @@ namespace BlazeJump.Common.Services.Identity
 	{
 		event EventHandler<QrConnectEventArgs> QrConnectReceived;
 		void OnQrConnectReceived(QrConnectEventArgs e);
+		Task<List<NEvent>> FetchLoginScanResponse(QrConnectEventArgs payload);
 		PlatformEnum Platform { get; set; }
 	}
 }
