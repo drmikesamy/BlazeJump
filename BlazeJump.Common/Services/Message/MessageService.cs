@@ -7,7 +7,6 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using BlazeJump.Common.Services.Connections.Events;
 using BlazeJump.Common.Services.UserProfile;
-using Microsoft.Extensions.Logging;
 
 namespace BlazeJump.Common.Services.Message
 {
@@ -18,10 +17,9 @@ namespace BlazeJump.Common.Services.Message
 		private IUserProfileService _userProfileService;
 		private IMapper _mapper;
 		private Dictionary<string, NEvent> sendMessageQueue = new Dictionary<string, NEvent>();
-		public List<NMessage> ReceivedMessageQueue { get; set; } = new List<NMessage>();
-		public List<NEvent> NEvents => NMessages.Select(m => m.Event).ToList();
-		public List<NMessage> NMessages { get; set; } = new List<NMessage>();
-		public List<User> Users { get; set; } = new List<User>();
+		public Dictionary<string, List<NMessage>> NMessages { get; set; } = new Dictionary<string, List<NMessage>>();
+		public Dictionary<string, User> Users { get; set; } = new Dictionary<string, User>();
+		private List<string> _usersToLoad { get; set; } = new List<string>();
 		public event EventHandler StateUpdated;
 
 		public MessageService(IRelayManager relayManager, ICryptoService cryptoService, IUserProfileService userProfileService, IMapper mapper)
@@ -32,115 +30,76 @@ namespace BlazeJump.Common.Services.Message
 			_mapper = mapper;
 			_relayManager.NewMessageReceived += NewMessageReceived;
 		}
-		public async Task FetchUserPage(string pubKey)
+		public async Task FetchNEventsByFilter(MessageTypeEnum requestMessageType, Filter filter, string subscriptionId)
 		{
-			NMessages.Clear();
-			var filter = new Filter
-			{
-				Kinds = new int[] { (int)KindEnum.Text },
-				Since = DateTime.Now.AddYears(-20),
-				Until = DateTime.Now.AddDays(1),
-				Authors = new List<string> { pubKey },
-				Limit = 5
-			};
-			await FetchNEventsByFilter(MessageTypeEnum.Req, filter);
-		}
-		public async Task FetchEventPage(string eventId)
-		{
-			NMessages.Clear();
-			var filter = new Filter
-			{
-				Kinds = new int[] { (int)KindEnum.Text },
-				Since = DateTime.Now.AddYears(-20),
-				Until = DateTime.Now.AddDays(1),
-				Limit = 1,
-				Ids = new List<string> { eventId }
-			};
-			await FetchNEventsByFilter(MessageTypeEnum.Req, filter);
-		}
-		public async Task FetchReplies(List<string> eventIds, DateTime cutOffDate)
-		{
-			var filter = new Filter
-			{
-				Kinds = new int[] { (int)KindEnum.Text },
-				Since = DateTime.Now.AddYears(-20),
-				Until = cutOffDate,
-				EventId = eventIds,
-				Limit = 50
-			};
-			await FetchNEventsByFilter(MessageTypeEnum.Req, filter, $"reply_{Guid.NewGuid()}");
-		}
-		public async Task FetchNEventsByFilter(MessageTypeEnum requestMessageType, Filter filter, string subscriptionId = null)
-		{
-			var subscriptionHash = subscriptionId ?? Guid.NewGuid().ToString();
-			await _relayManager.QueryRelays(new List<string> { "wss://nostr.wine" }, subscriptionHash, requestMessageType, filter);
+			await _relayManager.QueryRelays(new List<string> { "wss://nostr.wine" }, subscriptionId, requestMessageType, filter);
 		}
 		private void NewMessageReceived(object sender, MessageReceivedEventArgs e)
 		{
-			if ((e.Message.SubscriptionId.StartsWith("user_") || e.Message.SubscriptionId.StartsWith("reply_")) && e.Message.MessageType != MessageTypeEnum.Eose)
+			if(e.Message.MessageType == MessageTypeEnum.Eose)
 			{
-				ProcessStatsAndProfiles(e.Message);
-			}
-			else if (!(e.Message.SubscriptionId.StartsWith("user_") || e.Message.SubscriptionId.StartsWith("reply_")) && e.Message.MessageType == MessageTypeEnum.Eose)
-			{
-				var eventIds = NMessages.Where(m => m.SubscriptionId == e.Message.SubscriptionId).Select(m => m.Event.Id).ToList();
-				var userIds = NMessages.Where(m => m.SubscriptionId == e.Message.SubscriptionId).Select(m => m.Event.Pubkey).ToList();
-				_ = FetchReplies(eventIds, DateTime.Now);
-				_ = FetchProfiles(userIds);
-			}
-			else if (!(e.Message.SubscriptionId.StartsWith("user_") || e.Message.SubscriptionId.StartsWith("reply_")) && e.Message.Event?.Kind == KindEnum.Text)
-			{
-				NMessages.Add(e.Message);
-				StateUpdated.Invoke(this, null);
-			}
-		}
-		private void ProcessStatsAndProfiles(NMessage message)
-		{
-			if (message.Event?.Kind == KindEnum.Metadata)
-			{
-				if (!string.IsNullOrEmpty(message.Event.Content))
+				if (_usersToLoad.Any() && !e.Message.SubscriptionId.StartsWith($"{TemplateAreaEnum.User}_"))
 				{
-					try
+					var userFilter = new Filter
 					{
-						var parsed = JObject.Parse(message.Event.Content);
-						var user = new User
-						{
-							Id = message.Event.Pubkey,
-							Username = parsed["name"]?.ToString(),
-							Bio = parsed["about"]?.ToString(),
-							ProfilePic = parsed["picture"]?.ToString(),
-							Banner = parsed["banner"]?.ToString(),
-						};
-						var eventsForUser = NMessages.Select(m => m.Event).Where(n => n.Pubkey == message.Event.Pubkey);
-						foreach (var nEvent in eventsForUser)
-						{
-							nEvent.User = user;
-						}
-						Users.Add(user);
-					}
-					catch
-					{
-
-					}
+						Kinds = new int[] { (int)KindEnum.Metadata },
+						Since = DateTime.Now.AddYears(-20),
+						Until = DateTime.Now.AddDays(1),
+						Authors = _usersToLoad.ToList()
+					};
+					_ = FetchNEventsByFilter(MessageTypeEnum.Req, userFilter, $"{TemplateAreaEnum.User}_{Guid.NewGuid()}");
+					_usersToLoad.Clear();
 				}
+				return;
 			}
-			else if (message.SubscriptionId.StartsWith("reply_"))
+
+			if (e.Message.SubscriptionId.StartsWith($"{TemplateAreaEnum.User}_") 
+				&& !Users.ContainsKey(e.Message.Event.Pubkey))
 			{
-				var targetId = message.Event.ParentNEventId;
-				NMessages.Select(m => m.Event).FirstOrDefault(n => n.Id == targetId).ChildNEvents.Add(message.Event);
+				ProcessUser(e.Message);
 			}
-			StateUpdated.Invoke(this, null);
+			else if(e.Message.MessageType == MessageTypeEnum.Event)
+			{
+				NMessages.TryGetValue(e.Message.SubscriptionId, out var messages);
+				if (messages != null)
+				{
+					messages.Add(e.Message);
+				}
+				else
+				{
+					NMessages.Add(e.Message.SubscriptionId, new List<NMessage> { e.Message });
+				}
+				_usersToLoad.Add(e.Message.Event.Pubkey);
+			}
+			StateUpdated.Invoke(this, EventArgs.Empty);
 		}
-		private async Task FetchProfiles(List<string> pubKeys)
+		private void ProcessUser(NMessage message)
 		{
-			var filter = new Filter
+			try
 			{
-				Kinds = new int[] { (int)KindEnum.Metadata },
-				Since = DateTime.Now.AddYears(-20),
-				Until = DateTime.Now,
-				Authors = pubKeys.Distinct().ToList()
-			};
-			await FetchNEventsByFilter(MessageTypeEnum.Req, filter, $"user_{Guid.NewGuid()}");
+				var parsed = JObject.Parse(message.Event.Content);
+				var user = new User
+				{
+					Id = message.Event.Pubkey,
+					Username = parsed["name"]?.ToString(),
+					Bio = parsed["about"]?.ToString(),
+					ProfilePic = parsed["picture"]?.ToString(),
+					Banner = parsed["banner"]?.ToString(),
+				};
+				if(Users.ContainsKey(user.Id))
+				{
+					Users[user.Id] = user;
+				}
+				else
+				{
+					Users.Add(user.Id, user);
+				}
+				
+			}
+			catch
+			{
+
+			}
 		}
 		private bool SignNEvent(ref NEvent nEvent)
 		{

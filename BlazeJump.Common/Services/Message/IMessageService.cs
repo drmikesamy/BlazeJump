@@ -6,13 +6,9 @@ namespace BlazeJump.Common.Services.Message
 	public interface IMessageService
 	{
 		event EventHandler StateUpdated;
-		List<NEvent> NEvents { get; }
-		List<NMessage> NMessages { get; set; }
-		List<User> Users { get; set; }
-		Task FetchUserPage(string pubKey);
-		Task FetchEventPage(string eventId);
-		Task FetchReplies(List<string> eventIds, DateTime cutOffDate);
-		Task FetchNEventsByFilter(MessageTypeEnum requestMessageType, Filter filter, string subscriptionId = null);
+		Dictionary<string, List<NMessage>> NMessages { get; set; }
+		Dictionary<string, User> Users { get; set; }
+		Task FetchNEventsByFilter(MessageTypeEnum requestMessageType, Filter filter, string subscriptionId);
 		bool VerifyNEvent(NEvent nEvent);
 		Task SendNEvent(KindEnum kind, string message);
 	}

@@ -15,39 +15,78 @@
 
 <div class="background-container">
 	<div class="content-container">
-		@if (MessageService.Users.FirstOrDefault(u => u.Id == Hex) != null)
+
+		@if (PageType?.ToLowerInvariant() == PageTypeEnum.User.ToString().ToLowerInvariant())
 		{
-			<UserCard User="MessageService.Users.FirstOrDefault(u => u.Id == Hex)"></UserCard>
+			@if (MessageService.Users.ContainsKey(Hex))
+			{
+				<UserCard User="MessageService.Users[Hex]"></UserCard>
+			}
+
+			@foreach (var eventBodyId in EventBodyIds)
+			{
+				@if (MessageService.NMessages.ContainsKey(eventBodyId))
+				{
+					@foreach (var message in MessageService.NMessages[eventBodyId])
+					{
+						<MessageCard Message=message.Event></MessageCard>
+					}
+				}
+			}
+			@if (MessageService.NMessages.ContainsKey(EventBodyIds.Last()) && MessageService.NMessages[EventBodyIds.Last()].Count >= 5)
+			{
+				<Card>
+					<a @onclick="LoadMore">Load more</a>
+				</Card>
+			}
 		}
-		@foreach (var message in MessageService.NEvents)
+
+		@if (PageType?.ToLowerInvariant() == PageTypeEnum.Event.ToString().ToLowerInvariant())
 		{
-			<MessageCard Message=message></MessageCard>
+			@if (MessageService.NMessages.ContainsKey(EventHeaderId))
+			{
+				<MessageCard Message="MessageService.NMessages[EventHeaderId].First().Event"></MessageCard>
+			}
+
+			@foreach (var eventBodyId in EventBodyIds)
+			{
+				@if (MessageService.NMessages.ContainsKey(eventBodyId))
+				{
+					@foreach (var message in MessageService.NMessages[eventBodyId])
+					{
+						<MessageCard Message=message.Event></MessageCard>
+					}
+				}
+			}
+			@if (MessageService.NMessages.ContainsKey(EventBodyIds.Last()) && MessageService.NMessages[EventBodyIds.Last()].Count >= 5)
+			{
+				<Card>
+					<a @onclick="LoadMore">Load more</a>
+				</Card>
+			}
 		}
-		@if (MessageService.NEvents.Count() == 0)
+
+		@if (Hex == null)
 		{
 			<Card>
 				<p>Nothing to see here. Click <NavLink href="user/82341f882b6eabcd2ba7f1ef90aad961cf074af15b9ef44a09f9d2a8fbfbe6a2">here</NavLink> for Jack Dorsey's profile.</p>
 			</Card>
 		}
-		@if(MessageService.NEvents.Count() >= 5)
-		{
-			<Card>
-				<a @onclick="() => MessageService.FetchReplies(new List<string>{ Hex }, MessageService.NEvents.Last().CreatedAtDateTime.AddMilliseconds(-1))">Load more</a>
-			</Card>
-		}
+
 	</div>
 </div>
 
 @code {
+	public string EventHeaderId { get; set; } = Guid.NewGuid().ToString();
+	public List<string> EventBodyIds { get; set; } = new List<string> { Guid.NewGuid().ToString() };
+
 	public bool Loading { get; set; } = false;
 	public string NewNEventInput { get; set; } = string.Empty;
 
-	public Dictionary<string, bool> ActiveSubscriptions = new Dictionary<string, bool>();
 	[Parameter]
 	public string? PageType { get; set; }
 	[Parameter]
 	public string? Hex { get; set; }
-	public User? User { get; set; }
 
 	protected override async Task OnParametersSetAsync()
 	{
@@ -62,18 +101,71 @@
 		StateHasChanged();
 	}
 
-	public async Task Load(DateTime? endDate = null, bool append = false)
+	public async Task Load()
 	{
+		EventHeaderId = Guid.NewGuid().ToString();
+		EventBodyIds = new List<string> { Guid.NewGuid().ToString() };
 		if (PageType != null && Hex != null)
 		{
 			if (PageType.ToLowerInvariant() == PageTypeEnum.User.ToString().ToLowerInvariant())
 			{
-				await MessageService.FetchUserPage(Hex);
+				var userHeaderFilter = new Filter
+					{
+						Kinds = new int[] { (int)KindEnum.Metadata },
+						Since = DateTime.Now.AddYears(-20),
+						Until = DateTime.Now.AddDays(1),
+						Limit = 1,
+						Authors = new List<string> { Hex }
+					};
+				await MessageService.FetchNEventsByFilter(MessageTypeEnum.Req, userHeaderFilter, $"{TemplateAreaEnum.User}_{Guid.NewGuid().ToString()}");
+				var eventBodyFilter = new Filter
+					{
+						Kinds = new int[] { (int)KindEnum.Text },
+						Since = DateTime.Now.AddYears(-20),
+						Until = DateTime.Now.AddDays(1),
+						Limit = 5,
+						Authors = new List<string> { Hex }
+					};
+				await MessageService.FetchNEventsByFilter(MessageTypeEnum.Req, eventBodyFilter, EventBodyIds[0]);
 			}
 			else if (PageType.ToLowerInvariant() == PageTypeEnum.Event.ToString().ToLowerInvariant())
 			{
-				await MessageService.FetchEventPage(Hex);
+				var eventHeaderFilter = new Filter
+					{
+						Kinds = new int[] { (int)KindEnum.Text },
+						Since = DateTime.Now.AddYears(-20),
+						Until = DateTime.Now.AddDays(1),
+						Limit = 1,
+						Ids = new List<string> { Hex }
+					};
+				await MessageService.FetchNEventsByFilter(MessageTypeEnum.Req, eventHeaderFilter, EventHeaderId);
+				var eventBodyFilter = new Filter
+					{
+						Kinds = new int[] { (int)KindEnum.Text },
+						Since = DateTime.Now.AddYears(-20),
+						Until = DateTime.Now.AddDays(1),
+						Limit = 5,
+						EventId = new List<string> { Hex }
+					};
+				await MessageService.FetchNEventsByFilter(MessageTypeEnum.Req, eventBodyFilter, EventBodyIds[0]);
 			}
 		}
+
+	}
+	public async Task LoadMore()
+	{
+		var isEventPage = PageType.ToLowerInvariant() == PageTypeEnum.Event.ToString().ToLowerInvariant();
+		var newGuid = Guid.NewGuid().ToString();
+		var eventBodyFilter = new Filter
+			{
+				Kinds = new int[] { (int)KindEnum.Text },
+				Since = DateTime.Now.AddYears(-20),
+				Until = MessageService.NMessages[EventBodyIds.Last()].Last().Event.CreatedAtDateTime.AddMilliseconds(-1),
+				Limit = 5,
+				Ids = isEventPage ? new List<string> { Hex } : null,
+				Authors = !isEventPage ? new List<string> { Hex } : null,
+			};
+		EventBodyIds.Add(newGuid);
+		await MessageService.FetchNEventsByFilter(MessageTypeEnum.Req, eventBodyFilter, newGuid);
 	}
 }

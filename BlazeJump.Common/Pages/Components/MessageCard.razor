@@ -9,20 +9,20 @@
 <section>
 	<article class="card card-message">
 		<div class="profile-picture">
-			<img src="@($"{Message.User?.ProfilePic ?? $"/images/profilepics/{new Random().Next(1, 18)}.png"}")" alt="profile picture">
+			<img src="@($"{User?.ProfilePic ?? $"/images/profilepics/{new Random().Next(1, 18)}.png"}")" alt="profile picture">
 		</div>
 		<div class="card-body">
 			<h3>
-				<a @onclick=ViewUser style="cursor: pointer">@(Message.User?.Username ?? $"{Message.User?.Id.Substring(0, 10)}...")</a>
+				<a @onclick=ViewUser style="cursor: pointer">@(User?.Username ?? $"{User?.Id?.Substring(0, 10)}...")</a>
 			</h3>
 			<p class="subtle-info-line">
 				@(TimeAgo.GetTimeAgo(Message.CreatedAtDateTime))
 			</p>
-			@ParseEmbeds.ParseEmbedsFromContent(Message.Content).FirstOrDefault()
-			<p>@(Message.Content ?? "(No content)")</p>
+			@ParseEmbeds.ParseEmbedsFromContent(Message?.Content).FirstOrDefault()
+			<p>@(Message?.Content ?? "(No content)")</p>
 			<p class="stats-line">
-				<a @onclick=ViewMessage style="cursor: pointer">@Message.ReplyCount comments</a> |
-				@if (Message.Verified)
+				<a @onclick=ViewMessage style="cursor: pointer">@Message?.ReplyCount comments</a> |
+				@if (Message?.Verified ?? false)
 				{
 					<span>Verified</span>
 				}
@@ -35,17 +35,13 @@
 	</article>
 </section>
 
-@foreach (var child in Message.ChildNEvents)
-{
-	<MessageCard Message=child></MessageCard>
-}
-
 @code {
 	[Parameter]
 	public NEvent Message { get; set; }
+	public User User => MessageService.Users.ContainsKey(Message.Pubkey) ? MessageService.Users[Message.Pubkey] : null;
 	public void ViewUser()
 	{
-		NavManager.NavigateTo($"user/{Message.User?.Id}", true);
+		NavManager.NavigateTo($"user/{User?.Id}", true);
 	}
 	public void ViewMessage()
 	{
