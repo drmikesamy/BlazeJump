@@ -15,22 +15,24 @@
 
 <div class="background-container">
 	<div class="content-container">
-		@if (User != null)
+		@if (MessageService.Users.FirstOrDefault(u => u.Id == Hex) != null)
 		{
-			<UserCard User="User"></UserCard>
+			<UserCard User="MessageService.Users.FirstOrDefault(u => u.Id == Hex)"></UserCard>
 		}
-		@foreach (var message in MessageList)
+		@foreach (var message in MessageService.NEvents)
 		{
 			<MessageCard Message=message></MessageCard>
-			@if (message.Id == MessageList.Last().Id)
-			{
-				<div><a style="cursor: pointer" @onclick="() => Load(message.CreatedAtDateTime, true)">Load more</a></div>
-			}
 		}
-		@if (MessageList.Count() == 0)
+		@if (MessageService.NEvents.Count() == 0)
 		{
 			<Card>
 				<p>Nothing to see here. Click <NavLink href="user/82341f882b6eabcd2ba7f1ef90aad961cf074af15b9ef44a09f9d2a8fbfbe6a2">here</NavLink> for Jack Dorsey's profile.</p>
+			</Card>
+		}
+		@if(MessageService.NEvents.Count() >= 5)
+		{
+			<Card>
+				<a @onclick="() => MessageService.FetchReplies(new List<string>{ Hex }, MessageService.NEvents.Last().CreatedAtDateTime.AddMilliseconds(-1))">Load more</a>
 			</Card>
 		}
 	</div>
@@ -39,7 +41,6 @@
 @code {
 	public bool Loading { get; set; } = false;
 	public string NewNEventInput { get; set; } = string.Empty;
-	public List<NEvent> MessageList { get; set; } = new List<NEvent>();
 
 	public Dictionary<string, bool> ActiveSubscriptions = new Dictionary<string, bool>();
 	[Parameter]
@@ -50,53 +51,28 @@
 
 	protected override async Task OnParametersSetAsync()
 	{
+		MessageService.StateUpdated += UpdateState;
 		NotificationService.Loading = true;
 		await Load();
 		NotificationService.Loading = false;
+	}
+
+	public void UpdateState(object? o, EventArgs e)
+	{
+		StateHasChanged();
 	}
 
 	public async Task Load(DateTime? endDate = null, bool append = false)
 	{
 		if (PageType != null && Hex != null)
 		{
-			var filter = new Filter
-				{
-					Kinds = new int[] { (int)KindEnum.Text },
-					Since = DateTime.Now.AddYears(-20),
-					Until = endDate ?? DateTime.Now.AddDays(1),
-					Limit = 5
-				};
 			if (PageType.ToLowerInvariant() == PageTypeEnum.User.ToString().ToLowerInvariant())
 			{
-				filter.Authors = new List<string>();
-				filter.Authors.Add(Hex);
-				var messageList = await MessageService.FetchNEventsByFilter(filter, true);
-				if (append)
-				{
-					MessageList.AddRange(messageList);
-				}
-				else
-				{
-					MessageList = messageList;
-					User = (await MessageService.FetchProfiles(new List<string> { Hex })).FirstOrDefault();
-					MessageList.ForEach(m => m.User = User);
-				}
+				await MessageService.FetchUserPage(Hex);
 			}
 			else if (PageType.ToLowerInvariant() == PageTypeEnum.Event.ToString().ToLowerInvariant())
 			{
-				filter.Ids = new List<string> { Hex };
-				MessageList = await MessageService.FetchNEventsByFilter(filter, false, true);
-				var baseProfileId = MessageList.Select(m => m.Pubkey);
-				var replyProfileIds = MessageList.SelectMany(m => m.ChildNEvents).Select(m => m.Pubkey);
-				var allProfileIds = baseProfileId.Concat(replyProfileIds).Distinct().ToList();
-				var users = await MessageService.FetchProfiles(allProfileIds);
-				MessageList.ForEach(m => m.User = users.FirstOrDefault(u => u.Id == m.Pubkey));
-				MessageList.SelectMany(m => m.ChildNEvents).ToList().ForEach(m => m.User = users.FirstOrDefault(u => u.Id == m.Pubkey));
-				User = users.FirstOrDefault(u => u.Id == baseProfileId.FirstOrDefault());
-			}
-			else
-			{
-
+				await MessageService.FetchEventPage(Hex);
 			}
 		}
 	}

@@ -19,7 +19,15 @@
 	</PropertyGroup>
 
 	<ItemGroup>
+	  <Compile Remove="Models\MessageReceivedEventArgs.cs" />
+	</ItemGroup>
+
+	<ItemGroup>
 		<Content Remove="compilerconfig.json" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <Content Include="Services\Connections\Events\MessageReceivedEventArgs.cs" />
 	</ItemGroup>
 
 	<ItemGroup>

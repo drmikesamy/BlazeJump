@@ -13,7 +13,7 @@
 		</div>
 		<div class="card-body">
 			<h3>
-				<a href="user/@(Message.User?.Id)">@(Message.User?.Username ?? $"{Message.User?.Id.Substring(0, 10)}...")</a>
+				<a @onclick=ViewUser style="cursor: pointer">@(Message.User?.Username ?? $"{Message.User?.Id.Substring(0, 10)}...")</a>
 			</h3>
 			<p class="subtle-info-line">
 				@(TimeAgo.GetTimeAgo(Message.CreatedAtDateTime))
@@ -43,10 +43,13 @@
 @code {
 	[Parameter]
 	public NEvent Message { get; set; }
-
-	public async Task ViewMessage()
+	public void ViewUser()
 	{
-		NavManager.NavigateTo($"event/{Message.Id}");
+		NavManager.NavigateTo($"user/{Message.User?.Id}", true);
+	}
+	public void ViewMessage()
+	{
+		NavManager.NavigateTo($"event/{Message.Id}", true);
 	}
 	public void VerifyMessage(NEvent message)
 	{

@@ -41,6 +41,12 @@ namespace BlazeJump.Common.Enums
 					message.Event = evt;
 
 					break;
+				case MessageTypeEnum.Count:
+					var countSubscriptionId = ja[1].ToString();
+					message.SubscriptionId = countSubscriptionId;
+					message.Stats = JsonConvert.DeserializeObject<Stats>(ja[2].ToString());
+
+					break;
 				case MessageTypeEnum.Notice:
 					var noticeMessage = ja[1].ToString();
 

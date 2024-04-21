@@ -1,61 +1,61 @@
 ﻿using BlazeJump.Common.Models;
 using Newtonsoft.Json;
-using System;
+using BlazeJump.Common.Services.Connections.Events;
+using System.Net.WebSockets;
+using BlazeJump.Common.Enums;
 
 namespace BlazeJump.Common.Services.Connections
 {
 	public class RelayManager : IRelayManager
 	{
+		public event EventHandler<MessageReceivedEventArgs> NewMessageReceived;
 		public Dictionary<string, RelayConnection> RelayConnections { get; set; }
 		public List<string> MessageQueue = new List<string>();
 
 		public RelayManager()
 		{
-			var defaultRelay = "wss://relay.damus.io";
+			var defaultRelay = "wss://nostr.wine";
 			RelayConnections = new Dictionary<string, RelayConnection>();
 			RelayConnections.TryAdd(defaultRelay, new RelayConnection(defaultRelay));
 		}
 
 		public async Task OpenConnection(string uri)
 		{
-			RelayConnections.TryAdd(uri, new RelayConnection(uri));
-			await RelayConnections[uri].ConnectAsync();
+			if (RelayConnections[uri].WebSocket.State == WebSocketState.Open)
+				return;
+
+			var isFirstConnection = RelayConnections.TryAdd(uri, new RelayConnection(uri));
+			await RelayConnections[uri].Init();
+			Console.WriteLine("Event subscription");
+			RelayConnections[uri].NewMessageReceived += NewMessageReceived;
 		}
 
-		public void CloseConnection(string uri)
+		public async Task CloseConnection(string uri)
 		{
 			RelayConnections.TryGetValue(uri, out var connection);
 			if (connection != null)
 			{
-				connection.Cancel();
+				await connection.Close();
 			}
 		}
-		public async Task<List<string>> QueryRelays(List<string> uris, string subscriptionId, Filter filter, int timeout = 15000)
+		public async Task QueryRelays(List<string> uris, string subscriptionId, MessageTypeEnum requestMessageType, Filter filter, int timeout = 15000)
 		{
 			var connectionTasks = new List<Task>();
-
-			var messages = new List<string>();
-
 			foreach (var uri in uris)
 			{
 				Task connectionTask = Task.Run(async () =>
 				{
 					await OpenConnection(uri);
-					await RelayConnections[uri].SubscribeAsync(subscriptionId, filter);
-					var connectionMessages = await RelayConnections[uri].MessageLoop(timeout);
-					if(connectionMessages != null)
-						messages.AddRange(connectionMessages);
+					await RelayConnections[uri].SubscribeAsync(requestMessageType, subscriptionId, filter);
 				});
 				connectionTasks.Add(connectionTask);
 			}
 			await Task.WhenAll(connectionTasks);
-			return messages;
 		}
 
 		public async Task SendNEvent(NEvent nEvent, List<string> uris, string subscriptionHash)
 		{
 			var connectionTasks = new List<Task>();
-
 			object[] obj = { "EVENT", nEvent };
 			string serialisedNMessage = JsonConvert.SerializeObject(obj);
 

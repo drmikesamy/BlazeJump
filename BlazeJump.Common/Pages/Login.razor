@@ -92,7 +92,6 @@
 			};
 		var payloadString = JsonConvert.SerializeObject(payload);
 		ImageData = BlazeJump.Common.Helpers.QRCode.GenerateQRCode(payloadString);
-		var response = await IdentityService.FetchLoginScanResponse(payload);
-		response = response;
+		await IdentityService.FetchLoginScanResponse(payload);
 	}
 }

@@ -73,7 +73,7 @@ namespace BlazeJump.Common.Models
 		[JsonIgnore]
 		public List<NEvent> Reactions { get; set; } = new List<NEvent>();
         [JsonIgnore]
-        public int ReplyCount { get; set; } = 0;
+        public int ReplyCount => ChildNEvents.Count;
         [JsonIgnore]
         public int ReactionCount { get; set; } = 0;
         [JsonIgnore]

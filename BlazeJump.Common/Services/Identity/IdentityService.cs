@@ -42,7 +42,7 @@ namespace BlazeJump.Common.Services.Identity
 			await _messageService.SendNEvent(KindEnum.NostrConnect, JsonConvert.SerializeObject(message));
 			_isBusy = false;
 		}
-		public async Task<List<NEvent>> FetchLoginScanResponse(QrConnectEventArgs payload)
+		public async Task FetchLoginScanResponse(QrConnectEventArgs payload)
 		{
 			var filter = new Filter
 			{
@@ -53,9 +53,7 @@ namespace BlazeJump.Common.Services.Identity
 			};
 
 			var subscriptionHash = Guid.NewGuid().ToString();
-			var rawMessages = await _relayManager.QueryRelays(new List<string> { "wss://relay.damus.io" }, subscriptionHash, filter, 30000);
-			var nMessages = rawMessages.Select(rawMessage => JsonConvert.DeserializeObject<NMessage>(rawMessage));
-			return nMessages.Where(m => m?.MessageType == MessageTypeEnum.Event).Select(m => m?.Event).ToList();
+			await _relayManager.QueryRelays(new List<string> { "wss://nostr.wine" }, subscriptionHash, MessageTypeEnum.Req, filter, 30000);
 		}
 	}
 	public class QrConnectEventArgs : EventArgs

@@ -5,8 +5,9 @@ using AutoMapper;
 using BlazeJump.Common.Services.Crypto;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using BlazeJump.Common.Models.NostrConnect;
+using BlazeJump.Common.Services.Connections.Events;
 using BlazeJump.Common.Services.UserProfile;
+using Microsoft.Extensions.Logging;
 
 namespace BlazeJump.Common.Services.Message
 {
@@ -17,9 +18,11 @@ namespace BlazeJump.Common.Services.Message
 		private IUserProfileService _userProfileService;
 		private IMapper _mapper;
 		private Dictionary<string, NEvent> sendMessageQueue = new Dictionary<string, NEvent>();
-		public List<NEvent> NEvents { get; set; }
-
-		public List<string> Users { get; set; } = new List<string>();
+		public List<NMessage> ReceivedMessageQueue { get; set; } = new List<NMessage>();
+		public List<NEvent> NEvents => NMessages.Select(m => m.Event).ToList();
+		public List<NMessage> NMessages { get; set; } = new List<NMessage>();
+		public List<User> Users { get; set; } = new List<User>();
+		public event EventHandler StateUpdated;
 
 		public MessageService(IRelayManager relayManager, ICryptoService cryptoService, IUserProfileService userProfileService, IMapper mapper)
 		{
@@ -27,43 +30,108 @@ namespace BlazeJump.Common.Services.Message
 			_cryptoService = cryptoService;
 			_userProfileService = userProfileService;
 			_mapper = mapper;
+			_relayManager.NewMessageReceived += NewMessageReceived;
 		}
-		public async Task<List<NEvent>> FetchNEventsByFilter(Filter filter, bool fetchStats = false, bool fullFetch = false)
+		public async Task FetchUserPage(string pubKey)
 		{
-			var subscriptionHash = Guid.NewGuid().ToString();
-			var rawMessages = await _relayManager.QueryRelays(new List<string> { "wss://relay.damus.io" }, subscriptionHash, filter);
-			var nMessages = rawMessages.Select(rawMessage => JsonConvert.DeserializeObject<NMessage>(rawMessage));
-			var nEvents = nMessages.Where(m => m?.MessageType == MessageTypeEnum.Event).Select(m => m?.Event).ToList();
-
-			if (fullFetch)
+			NMessages.Clear();
+			var filter = new Filter
 			{
-				foreach (var nEvent in nEvents)
-				{
-					filter.EventId = new List<string> { nEvent.Id };
-					filter.Ids = null;
-					nEvent.ChildNEvents = await FetchNEventsByFilter(filter, true);
-				}
-			}
-			foreach (var nEvent in nEvents)
-			{
-				nEvent.ReplyCount = await FetchStats(nEvent.Id);
-			}
-			return nEvents;
+				Kinds = new int[] { (int)KindEnum.Text },
+				Since = DateTime.Now.AddYears(-20),
+				Until = DateTime.Now.AddDays(1),
+				Authors = new List<string> { pubKey },
+				Limit = 5
+			};
+			await FetchNEventsByFilter(MessageTypeEnum.Req, filter);
 		}
-		private async Task<int> FetchStats(string nEventId)
+		public async Task FetchEventPage(string eventId)
+		{
+			NMessages.Clear();
+			var filter = new Filter
+			{
+				Kinds = new int[] { (int)KindEnum.Text },
+				Since = DateTime.Now.AddYears(-20),
+				Until = DateTime.Now.AddDays(1),
+				Limit = 1,
+				Ids = new List<string> { eventId }
+			};
+			await FetchNEventsByFilter(MessageTypeEnum.Req, filter);
+		}
+		public async Task FetchReplies(List<string> eventIds, DateTime cutOffDate)
 		{
 			var filter = new Filter
 			{
 				Kinds = new int[] { (int)KindEnum.Text },
 				Since = DateTime.Now.AddYears(-20),
-				Until = DateTime.Now,
-				EventId = new List<string> { nEventId }
+				Until = cutOffDate,
+				EventId = eventIds,
+				Limit = 50
 			};
-			var subscriptionHash = Guid.NewGuid().ToString();
-			var rawMessages = await _relayManager.QueryRelays(new List<string> { "wss://relay.damus.io" }, subscriptionHash, filter, 15000);
-			return rawMessages.Count();
+			await FetchNEventsByFilter(MessageTypeEnum.Req, filter, $"reply_{Guid.NewGuid()}");
 		}
-		public async Task<List<User>> FetchProfiles(List<string> pubKeys)
+		public async Task FetchNEventsByFilter(MessageTypeEnum requestMessageType, Filter filter, string subscriptionId = null)
+		{
+			var subscriptionHash = subscriptionId ?? Guid.NewGuid().ToString();
+			await _relayManager.QueryRelays(new List<string> { "wss://nostr.wine" }, subscriptionHash, requestMessageType, filter);
+		}
+		private void NewMessageReceived(object sender, MessageReceivedEventArgs e)
+		{
+			if ((e.Message.SubscriptionId.StartsWith("user_") || e.Message.SubscriptionId.StartsWith("reply_")) && e.Message.MessageType != MessageTypeEnum.Eose)
+			{
+				ProcessStatsAndProfiles(e.Message);
+			}
+			else if (!(e.Message.SubscriptionId.StartsWith("user_") || e.Message.SubscriptionId.StartsWith("reply_")) && e.Message.MessageType == MessageTypeEnum.Eose)
+			{
+				var eventIds = NMessages.Where(m => m.SubscriptionId == e.Message.SubscriptionId).Select(m => m.Event.Id).ToList();
+				var userIds = NMessages.Where(m => m.SubscriptionId == e.Message.SubscriptionId).Select(m => m.Event.Pubkey).ToList();
+				_ = FetchReplies(eventIds, DateTime.Now);
+				_ = FetchProfiles(userIds);
+			}
+			else if (!(e.Message.SubscriptionId.StartsWith("user_") || e.Message.SubscriptionId.StartsWith("reply_")) && e.Message.Event?.Kind == KindEnum.Text)
+			{
+				NMessages.Add(e.Message);
+				StateUpdated.Invoke(this, null);
+			}
+		}
+		private void ProcessStatsAndProfiles(NMessage message)
+		{
+			if (message.Event?.Kind == KindEnum.Metadata)
+			{
+				if (!string.IsNullOrEmpty(message.Event.Content))
+				{
+					try
+					{
+						var parsed = JObject.Parse(message.Event.Content);
+						var user = new User
+						{
+							Id = message.Event.Pubkey,
+							Username = parsed["name"]?.ToString(),
+							Bio = parsed["about"]?.ToString(),
+							ProfilePic = parsed["picture"]?.ToString(),
+							Banner = parsed["banner"]?.ToString(),
+						};
+						var eventsForUser = NMessages.Select(m => m.Event).Where(n => n.Pubkey == message.Event.Pubkey);
+						foreach (var nEvent in eventsForUser)
+						{
+							nEvent.User = user;
+						}
+						Users.Add(user);
+					}
+					catch
+					{
+
+					}
+				}
+			}
+			else if (message.SubscriptionId.StartsWith("reply_"))
+			{
+				var targetId = message.Event.ParentNEventId;
+				NMessages.Select(m => m.Event).FirstOrDefault(n => n.Id == targetId).ChildNEvents.Add(message.Event);
+			}
+			StateUpdated.Invoke(this, null);
+		}
+		private async Task FetchProfiles(List<string> pubKeys)
 		{
 			var filter = new Filter
 			{
@@ -72,37 +140,11 @@ namespace BlazeJump.Common.Services.Message
 				Until = DateTime.Now,
 				Authors = pubKeys.Distinct().ToList()
 			};
-			var events = await FetchNEventsByFilter(filter, false, false);
-			var metaData = events.Where(e => e.Kind == KindEnum.Metadata && pubKeys.Contains(e.Pubkey));
-			var profiles = new List<User>();
-			foreach (var m in metaData)
-			{
-				if (!string.IsNullOrEmpty(m.Content))
-				{
-					try
-					{
-						var parsed = JObject.Parse(m.Content);
-						var user = new User
-						{
-							Id = m.Pubkey,
-							Username = parsed["name"]?.ToString(),
-							Bio = parsed["about"]?.ToString(),
-							ProfilePic = parsed["picture"]?.ToString(),
-							Banner = parsed["banner"]?.ToString(),
-						};
-						profiles.Add(user);
-					}
-					catch
-					{
-
-					}
-				}
-			}
-			return profiles;
+			await FetchNEventsByFilter(MessageTypeEnum.Req, filter, $"user_{Guid.NewGuid()}");
 		}
 		private bool SignNEvent(ref NEvent nEvent)
 		{
-			if(_cryptoService.EtherealPublicKey == null)
+			if (_cryptoService.EtherealPublicKey == null)
 			{
 				_cryptoService.CreateEtherealKeyPair();
 			}
@@ -124,7 +166,7 @@ namespace BlazeJump.Common.Services.Message
 			var nEvent = await GetNewNEvent(kind, message);
 			var subscriptionHash = Guid.NewGuid().ToString();
 			SignNEvent(ref nEvent);
-			await _relayManager.SendNEvent(nEvent, new List<string> { "wss://relay.damus.io" }, subscriptionHash);
+			await _relayManager.SendNEvent(nEvent, new List<string> { "wss://nostr.wine" }, subscriptionHash);
 			sendMessageQueue.TryAdd(nEvent.Id, nEvent);
 		}
 		private async Task<NEvent> GetNewNEvent(KindEnum kind, string message, string? parentId = null)

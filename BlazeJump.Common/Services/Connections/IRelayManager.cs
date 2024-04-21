@@ -1,13 +1,16 @@
 ﻿using BlazeJump.Common.Models;
+using BlazeJump.Common.Services.Connections.Events;
+using BlazeJump.Common.Enums;
 
 namespace BlazeJump.Common.Services.Connections
 {
     public interface IRelayManager
     {
-        Dictionary<string, RelayConnection> RelayConnections { get; set; }
+		event EventHandler<MessageReceivedEventArgs> NewMessageReceived;
+		Dictionary<string, RelayConnection> RelayConnections { get; set; }
 		Task OpenConnection(string uri);
-        void CloseConnection(string uri);
-		Task<List<string>> QueryRelays(List<string> uris, string subscriptionId, Filter filter, int timeout = 15000);
+		Task CloseConnection(string uri);
+		Task QueryRelays(List<string> uris, string subscriptionId, MessageTypeEnum requestMessageType, Filter filter, int timeout = 15000);
 		Task SendNEvent(NEvent nEvent, List<string> uris, string subscriptionHash);
 	}
 }

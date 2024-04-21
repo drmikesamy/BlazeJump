@@ -7,7 +7,7 @@ namespace BlazeJump.Common.Services.Identity
 	{
 		event EventHandler<QrConnectEventArgs> QrConnectReceived;
 		void OnQrConnectReceived(QrConnectEventArgs e);
-		Task<List<NEvent>> FetchLoginScanResponse(QrConnectEventArgs payload);
+		Task FetchLoginScanResponse(QrConnectEventArgs payload);
 		PlatformEnum Platform { get; set; }
 	}
 }
