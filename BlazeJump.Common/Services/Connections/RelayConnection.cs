@@ -47,7 +47,7 @@ namespace BlazeJump.Common.Services.Connections
 				WebSocket = new ClientWebSocket();
 			}
 		}
-		public async Task SubscribeAsync(MessageTypeEnum requestMessageType, string subscriptionId, Filter filter)
+		public async Task SubscribeAsync(MessageTypeEnum requestMessageType, string subscriptionId, List<Filter> filters)
 		{
 			if (WebSocket.State == WebSocketState.Open)
 			{
@@ -58,14 +58,20 @@ namespace BlazeJump.Common.Services.Connections
 				else
 				{
 					Console.WriteLine($"Subscribing to {_uri} using {subscriptionId}");
-					await SendRequest(requestMessageType, subscriptionId, filter);
+					await SendRequest(requestMessageType, subscriptionId, filters);
 					ActiveSubscriptions.TryAdd(subscriptionId, true);
 				}
 			}
 		}
-		public async Task SendRequest(MessageTypeEnum requestMessageType, string subscriptionId, Filter filter)
+		public async Task SendRequest(MessageTypeEnum requestMessageType, string subscriptionId, List<Filter> filters)
 		{
-			object[] obj = { requestMessageType.ToString().ToUpper(), subscriptionId, filter };
+			object[] obj = new object[2 + filters.Count];
+			obj[0] = requestMessageType.ToString().ToUpper();
+			obj[1] = subscriptionId;
+			for(var i = 2; i < 2 + filters.Count; i++)
+			{
+				obj[i] = filters[i - 2];
+			}
 
 			string newsub = JsonConvert.SerializeObject(obj);
 

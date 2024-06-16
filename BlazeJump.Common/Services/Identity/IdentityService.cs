@@ -49,11 +49,11 @@ namespace BlazeJump.Common.Services.Identity
 				Kinds = new int[] { (int)KindEnum.NostrConnect },
 				Since = DateTime.Now.AddSeconds(-15),
 				Until = DateTime.Now.AddSeconds(15),
-				PublicKey = new List<string> { payload.Pubkey }
+				TaggedPublicKeys = new List<string> { payload.Pubkey }
 			};
 
 			var subscriptionHash = Guid.NewGuid().ToString();
-			await _relayManager.QueryRelays(new List<string> { "wss://nostr.wine" }, subscriptionHash, MessageTypeEnum.Req, filter, 30000);
+			await _relayManager.QueryRelays(new List<string> { "wss://nostr.wine" }, subscriptionHash, MessageTypeEnum.Req, new List<Filter> { filter }, 30000);
 		}
 	}
 	public class QrConnectEventArgs : EventArgs

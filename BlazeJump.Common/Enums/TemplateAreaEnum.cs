@@ -2,8 +2,8 @@
 {
     public enum TemplateAreaEnum
     {
-        EventBody = 0,
-        EventHeader = 1,
-        User = 2
+        Event = 0,
+        User = 1,
+        Replies = 2
     }
 }

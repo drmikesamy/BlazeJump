@@ -8,6 +8,7 @@
 @using BlazeJump.Common.Services.Message;
 @using BlazeJump.Common.Services.Notification;
 @using BlazeJump.Common.Services.UserProfile;
+@using Newtonsoft.Json
 @inject IRelayManager RelayManager
 @inject IMessageService MessageService
 @inject ICryptoService CryptoService
@@ -22,65 +23,34 @@
 			{
 				<UserCard User="MessageService.Users[Hex]"></UserCard>
 			}
-
-			@foreach (var eventBodyId in EventBodyIds)
-			{
-				@if (MessageService.NMessages.ContainsKey(eventBodyId))
-				{
-					@foreach (var message in MessageService.NMessages[eventBodyId])
-					{
-						<MessageCard Message=message.Event></MessageCard>
-					}
-				}
-			}
-			@if (MessageService.NMessages.ContainsKey(EventBodyIds.Last()) && MessageService.NMessages[EventBodyIds.Last()].Count >= 5)
-			{
-				<Card>
-					<a @onclick="LoadMore">Load more</a>
-				</Card>
-			}
 		}
-
-		@if (PageType?.ToLowerInvariant() == PageTypeEnum.Event.ToString().ToLowerInvariant())
+		@foreach (var eventBodyId in EventBodyIds)
 		{
-			@if (MessageService.NMessages.ContainsKey(EventHeaderId))
+			@if (MessageService.NMessages.ContainsKey(eventBodyId))
 			{
-				<MessageCard Message="MessageService.NMessages[EventHeaderId].First().Event"></MessageCard>
-			}
-
-			@foreach (var eventBodyId in EventBodyIds)
-			{
-				@if (MessageService.NMessages.ContainsKey(eventBodyId))
+				@foreach (var message in MessageService.NMessages[eventBodyId])
 				{
-					@foreach (var message in MessageService.NMessages[eventBodyId])
-					{
-						<MessageCard Message=message.Event></MessageCard>
-					}
+					<MessageCard Message=message></MessageCard>
 				}
 			}
-			@if (MessageService.NMessages.ContainsKey(EventBodyIds.Last()) && MessageService.NMessages[EventBodyIds.Last()].Count >= 5)
-			{
-				<Card>
-					<a @onclick="LoadMore">Load more</a>
-				</Card>
-			}
 		}
-
+		@if (EventBodyIds.Count() > 0 && MessageService.NMessages.ContainsKey(EventBodyIds.Last()) && MessageService.NMessages[EventBodyIds.Last()].Count >= 5)
+		{
+			<Card>
+				<a @onclick="() => Load(true)">Load more</a>
+			</Card>
+		}
 		@if (Hex == null)
 		{
 			<Card>
 				<p>Nothing to see here. Click <NavLink href="user/82341f882b6eabcd2ba7f1ef90aad961cf074af15b9ef44a09f9d2a8fbfbe6a2">here</NavLink> for Jack Dorsey's profile.</p>
 			</Card>
 		}
-
 	</div>
 </div>
 
 @code {
-	public string EventHeaderId { get; set; } = Guid.NewGuid().ToString();
-	public List<string> EventBodyIds { get; set; } = new List<string> { Guid.NewGuid().ToString() };
-
-	public bool Loading { get; set; } = false;
+	public List<string> EventBodyIds { get; set; } = new List<string>();
 	public string NewNEventInput { get; set; } = string.Empty;
 
 	[Parameter]
@@ -101,71 +71,38 @@
 		StateHasChanged();
 	}
 
-	public async Task Load()
+	public async Task Load(bool loadMore = false)
 	{
-		EventHeaderId = Guid.NewGuid().ToString();
-		EventBodyIds = new List<string> { Guid.NewGuid().ToString() };
+		if(!loadMore)
+			EventBodyIds.Clear();
 		if (PageType != null && Hex != null)
 		{
-			if (PageType.ToLowerInvariant() == PageTypeEnum.User.ToString().ToLowerInvariant())
+			var isEventPage = PageType.ToLowerInvariant() == PageTypeEnum.Event.ToString().ToLowerInvariant();
+			var filters = new List<Filter>();
+			if (isEventPage && !loadMore)
 			{
-				var userHeaderFilter = new Filter
-					{
-						Kinds = new int[] { (int)KindEnum.Metadata },
-						Since = DateTime.Now.AddYears(-20),
-						Until = DateTime.Now.AddDays(1),
-						Limit = 1,
-						Authors = new List<string> { Hex }
-					};
-				await MessageService.FetchNEventsByFilter(MessageTypeEnum.Req, userHeaderFilter, $"{TemplateAreaEnum.User}_{Guid.NewGuid().ToString()}");
-				var eventBodyFilter = new Filter
-					{
-						Kinds = new int[] { (int)KindEnum.Text },
-						Since = DateTime.Now.AddYears(-20),
-						Until = DateTime.Now.AddDays(1),
-						Limit = 5,
-						Authors = new List<string> { Hex }
-					};
-				await MessageService.FetchNEventsByFilter(MessageTypeEnum.Req, eventBodyFilter, EventBodyIds[0]);
-			}
-			else if (PageType.ToLowerInvariant() == PageTypeEnum.Event.ToString().ToLowerInvariant())
-			{
-				var eventHeaderFilter = new Filter
+				filters.Add(new Filter
 					{
 						Kinds = new int[] { (int)KindEnum.Text },
 						Since = DateTime.Now.AddYears(-20),
 						Until = DateTime.Now.AddDays(1),
 						Limit = 1,
-						Ids = new List<string> { Hex }
-					};
-				await MessageService.FetchNEventsByFilter(MessageTypeEnum.Req, eventHeaderFilter, EventHeaderId);
-				var eventBodyFilter = new Filter
-					{
-						Kinds = new int[] { (int)KindEnum.Text },
-						Since = DateTime.Now.AddYears(-20),
-						Until = DateTime.Now.AddDays(1),
-						Limit = 5,
-						EventId = new List<string> { Hex }
-					};
-				await MessageService.FetchNEventsByFilter(MessageTypeEnum.Req, eventBodyFilter, EventBodyIds[0]);
+						EventIds = new List<string> { Hex },
+					});
 			}
+			filters.Add(new Filter
+				{
+					Kinds = new int[] { (int)KindEnum.Text },
+					Since = DateTime.Now.AddYears(-20),
+					Until = loadMore ? MessageService.NMessages[EventBodyIds.Last()].Last().Event.CreatedAtDateTime.AddMilliseconds(-1) : DateTime.Now.AddDays(1),
+					Limit = 5,
+					TaggedEventIds = isEventPage ? new List<string> { Hex } : null,
+					Authors = isEventPage ? null : new List<string> { Hex }
+				});
+			var fetchId = $"{(isEventPage ? TemplateAreaEnum.Event.ToString().ToLowerInvariant() : TemplateAreaEnum.User.ToString().ToLowerInvariant())}_{Hex.Substring(0, 30)}_{EventBodyIds.Count()}";
+			await MessageService.FetchNEventsByFilter(MessageTypeEnum.Req, filters, fetchId);
+			EventBodyIds.Add(fetchId);
 		}
 
-	}
-	public async Task LoadMore()
-	{
-		var isEventPage = PageType.ToLowerInvariant() == PageTypeEnum.Event.ToString().ToLowerInvariant();
-		var newGuid = Guid.NewGuid().ToString();
-		var eventBodyFilter = new Filter
-			{
-				Kinds = new int[] { (int)KindEnum.Text },
-				Since = DateTime.Now.AddYears(-20),
-				Until = MessageService.NMessages[EventBodyIds.Last()].Last().Event.CreatedAtDateTime.AddMilliseconds(-1),
-				Limit = 5,
-				Ids = isEventPage ? new List<string> { Hex } : null,
-				Authors = !isEventPage ? new List<string> { Hex } : null,
-			};
-		EventBodyIds.Add(newGuid);
-		await MessageService.FetchNEventsByFilter(MessageTypeEnum.Req, eventBodyFilter, newGuid);
 	}
 }
