@@ -51,7 +51,9 @@ namespace BlazeJump.Common.Models
         [JsonIgnore]
         public virtual NEvent? ParentNEvent { get; set; }
         [JsonIgnore]
-        public virtual List<NEvent> ChildNEvents { get; set; } = new List<NEvent>();
+        public virtual List<NEvent> Replies { get; set; } = new List<NEvent>();
+        [JsonIgnore]
+        public bool RepliesLoaded { get; set; } = false;
         [JsonIgnore]
         [InverseProperty(nameof(Reactions))]
 		public string? ReactionId
@@ -73,7 +75,7 @@ namespace BlazeJump.Common.Models
 		[JsonIgnore]
 		public List<NEvent> Reactions { get; set; } = new List<NEvent>();
         [JsonIgnore]
-        public int ReplyCount => ChildNEvents.Count;
+        public int ReplyCount => Replies.Count;
         [JsonIgnore]
         public int ReactionCount { get; set; } = 0;
         [JsonIgnore]

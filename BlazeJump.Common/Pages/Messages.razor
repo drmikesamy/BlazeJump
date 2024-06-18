@@ -8,38 +8,31 @@
 @using BlazeJump.Common.Services.Message;
 @using BlazeJump.Common.Services.Notification;
 @using BlazeJump.Common.Services.UserProfile;
+@using BlazeJump.Common.Services.Display;
 @using Newtonsoft.Json
 @inject IRelayManager RelayManager
 @inject IMessageService MessageService
 @inject ICryptoService CryptoService
 @inject INotificationService NotificationService;
+@inject IMessagesDisplay MessagesDisplay;
 
 <div class="background-container">
 	<div class="content-container">
 
-		@if (PageType?.ToLowerInvariant() == PageTypeEnum.User.ToString().ToLowerInvariant())
+		@if (MessagesDisplay.PageType != null && MessagesDisplay.PageType == PageTypeEnum.User && MessagesDisplay.Users.TryGetValue(MessagesDisplay.Hex, out var featuredUser))
 		{
-			@if (MessageService.Users.ContainsKey(Hex))
+			<UserCard User="featuredUser"></UserCard>
+		}
+		@foreach (var bucket in MessagesDisplay.MessageBuckets)
+		{
+			@foreach (var message in bucket.Value)
 			{
-				<UserCard User="MessageService.Users[Hex]"></UserCard>
+				<MessageCard Message=message></MessageCard>
 			}
 		}
-		@foreach (var eventBodyId in EventBodyIds)
-		{
-			@if (MessageService.NMessages.ContainsKey(eventBodyId))
-			{
-				@foreach (var message in MessageService.NMessages[eventBodyId])
-				{
-					<MessageCard Message=message></MessageCard>
-				}
-			}
-		}
-		@if (EventBodyIds.Count() > 0 && MessageService.NMessages.ContainsKey(EventBodyIds.Last()) && MessageService.NMessages[EventBodyIds.Last()].Count >= 5)
-		{
-			<Card>
-				<a @onclick="() => Load(true)">Load more</a>
-			</Card>
-		}
+		<Card>
+			<a @onclick="() => MessagesDisplay.LoadMessages()">Load more</a>
+		</Card>
 		@if (Hex == null)
 		{
 			<Card>
@@ -50,9 +43,6 @@
 </div>
 
 @code {
-	public List<string> EventBodyIds { get; set; } = new List<string>();
-	public string NewNEventInput { get; set; } = string.Empty;
-
 	[Parameter]
 	public string? PageType { get; set; }
 	[Parameter]
@@ -60,9 +50,10 @@
 
 	protected override async Task OnParametersSetAsync()
 	{
-		MessageService.StateUpdated += UpdateState;
+		MessagesDisplay.StateUpdated += UpdateState;
 		NotificationService.Loading = true;
-		await Load();
+		if(PageType != null && Hex != null)
+			await MessagesDisplay.Init(PageType.ToLowerInvariant() == PageTypeEnum.Event.ToString().ToLowerInvariant() ? PageTypeEnum.Event : PageTypeEnum.User, Hex);
 		NotificationService.Loading = false;
 	}
 
@@ -71,38 +62,4 @@
 		StateHasChanged();
 	}
 
-	public async Task Load(bool loadMore = false)
-	{
-		if(!loadMore)
-			EventBodyIds.Clear();
-		if (PageType != null && Hex != null)
-		{
-			var isEventPage = PageType.ToLowerInvariant() == PageTypeEnum.Event.ToString().ToLowerInvariant();
-			var filters = new List<Filter>();
-			if (isEventPage && !loadMore)
-			{
-				filters.Add(new Filter
-					{
-						Kinds = new int[] { (int)KindEnum.Text },
-						Since = DateTime.Now.AddYears(-20),
-						Until = DateTime.Now.AddDays(1),
-						Limit = 1,
-						EventIds = new List<string> { Hex },
-					});
-			}
-			filters.Add(new Filter
-				{
-					Kinds = new int[] { (int)KindEnum.Text },
-					Since = DateTime.Now.AddYears(-20),
-					Until = loadMore ? MessageService.NMessages[EventBodyIds.Last()].Last().Event.CreatedAtDateTime.AddMilliseconds(-1) : DateTime.Now.AddDays(1),
-					Limit = 5,
-					TaggedEventIds = isEventPage ? new List<string> { Hex } : null,
-					Authors = isEventPage ? null : new List<string> { Hex }
-				});
-			var fetchId = $"{(isEventPage ? TemplateAreaEnum.Event.ToString().ToLowerInvariant() : TemplateAreaEnum.User.ToString().ToLowerInvariant())}_{Hex.Substring(0, 30)}_{EventBodyIds.Count()}";
-			await MessageService.FetchNEventsByFilter(MessageTypeEnum.Req, filters, fetchId);
-			EventBodyIds.Add(fetchId);
-		}
-
-	}
 }

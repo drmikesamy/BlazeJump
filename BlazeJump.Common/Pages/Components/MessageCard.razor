@@ -1,10 +1,12 @@
 ﻿@using BlazeJump.Common.Enums;
 @using BlazeJump.Common.Models;
 @using BlazeJump.Common.Services.Message;
+@using BlazeJump.Common.Services.Display;
 @using BlazeJump.Common.Services.Crypto;
 @using BlazeJump.Helpers;
-@using Newtonsoft.Json
+@using Newtonsoft.Json;
 @inject IMessageService MessageService
+@inject IMessagesDisplay MessagesDisplay
 @inject NavigationManager NavManager
 
 <section>
@@ -22,7 +24,7 @@
 			@ParseEmbeds.ParseEmbedsFromContent(NEvent?.Content).FirstOrDefault()
 			<p>@(NEvent?.Content ?? "(No content)")</p>
 			<p class="stats-line">
-				<a @onclick=ViewMessage style="cursor: pointer">@ReplyCount comments</a> |
+				<a @onclick=ViewMessage style="cursor: pointer">@NEvent?.ReplyCount comments</a> |
 				@if (NEvent?.Verified ?? false)
 				{
 					<span>Verified</span>
@@ -40,10 +42,7 @@
 	[Parameter]
 	public NMessage Message { get; set; }
 	public NEvent NEvent => Message.Event;
-	public User User => MessageService.Users.ContainsKey(NEvent.Pubkey) ? MessageService.Users[NEvent.Pubkey] : null;
-	public int ReplyCount => MessageService.NMessages.ContainsKey($"{TemplateAreaEnum.Replies}_{Message.SubscriptionId}") ?
-		MessageService.NMessages[$"{TemplateAreaEnum.Replies}_{Message.SubscriptionId}"]
-		.Where(m => m.Event.ParentNEventId == NEvent.Id).Count() : 0;
+	public User User => MessagesDisplay.Users.ContainsKey(NEvent.Pubkey) ? MessagesDisplay.Users[NEvent.Pubkey] : null;
 	public void ViewUser()
 	{
 		NavManager.NavigateTo($"user/{User?.Id}", true);
