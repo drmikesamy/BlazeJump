@@ -9,7 +9,7 @@
 @using BlazeJump.Common.Services.Notification;
 @using BlazeJump.Common.Services.UserProfile;
 @using BlazeJump.Common.Services.Display;
-@using Newtonsoft.Json
+@using System.Text.Json
 @inject IRelayManager RelayManager
 @inject IMessageService MessageService
 @inject ICryptoService CryptoService
@@ -39,6 +39,7 @@
 				<p>Nothing to see here. Click <NavLink href="user/82341f882b6eabcd2ba7f1ef90aad961cf074af15b9ef44a09f9d2a8fbfbe6a2">here</NavLink> for Jack Dorsey's profile.</p>
 			</Card>
 		}
+@* 		<pre>@(JsonSerializer.Serialize(MessagesDisplay.MessageBuckets, new JsonSerializerOptions() { WriteIndented = true }))</pre> *@
 	</div>
 </div>
 

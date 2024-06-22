@@ -1,9 +1,9 @@
 ﻿namespace BlazeJump.Common.Enums
 {
-    public enum TemplateAreaEnum
+    public enum MessageContextEnum
     {
         Event = 0,
         User = 1,
-        Replies = 2
+        Reply = 2
     }
 }

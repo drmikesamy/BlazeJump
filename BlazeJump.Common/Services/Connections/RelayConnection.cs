@@ -4,7 +4,6 @@ using BlazeJump.Common.Services.Connections.Events;
 using Newtonsoft.Json;
 using System.Net.WebSockets;
 using System.Text;
-using System.Threading;
 
 namespace BlazeJump.Common.Services.Connections
 {
@@ -86,6 +85,7 @@ namespace BlazeJump.Common.Services.Connections
 			await foreach (var message in ReceiveLoop())
 			{
 				NewMessageReceived.Invoke(this, new MessageReceivedEventArgs(_uri, message));
+				
 			}
 		}
 
@@ -119,8 +119,8 @@ namespace BlazeJump.Common.Services.Connections
 				{
 					continue;
 				}
-				Console.WriteLine($"Message received from {_uri}");
 				var message = JsonConvert.DeserializeObject<NMessage>(rawMessage);
+				Console.WriteLine($"Message received from {_uri}: {message.SubscriptionId}");
 				yield return message;
 				if (canceled)
 				{

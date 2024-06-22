@@ -36,9 +36,14 @@ namespace BlazeJump.Common.Enums
 					var eventSubscriptionId = ja[1].ToString();
 					var eventJa = ja[2].ToString();
 					var evt = JsonConvert.DeserializeObject<NEvent>(eventJa);
+					var contextFound = Enum.TryParse<MessageContextEnum>(eventSubscriptionId.Split('_')[0], true, out var messageContext);
 
-					message.SubscriptionId = eventSubscriptionId;
+					message.SubscriptionId = eventSubscriptionId.Split('_')[1];
 					message.Event = evt;
+					if (contextFound)
+					{
+						message.Context = messageContext;
+					}
 
 					break;
 				case MessageTypeEnum.Count:
@@ -55,8 +60,13 @@ namespace BlazeJump.Common.Enums
 					break;
 				case MessageTypeEnum.Eose:
 					var eoseSubscriptionId = ja[1].ToString();
+					var eoseContextFound = Enum.TryParse<MessageContextEnum>(eoseSubscriptionId.Split('_')[0], true, out var eoseMessageContext);
 
-					message.SubscriptionId = eoseSubscriptionId;
+					message.SubscriptionId = eoseSubscriptionId.Split('_')[1];
+					if (eoseContextFound)
+					{
+						message.Context = eoseMessageContext;
+					}
 
 					break;
 				case MessageTypeEnum.Ok:

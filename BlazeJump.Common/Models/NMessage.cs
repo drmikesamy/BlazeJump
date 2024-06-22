@@ -15,6 +15,7 @@ namespace BlazeJump.Common.Models
 		public bool? Success { get; set; }
 		public string? NEventId { get; set; }
 		public Stats? Stats { get; set; }
+		public MessageContextEnum Context { get; set; }
 	}
 
 }

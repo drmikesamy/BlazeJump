@@ -14,7 +14,6 @@ namespace BlazeJump.Common.Services.Display
 		Dictionary<string, User> Users { get; set; }
 		List<Filter> Filters { get; set; }
 		event EventHandler StateUpdated;
-		event EventHandler<MessageReceivedEventArgs> NewMessageReceived;
 		Task Init(PageTypeEnum pageType, string hex);
 		Task LoadMessages();
 	}

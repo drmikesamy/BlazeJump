@@ -11,6 +11,7 @@ namespace BlazeJump.Helpers
 		public static List<MarkupString> ParseEmbedsFromContent(string content)
 		{
 			var linkFinder = new Regex(@"((http|ftp|https):\/\/[\w\-_]+(\.[\w\-_]+)+([\w\-\.,@?^=%&amp;:/~\+#]*[\w\-\@?^=%&amp;/~\+#])?)", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+			var bech32Finder = new Regex(@"/[\x21-\x7E]{1,83}1[023456789acdefghjklmnpqrstuvwxyz]{6,}/", RegexOptions.Compiled | RegexOptions.IgnoreCase);
 			var htmlItems = new List<MarkupString>();
 			foreach (Match m in linkFinder.Matches(content))
 			{
