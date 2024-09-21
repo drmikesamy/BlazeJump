@@ -53,8 +53,8 @@
 	{
 		MessagesDisplay.StateUpdated += UpdateState;
 		NotificationService.Loading = true;
-		if(PageType != null && Hex != null)
-			await MessagesDisplay.Init(PageType.ToLowerInvariant() == PageTypeEnum.Event.ToString().ToLowerInvariant() ? PageTypeEnum.Event : PageTypeEnum.User, Hex);
+		if (Enum.TryParse(typeof(PageTypeEnum), PageType, out var pageType) && !string.IsNullOrEmpty(Hex))
+			await MessagesDisplay.Init((PageTypeEnum)pageType, Hex);
 		NotificationService.Loading = false;
 	}
 

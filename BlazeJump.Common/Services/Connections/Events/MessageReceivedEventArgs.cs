@@ -2,7 +2,7 @@
 
 namespace BlazeJump.Common.Services.Connections.Events
 {
-	public class MessageReceivedEventArgs
+	public class MessageReceivedEventArgs : EventArgs
 	{
 		public MessageReceivedEventArgs(string url, NMessage message)
 		{
