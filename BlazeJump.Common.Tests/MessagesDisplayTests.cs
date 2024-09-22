@@ -136,8 +136,29 @@ namespace BlazeJump.Common.Tests
 			Assert.That(_sut.Users?.Single().Value?.Banner, Is.EqualTo("testBanner"));
 		}
 		[Test]
-		public async Task OnEoseMessageReceived_TriggersRepliesAndUsersLoadWithCorrectFilter()
+		public void OnEoseMessageReceived_TriggersRepliesAndUsersLoadWithCorrectFilter()
 		{
+			_nMessage.MessageType = MessageTypeEnum.Eose;
+			_sut.MessageBuckets.Single().Value.Add(new NMessage
+			{
+				SubscriptionId = "testSubscriptionId",
+				Event = new NEvent
+				{
+					Pubkey = "testUserKey",
+					Id = "testParentEventId"
+				}
+			});
+
+			List<Filter> userFetchFilter = new List<Filter>();
+			List<Filter> replyFetchFilter = new List<Filter>();
+
+			_mockMessageService.FetchNEventsByFilter(MessageTypeEnum.Req, Arg.Do<List<Filter>>(f => userFetchFilter = f), Arg.Is<string>(s => s.StartsWith("User_")));
+			_mockMessageService.FetchNEventsByFilter(MessageTypeEnum.Req, Arg.Do<List<Filter>>(f => replyFetchFilter = f), Arg.Is<string>(s => s.StartsWith("Reply_")));
+
+			_mockMessageService.NewMessageReceived += Raise.EventWith(new object(), _messageReceivedEventArgs);
+
+			Assert.That(userFetchFilter?.Single().Authors?.Single(), Is.EqualTo("testUserKey"));
+			Assert.That(replyFetchFilter?.Single().TaggedEventIds?.Single(), Is.EqualTo("testParentEventId"));
 		}
 		void UpdateTheState(object sender, EventArgs e) { }
 	}
