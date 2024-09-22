@@ -1,12 +1,8 @@
 using BlazeJump.Common.Enums;
 using BlazeJump.Common.Models;
-using BlazeJump.Common.Services.Connections.Events;
 using BlazeJump.Common.Services.Display;
 using BlazeJump.Common.Services.Message;
-using Microsoft.VisualStudio.TestPlatform.CommunicationUtilities;
-using Microsoft.VisualStudio.TestPlatform.CommunicationUtilities.Interfaces;
 using NSubstitute;
-using static QRCoder.PayloadGenerator;
 using MessageReceivedEventArgs = BlazeJump.Common.Services.Connections.Events.MessageReceivedEventArgs;
 
 namespace BlazeJump.Common.Tests
