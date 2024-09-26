@@ -21,7 +21,7 @@ namespace BlazeJump.Common.Services.Display
 		{
 
 			_messageService = messageService;
-			_messageService.NewMessageReceived += ProcessMessage;
+			_messageService.MessageReceived += ProcessMessage;
 		}
 		public async Task Init(PageTypeEnum pageType, string hex)
 		{
@@ -57,7 +57,7 @@ namespace BlazeJump.Common.Services.Display
 			});
 			var fetchId = Guid.NewGuid().ToString();
 			MessageBuckets.Add(fetchId, new List<NMessage>());
-			await _messageService.FetchNEventsByFilter(MessageTypeEnum.Req, Filters, $"{MessageContextEnum.Event}_{fetchId}");
+			await _messageService.Fetch(MessageTypeEnum.Req, Filters, $"{MessageContextEnum.Event}_{fetchId}");
 		}
 		private async Task LoadUsers(string subId)
 		{
@@ -74,7 +74,7 @@ namespace BlazeJump.Common.Services.Display
 					Until = DateTime.Now.AddDays(1),
 					Authors = usersToLoad.ToList()
 				};
-				await _messageService.FetchNEventsByFilter(MessageTypeEnum.Req, new List<Filter> { userFilter }, $"{MessageContextEnum.User}_{subId}");
+				await _messageService.Fetch(MessageTypeEnum.Req, new List<Filter> { userFilter }, $"{MessageContextEnum.User}_{subId}");
 			}
 		}
 		private async Task LoadReplies(string subId)
@@ -94,7 +94,7 @@ namespace BlazeJump.Common.Services.Display
 					TaggedEventIds = new List<string> { parentEventId }
 				});
 			}
-			await _messageService.FetchNEventsByFilter(MessageTypeEnum.Req, filters, $"{MessageContextEnum.Reply}_{subId}");
+			await _messageService.Fetch(MessageTypeEnum.Req, filters, $"{MessageContextEnum.Reply}_{subId}");
 		}
 		private void ProcessMessage(object sender, MessageReceivedEventArgs e)
 		{

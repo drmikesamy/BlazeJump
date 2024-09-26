@@ -17,7 +17,7 @@ namespace BlazeJump.Common.Services.Message
 		private ICryptoService _cryptoService;
 		private IUserProfileService _userProfileService;
 		private Dictionary<string, NEvent> sendMessageQueue = new Dictionary<string, NEvent>();
-		public event EventHandler<MessageReceivedEventArgs> NewMessageReceived;
+		public event EventHandler<MessageReceivedEventArgs> MessageReceived;
 
 		public MessageService(IRelayManager relayManager, ICryptoService cryptoService, IUserProfileService userProfileService)
 		{
@@ -28,13 +28,13 @@ namespace BlazeJump.Common.Services.Message
 		}
 		public void RelayMessageReceived(object sender, MessageReceivedEventArgs e)
 		{
-			NewMessageReceived?.Invoke(sender, e);
+			MessageReceived?.Invoke(sender, e);
 		}
-		public async Task FetchNEventsByFilter(MessageTypeEnum requestMessageType, List<Filter> filters, string subscriptionId)
+		public async Task Fetch(MessageTypeEnum requestMessageType, List<Filter> filters, string subscriptionId)
 		{
-			await _relayManager.QueryRelays(new List<string> { "wss://nostr.wine" }, subscriptionId, requestMessageType, filters);
+			await _relayManager.QueryRelays(_relayManager.OpenRelays, subscriptionId, requestMessageType, filters);
 		}
-		private bool SignNEvent(ref NEvent nEvent)
+		private bool Sign(ref NEvent nEvent)
 		{
 			if (_cryptoService.EtherealPublicKey == null)
 			{
@@ -46,22 +46,22 @@ namespace BlazeJump.Common.Services.Message
 			nEvent.Sig = signature;
 			return true;
 		}
-		public bool VerifyNEvent(NEvent nEvent)
+		public bool Verify(NEvent nEvent)
 		{
 			var signableEvent = nEvent.GetSignableNEvent();
 			var serialisedNEvent = JsonConvert.SerializeObject(signableEvent);
 			var verified = _cryptoService.Verify(nEvent.Sig, serialisedNEvent, nEvent.Pubkey);
 			return verified;
 		}
-		public async Task SendNEvent(KindEnum kind, string message)
+		public async Task Send(KindEnum kind, string message)
 		{
-			var nEvent = await GetNewNEvent(kind, message);
+			var nEvent = CreateNEvent(kind, message);
 			var subscriptionHash = Guid.NewGuid().ToString();
-			SignNEvent(ref nEvent);
-			await _relayManager.SendNEvent(nEvent, new List<string> { "wss://nostr.wine" }, subscriptionHash);
+			Sign(ref nEvent);
+			await _relayManager.SendNEvent(nEvent, _relayManager.OpenRelays, subscriptionHash);
 			sendMessageQueue.TryAdd(nEvent.Id, nEvent);
 		}
-		private async Task<NEvent> GetNewNEvent(KindEnum kind, string message, string? parentId = null)
+		private NEvent CreateNEvent(KindEnum kind, string message, string parentId = null)
 		{
 			return new NEvent
 			{

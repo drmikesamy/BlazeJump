@@ -8,7 +8,11 @@ using System.Text;
 
 namespace BlazeJump.Common.Services.Crypto
 {
-	public partial class CryptoService : ICryptoService
+    public interface IBrowserCrypto
+    {
+		Task<string> InvokeBrowserCrypto(string functionName, params object[] args);
+	}
+    public partial class CryptoService : ICryptoService, IBrowserCrypto
 	{
 		public ECPubKey EtherealPublicKey => _etherealKeyPair?.PublicKey;
 		protected Secp256k1KeyPair? _etherealKeyPair { get; set; }
@@ -50,14 +54,18 @@ namespace BlazeJump.Common.Services.Crypto
 			}
 			var ivString = Convert.ToBase64String(iv);
 			var paddedTextBytes = Encoding.UTF8.GetBytes(plainText).Pad();
-			var encrypted = await _jsRuntime.InvokeAsync<string>("aesEncrypt", paddedTextBytes, sharedPoint, iv);
+			var encrypted = await InvokeBrowserCrypto("aesEncrypt", paddedTextBytes, sharedPoint, iv);
 			return new Tuple<string, string>(encrypted.ToString(), ivString);
+		}
+		public async Task<string> InvokeBrowserCrypto(string functionName, params object[] args)
+		{
+			return await _jsRuntime.InvokeAsync<string>(functionName, args);
 		}
 		public virtual async Task<string> AesDecrypt(string base64CipherText, string theirPublicKey, string ivString, bool ethereal = true)
 		{
 			byte[] sharedPoint = await GetSharedSecret(theirPublicKey, ethereal);
 			var sharedPointString = Convert.ToBase64String(sharedPoint);
-			var decrypted = await _jsRuntime.InvokeAsync<string>("aesDecrypt", base64CipherText, sharedPointString, ivString);
+			var decrypted = await InvokeBrowserCrypto("aesDecrypt", base64CipherText, sharedPointString, ivString);
 			return decrypted;
 		}
 		protected async Task<byte[]> GetSharedSecret(string theirPublicKey, bool ethereal)

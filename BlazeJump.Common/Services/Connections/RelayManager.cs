@@ -3,6 +3,7 @@ using Newtonsoft.Json;
 using BlazeJump.Common.Services.Connections.Events;
 using System.Net.WebSockets;
 using BlazeJump.Common.Enums;
+using BlazeJump.Helpers;
 
 namespace BlazeJump.Common.Services.Connections
 {
@@ -18,6 +19,8 @@ namespace BlazeJump.Common.Services.Connections
 			RelayConnections = new Dictionary<string, RelayConnection>();
 			RelayConnections.TryAdd(defaultRelay, new RelayConnection(defaultRelay));
 		}
+
+		public List<string> OpenRelays => RelayConnections.Where(rc => rc.Value.WebSocket.State == WebSocketState.Open).Select(rc => rc.Key).ToList();
 
 		public async Task OpenConnection(string uri)
 		{

@@ -39,7 +39,7 @@ namespace BlazeJump.Common.Services.Identity
 				Id = subscriptionHash,
 				Result = "Connected"
 			};
-			await _messageService.SendNEvent(KindEnum.NostrConnect, JsonConvert.SerializeObject(message));
+			await _messageService.Send(KindEnum.NostrConnect, JsonConvert.SerializeObject(message));
 			_isBusy = false;
 		}
 		public async Task FetchLoginScanResponse(QrConnectEventArgs payload)
@@ -53,7 +53,7 @@ namespace BlazeJump.Common.Services.Identity
 			};
 
 			var subscriptionHash = Guid.NewGuid().ToString();
-			await _relayManager.QueryRelays(new List<string> { "wss://nostr.wine" }, subscriptionHash, MessageTypeEnum.Req, new List<Filter> { filter }, 30000);
+			await _relayManager.QueryRelays(_relayManager.OpenRelays, subscriptionHash, MessageTypeEnum.Req, new List<Filter> { filter }, 30000);
 		}
 	}
 	public class QrConnectEventArgs : EventArgs

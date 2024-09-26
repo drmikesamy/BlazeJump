@@ -6,10 +6,10 @@ namespace BlazeJump.Common.Services.Message
 {
 	public interface IMessageService
 	{
-		event EventHandler<MessageReceivedEventArgs> NewMessageReceived;
-		Task FetchNEventsByFilter(MessageTypeEnum requestMessageType, List<Filter> filters, string subscriptionId);
-		bool VerifyNEvent(NEvent nEvent);
-		Task SendNEvent(KindEnum kind, string message);
+		event EventHandler<MessageReceivedEventArgs> MessageReceived;
+		Task Fetch(MessageTypeEnum requestMessageType, List<Filter> filters, string subscriptionId);
+		bool Verify(NEvent nEvent);
+		Task Send(KindEnum kind, string message);
 		void RelayMessageReceived(object sender, MessageReceivedEventArgs e);
 	}
 }
