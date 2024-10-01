@@ -2,7 +2,7 @@
 {
 	public class NotificationService : INotificationService
 	{
-		public event EventHandler? UpdateState;
+		public event EventHandler UpdateState;
 		private bool _loading { get; set; } = false;
 		public bool Loading
 		{

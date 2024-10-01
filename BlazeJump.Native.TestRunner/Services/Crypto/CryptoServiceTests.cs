@@ -117,7 +117,7 @@ namespace BlazeJump.Native.TestRunner.Services.Crypto
 		//}
 
 		[Fact]
-		public async Task Sign_ShouldReturnValidSignature()
+		public void Sign_ShouldReturnValidSignature()
 		{
 			// Arrange
 

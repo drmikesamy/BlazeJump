@@ -11,7 +11,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BlazeJump.Native", "BlazeJu
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BlazeJump.Native.TestRunner", "BlazeJump.Native.TestRunner\BlazeJump.Native.TestRunner.csproj", "{22D633C5-EF25-4325-A369-F32CC7FB4A29}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BlazeJump.Common.Tests", "BlazeJump.Common.Tests\BlazeJump.Common.Tests.csproj", "{CA59B0F2-AAFC-43A9-A8A4-B5B3795D64C0}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BlazeJump.Common.Tests", "BlazeJump.Common.Tests\BlazeJump.Common.Tests.csproj", "{CA59B0F2-AAFC-43A9-A8A4-B5B3795D64C0}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

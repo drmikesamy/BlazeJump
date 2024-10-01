@@ -39,6 +39,18 @@
 				<p>Nothing to see here. Click <NavLink href="user/82341f882b6eabcd2ba7f1ef90aad961cf074af15b9ef44a09f9d2a8fbfbe6a2">here</NavLink> for Jack Dorsey's profile.</p>
 			</Card>
 		}
+		@if (PageTypeEnum2 != null && Hex != null)
+		{
+			<p>
+				@(PageTypeEnum2.ToString())
+			</p>
+			<p>
+				@(Hex.ToString())
+			</p>
+			<p>
+				@(PageTypeLoaded.ToString())
+			</p>
+		}
 @* 		<pre>@(JsonSerializer.Serialize(MessagesDisplay.MessageBuckets, new JsonSerializerOptions() { WriteIndented = true }))</pre> *@
 	</div>
 </div>
@@ -48,13 +60,19 @@
 	public string? PageType { get; set; }
 	[Parameter]
 	public string? Hex { get; set; }
+	public PageTypeEnum PageTypeEnum2 { get; set; }
+	public bool PageTypeLoaded { get; set; } = false;
 
 	protected override async Task OnParametersSetAsync()
 	{
 		MessagesDisplay.StateUpdated += UpdateState;
 		NotificationService.Loading = true;
-		if (Enum.TryParse(typeof(PageTypeEnum), PageType, out var pageType) && !string.IsNullOrEmpty(Hex))
-			await MessagesDisplay.Init((PageTypeEnum)pageType, Hex);
+		PageTypeEnum pageType;
+		PageTypeLoaded = Enum.TryParse(PageType, true, out pageType);
+		if (PageTypeLoaded && !string.IsNullOrEmpty(Hex)){
+			PageTypeEnum2 = pageType;
+			await MessagesDisplay.Init(pageType, Hex);
+		}		
 		NotificationService.Loading = false;
 	}
 

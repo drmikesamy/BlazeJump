@@ -32,7 +32,8 @@ namespace BlazeJump.Common.Services.Message
 		}
 		public async Task Fetch(MessageTypeEnum requestMessageType, List<Filter> filters, string subscriptionId)
 		{
-			await _relayManager.QueryRelays(_relayManager.OpenRelays, subscriptionId, requestMessageType, filters);
+			await _relayManager.OpenConnection("wss://nostr.wine");
+			await _relayManager.QueryRelays(subscriptionId, requestMessageType, filters);
 		}
 		private bool Sign(ref NEvent nEvent)
 		{

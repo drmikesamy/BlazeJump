@@ -53,7 +53,7 @@ namespace BlazeJump.Common.Services.Identity
 			};
 
 			var subscriptionHash = Guid.NewGuid().ToString();
-			await _relayManager.QueryRelays(_relayManager.OpenRelays, subscriptionHash, MessageTypeEnum.Req, new List<Filter> { filter }, 30000);
+			await _relayManager.QueryRelays(subscriptionHash, MessageTypeEnum.Req, new List<Filter> { filter }, 30000);
 		}
 	}
 	public class QrConnectEventArgs : EventArgs

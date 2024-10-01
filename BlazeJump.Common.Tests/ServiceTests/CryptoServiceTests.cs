@@ -8,15 +8,13 @@ namespace BlazeJump.Tests.Services.Crypto
 	public class CryptoServiceTests
 	{
 		private IBrowserCrypto _browserCrypto;
-		private IJSRuntime _jsRuntime;
 		private CryptoService _cryptoService;
 
 		[SetUp]
 		public void SetUp()
 		{
-			_jsRuntime = Substitute.For<IJSRuntime>();
 			_browserCrypto = Substitute.For<IBrowserCrypto>();
-			_cryptoService = new CryptoService(_jsRuntime);
+			_cryptoService = new CryptoService(_browserCrypto);
 		}
 
 		[Test]
@@ -48,15 +46,15 @@ namespace BlazeJump.Tests.Services.Crypto
 			var plainText = "Hello World";
 			_cryptoService.CreateEtherealKeyPair();
 			var theirPublicKey = Convert.ToHexString(_cryptoService.EtherealPublicKey.ToBytes());
-			var sharedPoint = new byte[32];
-			_browserCrypto.InvokeBrowserCrypto(Arg.Any<String>(), Arg.Any<Object>()).Returns(Task.FromResult("encryptedText"));
+			_browserCrypto.InvokeBrowserCrypto("aesEncrypt", Arg.Any<byte[]>(), Arg.Any<byte[]>(), Arg.Any<byte[]>())
+				.Returns("encryptedText");
 
 			// Act
 			var result = await _cryptoService.AesEncrypt(plainText, theirPublicKey);
 
 			// Assert
 			Assert.IsNotNull(result);
-			Assert.AreEqual("encryptedText", result.Item1);
+			Assert.That(result.Item1, Is.EqualTo("encryptedText"));
 			Assert.IsNotNull(result.Item2);
 		}
 
@@ -76,7 +74,7 @@ namespace BlazeJump.Tests.Services.Crypto
 			var result = await _cryptoService.AesDecrypt(base64CipherText, theirPublicKey, ivString);
 
 			// Assert
-			Assert.AreEqual("decryptedText", result);
+			Assert.That(result, Is.EqualTo("decryptedText"));
 		}
 
 		[Test]

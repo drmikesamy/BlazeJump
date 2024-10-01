@@ -23,7 +23,7 @@ builder.Services.AddScoped<ICryptoService, CryptoService>(
 	(ctx) =>
 	{
 		var jsRuntime = ctx.GetService<IJSRuntime>();
-		return new CryptoService(jsRuntime);
+		return new CryptoService(new BrowserCrypto(jsRuntime));
 	});
 builder.Services.AddScoped<IRelayManager, RelayManager>();
 builder.Services.AddScoped<INotificationService, NotificationService>();

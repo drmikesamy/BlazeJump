@@ -1,30 +1,25 @@
 ﻿using BlazeJump.Common.Models.Crypto;
 using BlazeJump.Helpers;
-using Microsoft.AspNetCore.Components.Web.Virtualization;
 using Microsoft.JSInterop;
-using Microsoft.Maui.Platform;
 using NBitcoin.Secp256k1;
+using System.Diagnostics.CodeAnalysis;
 using System.Text;
 
 namespace BlazeJump.Common.Services.Crypto
 {
-    public interface IBrowserCrypto
-    {
-		Task<string> InvokeBrowserCrypto(string functionName, params object[] args);
-	}
-    public partial class CryptoService : ICryptoService, IBrowserCrypto
+	public partial class CryptoService : ICryptoService
 	{
 		public ECPubKey EtherealPublicKey => _etherealKeyPair?.PublicKey;
-		protected Secp256k1KeyPair? _etherealKeyPair { get; set; }
+		protected Secp256k1KeyPair _etherealKeyPair { get; set; }
 
-		private readonly IJSRuntime _jsRuntime;
+		private readonly IBrowserCrypto _browserCrypto;
 
 		public CryptoService()
 		{
 		}
-		public CryptoService(IJSRuntime jsRuntime)
+		public CryptoService(IBrowserCrypto browserCrypto)
 		{
-			_jsRuntime = jsRuntime;
+			_browserCrypto = browserCrypto;
 		}
 		public void CreateEtherealKeyPair()
 		{
@@ -39,7 +34,7 @@ namespace BlazeJump.Common.Services.Crypto
 			var publicKey = privateKey.CreatePubKey();
 			return new Secp256k1KeyPair(privateKey, publicKey);
 		}
-		public virtual async Task<Tuple<string, string>> AesEncrypt(string plainText, string theirPublicKey, string? ivOverride = null, bool ethereal = true)
+		public virtual async Task<Tuple<string, string>> AesEncrypt(string plainText, string theirPublicKey, string ivOverride = null, bool ethereal = true)
 		{
 			byte[] sharedPoint = await GetSharedSecret(theirPublicKey, ethereal);
 			byte[] iv = new byte[16];
@@ -54,18 +49,14 @@ namespace BlazeJump.Common.Services.Crypto
 			}
 			var ivString = Convert.ToBase64String(iv);
 			var paddedTextBytes = Encoding.UTF8.GetBytes(plainText).Pad();
-			var encrypted = await InvokeBrowserCrypto("aesEncrypt", paddedTextBytes, sharedPoint, iv);
+			var encrypted = await _browserCrypto.InvokeBrowserCrypto("aesEncrypt", paddedTextBytes, sharedPoint, iv);
 			return new Tuple<string, string>(encrypted.ToString(), ivString);
-		}
-		public async Task<string> InvokeBrowserCrypto(string functionName, params object[] args)
-		{
-			return await _jsRuntime.InvokeAsync<string>(functionName, args);
 		}
 		public virtual async Task<string> AesDecrypt(string base64CipherText, string theirPublicKey, string ivString, bool ethereal = true)
 		{
 			byte[] sharedPoint = await GetSharedSecret(theirPublicKey, ethereal);
 			var sharedPointString = Convert.ToBase64String(sharedPoint);
-			var decrypted = await InvokeBrowserCrypto("aesDecrypt", base64CipherText, sharedPointString, ivString);
+			var decrypted = await _browserCrypto.InvokeBrowserCrypto("aesDecrypt", base64CipherText, sharedPointString, ivString);
 			return decrypted;
 		}
 		protected async Task<byte[]> GetSharedSecret(string theirPublicKey, bool ethereal)
