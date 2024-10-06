@@ -43,6 +43,18 @@ namespace BlazeJump.Common.Enums
 					if (contextFound)
 					{
 						message.Context = messageContext;
+						switch (messageContext)
+						{
+							case MessageContextEnum.User:
+								message.Priority = 1;
+								break;
+							case MessageContextEnum.Event:
+								message.Priority = 2;
+								break;
+							case MessageContextEnum.Reply:
+								message.Priority = 3;
+								break;
+						}
 					}
 
 					break;

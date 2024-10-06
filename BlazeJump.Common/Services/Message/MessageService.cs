@@ -24,15 +24,21 @@ namespace BlazeJump.Common.Services.Message
 			_relayManager = relayManager;
 			_cryptoService = cryptoService;
 			_userProfileService = userProfileService;
-			_relayManager.NewMessageReceived += RelayMessageReceived;
+			_ = ProcessReceivedMessages();
 		}
-		public void RelayMessageReceived(object sender, MessageReceivedEventArgs e)
+		private async Task ProcessReceivedMessages()
 		{
-			MessageReceived?.Invoke(sender, e);
+			while (true)
+			{
+				await Task.Delay(100);
+				if(_relayManager.ReceivedMessages.Count > 0	)
+				{
+					MessageReceived.Invoke(this, new MessageReceivedEventArgs("", _relayManager.ReceivedMessages.Dequeue()));
+				}
+			}
 		}
 		public async Task Fetch(MessageTypeEnum requestMessageType, List<Filter> filters, string subscriptionId)
 		{
-			await _relayManager.OpenConnection("wss://nostr.wine");
 			await _relayManager.QueryRelays(subscriptionId, requestMessageType, filters);
 		}
 		private bool Sign(ref NEvent nEvent)
@@ -59,7 +65,7 @@ namespace BlazeJump.Common.Services.Message
 			var nEvent = CreateNEvent(kind, message);
 			var subscriptionHash = Guid.NewGuid().ToString();
 			Sign(ref nEvent);
-			await _relayManager.SendNEvent(nEvent, _relayManager.OpenRelays, subscriptionHash);
+			await _relayManager.SendNEvent(nEvent, _relayManager.Relays, subscriptionHash);
 			sendMessageQueue.TryAdd(nEvent.Id, nEvent);
 		}
 		private NEvent CreateNEvent(KindEnum kind, string message, string parentId = null)

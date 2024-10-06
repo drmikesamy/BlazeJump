@@ -3,22 +3,27 @@ using Newtonsoft.Json;
 using BlazeJump.Common.Services.Connections.Events;
 using System.Net.WebSockets;
 using BlazeJump.Common.Enums;
-using BlazeJump.Helpers;
+using System.Diagnostics;
 
 namespace BlazeJump.Common.Services.Connections
 {
 	public class RelayManager : IRelayManager
 	{
-		public event EventHandler<MessageReceivedEventArgs> NewMessageReceived;
 		public Dictionary<string, RelayConnection> RelayConnections { get; set; }
-		public List<string> MessageQueue = new List<string>();
+		public List<string> Relays => RelayConnections.Keys.ToList();
+		public PriorityQueue<NMessage, Tuple<int, long>> ReceivedMessages { get; set; } = new PriorityQueue<NMessage, Tuple<int, long>>();
 
 		public RelayManager()
 		{
-			RelayConnections = new Dictionary<string, RelayConnection>();
+			RelayConnections = new Dictionary<string, RelayConnection> {
+				{ "wss://nostr.wine", new RelayConnection("wss://nostr.wine") }
+			};
 		}
 
-		public List<string> OpenRelays => RelayConnections.Where(rc => rc.Value.WebSocket.State == WebSocketState.Open).Select(rc => rc.Key).ToList();
+		private void AddToQueue(object sender, MessageReceivedEventArgs e)
+		{
+			ReceivedMessages.Enqueue(e.Message, new Tuple<int, long>(e.Message.Priority, Stopwatch.GetTimestamp()));
+		}
 
 		public async Task OpenConnection(string uri)
 		{
@@ -27,7 +32,7 @@ namespace BlazeJump.Common.Services.Connections
 			RelayConnections.TryAdd(uri, new RelayConnection(uri));
 			await RelayConnections[uri].Init();
 			Console.WriteLine("Event subscription");
-			RelayConnections[uri].NewMessageReceived += NewMessageReceived;
+			RelayConnections[uri].NewMessageReceived += AddToQueue;
 		}
 
 		public async Task CloseConnection(string uri)
@@ -41,7 +46,7 @@ namespace BlazeJump.Common.Services.Connections
 		public async Task QueryRelays(string subscriptionId, MessageTypeEnum requestMessageType, List<Filter> filters, int timeout = 15000)
 		{
 			var connectionTasks = new List<Task>();
-			foreach (var uri in OpenRelays)
+			foreach (var uri in Relays)
 			{
 				Task connectionTask = Task.Run(async () =>
 				{

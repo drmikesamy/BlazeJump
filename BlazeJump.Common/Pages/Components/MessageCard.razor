@@ -21,7 +21,7 @@
 			<p class="subtle-info-line">
 				@(TimeAgo.GetTimeAgo(NEvent.CreatedAtDateTime))
 			</p>
-			@ParseEmbeds.ParseEmbedsFromContent(NEvent?.Content).FirstOrDefault()
+			@* @ParseEmbeds.ParseEmbedsFromContent(NEvent?.Content).FirstOrDefault() *@
 			<p>@(NEvent?.Content ?? "(No content)")</p>
 			<p class="stats-line">
 				<a @onclick=ViewMessage style="cursor: pointer">@NEvent?.ReplyCount comments</a> |

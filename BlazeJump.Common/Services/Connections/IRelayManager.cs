@@ -6,8 +6,8 @@ namespace BlazeJump.Common.Services.Connections
 {
     public interface IRelayManager
     {
-		List<string> OpenRelays { get; }
-		event EventHandler<MessageReceivedEventArgs> NewMessageReceived;
+		PriorityQueue<NMessage, Tuple<int, long>> ReceivedMessages { get; set; }
+		List<string> Relays { get; }
 		Dictionary<string, RelayConnection> RelayConnections { get; set; }
 		Task OpenConnection(string uri);
 		Task CloseConnection(string uri);

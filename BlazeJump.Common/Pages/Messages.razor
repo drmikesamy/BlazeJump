@@ -30,28 +30,19 @@
 				<MessageCard Message=message></MessageCard>
 			}
 		}
-		<Card>
-			<a @onclick="() => MessagesDisplay.LoadMessages()">Load more</a>
-		</Card>
+		@if (MessagesDisplay.MessageBuckets.Count > 0 && MessagesDisplay.MessageBuckets.Last().Value.Count == 5)
+		{
+			<Card>
+				<a @onclick="() => MessagesDisplay.LoadMessages()">Load more</a>
+			</Card>
+		})
 		@if (Hex == null)
 		{
 			<Card>
 				<p>Nothing to see here. Click <NavLink href="user/82341f882b6eabcd2ba7f1ef90aad961cf074af15b9ef44a09f9d2a8fbfbe6a2">here</NavLink> for Jack Dorsey's profile.</p>
 			</Card>
 		}
-		@if (PageTypeEnum2 != null && Hex != null)
-		{
-			<p>
-				@(PageTypeEnum2.ToString())
-			</p>
-			<p>
-				@(Hex.ToString())
-			</p>
-			<p>
-				@(PageTypeLoaded.ToString())
-			</p>
-		}
-@* 		<pre>@(JsonSerializer.Serialize(MessagesDisplay.MessageBuckets, new JsonSerializerOptions() { WriteIndented = true }))</pre> *@
+ 		@* <pre>@(JsonSerializer.Serialize(MessagesDisplay.MessageBuckets, new JsonSerializerOptions() { WriteIndented = true }))</pre> *@
 	</div>
 </div>
 

@@ -19,7 +19,6 @@ namespace BlazeJump.Common.Services.Display
 		public event EventHandler StateUpdated;
 		public MessagesDisplay(IMessageService messageService)
 		{
-
 			_messageService = messageService;
 			_messageService.MessageReceived += ProcessMessage;
 		}
@@ -80,6 +79,7 @@ namespace BlazeJump.Common.Services.Display
 		private async Task LoadReplies(string subId)
 		{
 			MessageBuckets.TryGetValue(subId, out var messages);
+			var test = MessageBuckets.Keys.ToList();
 			if (messages.Count() == 0)
 				return;
 			var nEventIds = messages.Where(m => !m.Event.RepliesLoaded).Select(m => m.Event.Id);
@@ -89,7 +89,7 @@ namespace BlazeJump.Common.Services.Display
 				filters.Add(new Filter
 				{
 					Kinds = new int[] { (int)KindEnum.Text },
-					Since = messages.Last().Event.CreatedAtDateTime,
+					Since = DateTime.Now.AddYears(-20),
 					Until = DateTime.Now.AddDays(1),
 					TaggedEventIds = new List<string> { parentEventId }
 				});

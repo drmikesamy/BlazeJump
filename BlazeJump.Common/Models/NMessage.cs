@@ -16,6 +16,7 @@ namespace BlazeJump.Common.Models
 		public string? NEventId { get; set; }
 		public Stats? Stats { get; set; }
 		public MessageContextEnum Context { get; set; }
+		public int Priority { get; set; } = 0;
 	}
 
 }
