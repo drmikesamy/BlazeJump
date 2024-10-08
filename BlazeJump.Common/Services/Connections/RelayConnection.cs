@@ -85,7 +85,6 @@ namespace BlazeJump.Common.Services.Connections
 			await foreach (var message in ReceiveLoop())
 			{
 				NewMessageReceived.Invoke(this, new MessageReceivedEventArgs(_uri, message));
-				
 			}
 		}
 

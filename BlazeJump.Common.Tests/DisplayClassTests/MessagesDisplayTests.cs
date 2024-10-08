@@ -27,7 +27,7 @@ namespace BlazeJump.Common.Tests.DisplayClassTests
                 MessageType = MessageTypeEnum.Event,
                 Event = new NEvent
                 {
-                    Pubkey = "testPubKey",
+                    UserId = "testPubKey",
                     Content = "testMessage"
                 },
                 SubscriptionId = "testSubscriptionId"
@@ -91,7 +91,6 @@ namespace BlazeJump.Common.Tests.DisplayClassTests
                 SubscriptionId = subscriptionId
             };
 
-            _nMessage.Context = MessageContextEnum.Reply;
             _nMessage.Event!.Id = childEventId;
             _nMessage.Event!.Tags = new List<EventTag>
             {
@@ -121,7 +120,6 @@ namespace BlazeJump.Common.Tests.DisplayClassTests
                 }
             """;
 
-            _nMessage.Context = MessageContextEnum.User;
             _nMessage.Event!.Content = userString;
 
             _mockMessageService.MessageReceived += Raise.EventWith(new object(), _messageReceivedEventArgs);
@@ -144,7 +142,7 @@ namespace BlazeJump.Common.Tests.DisplayClassTests
                 SubscriptionId = "testSubscriptionId",
                 Event = new NEvent
                 {
-                    Pubkey = "testUserKey",
+                    UserId = "testUserKey",
                     Id = "testParentEventId"
                 }
             });

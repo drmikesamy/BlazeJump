@@ -8,6 +8,7 @@ namespace BlazeJump.Common.Services.Display
 {
 	public interface IMessagesDisplay
 	{
+		Dictionary<string, List<NMessage>> Replies { get; set; }
 		PageTypeEnum? PageType { get; set; }
 		string Hex { get; set; }
 		Dictionary<string, List<NMessage>> MessageBuckets { get; set; }
@@ -15,6 +16,6 @@ namespace BlazeJump.Common.Services.Display
 		List<Filter> Filters { get; set; }
 		event EventHandler StateUpdated;
 		Task Init(PageTypeEnum pageType, string hex);
-		Task LoadMessages();
+		Task LoadMore();
 	}
 }

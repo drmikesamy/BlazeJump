@@ -4,6 +4,7 @@ using BlazeJump.Common.Services.Message;
 using Newtonsoft.Json.Linq;
 using BlazeJump.Common.Services.Connections.Events;
 using System;
+using System.Diagnostics;
 
 namespace BlazeJump.Common.Services.Display
 {
@@ -15,17 +16,33 @@ namespace BlazeJump.Common.Services.Display
 		public string Hex { get; set; }
 		public Dictionary<string, List<NMessage>> MessageBuckets { get; set; } = new();
 		public Dictionary<string, User> Users { get; set; } = new();
+		public Dictionary<string, List<NMessage>> Replies { get; set; } = new();
 		public List<Filter> Filters { get; set; } = new List<Filter>();
+		private PriorityQueue<Tuple<MessageContextEnum, string>, Tuple<int, long>> _loadQueue { get; set; } = new();
 		public event EventHandler StateUpdated;
 		public MessagesDisplay(IMessageService messageService)
 		{
 			_messageService = messageService;
 			_messageService.MessageReceived += ProcessMessage;
+			_ = ProcessLoadQueue();
 		}
 		public async Task Init(PageTypeEnum pageType, string hex)
 		{
 			PageType = pageType;
 			Hex = hex;
+
+			Filters.Clear();
+			SetFilters();
+			await FetchPosts(true);
+		}
+		public async Task LoadMore()
+		{
+			Filters.Clear();
+			SetBodyFilter();
+			await FetchPosts(true);
+		}
+		private void SetFilters()
+		{
 			if (PageType == PageTypeEnum.Event)
 			{
 				Filters.Add(new Filter
@@ -37,14 +54,10 @@ namespace BlazeJump.Common.Services.Display
 					EventIds = new List<string> { Hex },
 				});
 			}
-			await LoadMessages();
+			SetBodyFilter();
 		}
-		public async Task LoadMessages()
+		private void SetBodyFilter()
 		{
-			if (MessageBuckets.Any())
-			{
-				Filters.Clear();
-			}
 			Filters.Add(new Filter
 			{
 				Kinds = new int[] { (int)KindEnum.Text },
@@ -54,104 +67,128 @@ namespace BlazeJump.Common.Services.Display
 				TaggedEventIds = PageType == PageTypeEnum.Event ? new List<string> { Hex } : null,
 				Authors = PageType == PageTypeEnum.Event ? null : new List<string> { Hex }
 			});
-			var fetchId = Guid.NewGuid().ToString();
-			MessageBuckets.Add(fetchId, new List<NMessage>());
-			await _messageService.Fetch(MessageTypeEnum.Req, Filters, $"{MessageContextEnum.Event}_{fetchId}");
 		}
-		private async Task LoadUsers(string subId)
+		private async Task FetchPosts(bool isPrimaryPost)
 		{
-			MessageBuckets.TryGetValue(subId, out var messages);
-			if (messages.Count() == 0)
-				return;
-			var usersToLoad = messages.Select(m => m.Event).Select(e => e.Pubkey).Except(Users.Keys);
-			if (usersToLoad.Any())
+			if (Filters.All(f => f.TaggedEventIds?.Count() > 0 || f.Authors?.Count() > 0 || f.EventIds.Count() > 0))
 			{
-				var userFilter = new Filter
-				{
-					Kinds = new int[] { (int)KindEnum.Metadata },
-					Since = DateTime.Now.AddYears(-20),
-					Until = DateTime.Now.AddDays(1),
-					Authors = usersToLoad.ToList()
-				};
-				await _messageService.Fetch(MessageTypeEnum.Req, new List<Filter> { userFilter }, $"{MessageContextEnum.User}_{subId}");
+				var fetchId = Guid.NewGuid().ToString();
+				if (isPrimaryPost)
+					MessageBuckets.Add(fetchId, new List<NMessage>());
+				await _messageService.Fetch(MessageTypeEnum.Req, Filters, fetchId);
 			}
 		}
-		private async Task LoadReplies(string subId)
+		private void SetupUserFilter(List<string> pubkeys)
 		{
-			MessageBuckets.TryGetValue(subId, out var messages);
-			var test = MessageBuckets.Keys.ToList();
-			if (messages.Count() == 0)
-				return;
-			var nEventIds = messages.Where(m => !m.Event.RepliesLoaded).Select(m => m.Event.Id);
-			var filters = new List<Filter>();
-			foreach (var parentEventId in nEventIds)
+			Filters.Add(new Filter
 			{
-				filters.Add(new Filter
-				{
-					Kinds = new int[] { (int)KindEnum.Text },
-					Since = DateTime.Now.AddYears(-20),
-					Until = DateTime.Now.AddDays(1),
-					TaggedEventIds = new List<string> { parentEventId }
-				});
-			}
-			await _messageService.Fetch(MessageTypeEnum.Req, filters, $"{MessageContextEnum.Reply}_{subId}");
+				Kinds = new int[] { (int)KindEnum.Metadata },
+				Since = DateTime.Now.AddYears(-20),
+				Until = DateTime.Now.AddDays(1),
+				Authors = pubkeys
+			});
+		}
+		private void SetupReplyFilter(List<string> parentEventIds)
+		{
+			Filters.Add(new Filter
+			{
+				Kinds = new int[] { (int)KindEnum.Text },
+				Since = DateTime.Now.AddYears(-20),
+				Until = DateTime.Now.AddDays(1),
+				TaggedEventIds = parentEventIds
+			});
 		}
 		private void ProcessMessage(object sender, MessageReceivedEventArgs e)
 		{
 			switch (e.Message.MessageType)
 			{
 				case MessageTypeEnum.Event:
-					switch (e.Message.Context)
+					switch (e.Message.Event.Kind)
 					{
-						case MessageContextEnum.Event:
-							MessageBuckets.TryGetValue(e.Message.SubscriptionId, out var messages);
-							messages.Add(e.Message);
+						case KindEnum.Text:
+							if (MessageBuckets.TryGetValue(e.Message.SubscriptionId, out var messages))
+							{
+								messages.Add(e.Message);
+								if (!Users.TryGetValue(e.Message.Event.UserId, out var pubkey))
+								{
+									_loadQueue.Enqueue(new Tuple<MessageContextEnum, string>(MessageContextEnum.User, e.Message.Event.UserId), new Tuple<int, long>(0, Stopwatch.GetTimestamp()));
+								}
+								if (MessageBuckets.TryGetValue(e.Message.SubscriptionId, out var message))
+								{
+									_loadQueue.Enqueue(new Tuple<MessageContextEnum, string>(MessageContextEnum.Reply, e.Message.Event.Id), new Tuple<int, long>(1, Stopwatch.GetTimestamp()));
+								}
+							}
+							else
+							{
+								ProcessReply(e.Message);
+							}
 							break;
-						case MessageContextEnum.Reply:
-							ProcessReply(e.Message);
-							break;
-						case MessageContextEnum.User:
+						case KindEnum.Metadata:
 							ProcessUser(e.Message);
 							break;
 					}
 					break;
 				case MessageTypeEnum.Eose:
-					_ = LoadUsers(e.Message.SubscriptionId);
-					_ = LoadReplies(e.Message.SubscriptionId);
+					_ = ProcessLoadQueue();
 					break;
 			}
-			StateUpdated.Invoke(this, EventArgs.Empty);		
+			StateUpdated.Invoke(this, EventArgs.Empty);
+		}
+		private async Task ProcessLoadQueue()
+		{
+			await Task.Delay(3000);
+			var pubkeys = new List<string>();
+			var parentEventIds = new List<string>();
+			while (_loadQueue.Count > 0)
+			{
+				var (context, id) = _loadQueue.Dequeue();
+				switch (context)
+				{
+					case MessageContextEnum.User:
+						pubkeys.Add(id);
+						break;
+					case MessageContextEnum.Reply:
+						parentEventIds.Add(id);
+						break;
+				}
+			}
+			Filters.Clear();
+			SetupUserFilter(pubkeys);
+			SetupReplyFilter(parentEventIds);
+			await FetchPosts(false);
 		}
 		private void ProcessReply(NMessage message)
 		{
-			MessageBuckets.TryGetValue(message.SubscriptionId, out var messages);
-			if (messages.Count() == 0)
+			if (MessageBuckets.ContainsKey(message.SubscriptionId))
 				return;
-			var parent = messages.Where(m => message.Event.Tags.Select(t => t.Value).Contains(m.Event.Id)).Single();
-			parent.Event.Replies.Add(message.Event);
-			parent.Event.RepliesLoaded = true;
+			var parentEventId = message.Event.Tags.LastOrDefault(t => t.Key == TagEnum.e && t.Value3 == "root")?.Value;
+			if (parentEventId == null)
+				return;
+			Replies.TryGetValue(parentEventId, out var replies);
+			if (replies == null)
+			{
+				replies = new List<NMessage>();
+				Replies.Add(parentEventId, replies);
+			}
+			else
+			{
+				replies.Add(message);
+			}
+			StateUpdated.Invoke(this, EventArgs.Empty);
 		}
 		private void ProcessUser(NMessage message)
 		{
 			try
 			{
-				if (Users.ContainsKey(message.Event.Pubkey))
+				if (Users.ContainsKey(message.Event.UserId))
 					return;
-				var parsed = JObject.Parse(message.Event.Content);
-				var user = new User
-				{
-					Id = message.Event.Pubkey,
-					Username = parsed["name"]?.ToString(),
-					Bio = parsed["about"]?.ToString(),
-					ProfilePic = parsed["picture"]?.ToString(),
-					Banner = parsed["banner"]?.ToString(),
-				};
-				Users.Add(user.Id, user);
+				Users.Add(message.Event.UserId, message.Event.User);
 			}
 			catch
 			{
 
 			}
+			StateUpdated.Invoke(this, EventArgs.Empty);
 		}
 	}
 }

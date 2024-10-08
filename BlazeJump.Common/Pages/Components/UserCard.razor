@@ -7,7 +7,8 @@
 
 <section class="profile-header full-width-section" style="background-image: url('@($"{User.Banner}")')">
 	<article class="profile-pic-band">
-		<img src="@($"{User.ProfilePic ?? $"images/profilepics/{new Random().Next(1, 18)}.png"}")" alt="profile picture">
+		<div class="profile-picture" style="background-image: url('@($"{User?.ProfilePic ?? $"/images/profilepics/{new Random().Next(1, 18)}.png"}")')">
+		</div>
 	</article>
 	<article class="name-bio-band">
 		<a href="user/@(User.Id)"><h2>@(User.Username ?? $"{User.Id.Substring(0, 10)}...")</h2></a>

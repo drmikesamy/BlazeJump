@@ -44,9 +44,9 @@ namespace BlazeJump.Common.Enums
 			{
 				ja.Add(0);
 			}
-			if (!String.IsNullOrEmpty(nEvent.Pubkey))
+			if (!String.IsNullOrEmpty(nEvent.UserId))
 			{
-				ja.Add(nEvent.Pubkey);
+				ja.Add(nEvent.UserId);
 			}
 			if (nEvent.Created_At != 0)
 			{

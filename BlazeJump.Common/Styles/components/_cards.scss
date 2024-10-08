@@ -12,11 +12,13 @@ section {
     grid-template-columns: min-content auto;
 }
 
-.profile-picture img {
+.profile-picture {
     width: calc(50px + 2vw);
     height: calc(50px + 2vw);
     border-radius: 50%;
     border: 5px solid white;
+    background-size: cover;
+    background-position: center;
 }
 
 //video player
@@ -28,16 +30,10 @@ section {
 //Profile header
 
 .profile-header {
-
-    img {
+    .profile-picture {
         width: calc(140px + 3vw);
         height: calc(140px + 3vw);
-        border-radius: 50%;
-        background-size: cover;
-        border: 5px solid white;
     }
-
-    justify-items: center;
     text-align: center;
 }
 
@@ -47,5 +43,7 @@ section {
     @include responsive-content-padding;
 }
 .profile-pic-band {
+    display: grid;
+    justify-content: center;
     @include responsive-content-padding;
 }

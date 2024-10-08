@@ -36,32 +36,17 @@ namespace BlazeJump.Common.Enums
 					var eventSubscriptionId = ja[1].ToString();
 					var eventJa = ja[2].ToString();
 					var evt = JsonConvert.DeserializeObject<NEvent>(eventJa);
-					var contextFound = Enum.TryParse<MessageContextEnum>(eventSubscriptionId.Split('_')[0], true, out var messageContext);
-
-					message.SubscriptionId = eventSubscriptionId.Split('_')[1];
-					message.Event = evt;
-					if (contextFound)
+					if(evt.Kind == KindEnum.Metadata)
 					{
-						message.Context = messageContext;
-						switch (messageContext)
-						{
-							case MessageContextEnum.User:
-								message.Priority = 1;
-								break;
-							case MessageContextEnum.Event:
-								message.Priority = 2;
-								break;
-							case MessageContextEnum.Reply:
-								message.Priority = 3;
-								break;
-						}
+						evt.User = JsonConvert.DeserializeObject<User>(evt.Content);
 					}
+					message.SubscriptionId = eventSubscriptionId;
+					message.Event = evt;
 
 					break;
 				case MessageTypeEnum.Count:
 					var countSubscriptionId = ja[1].ToString();
 					message.SubscriptionId = countSubscriptionId;
-					message.Stats = JsonConvert.DeserializeObject<Stats>(ja[2].ToString());
 
 					break;
 				case MessageTypeEnum.Notice:
@@ -71,15 +56,6 @@ namespace BlazeJump.Common.Enums
 
 					break;
 				case MessageTypeEnum.Eose:
-					var eoseSubscriptionId = ja[1].ToString();
-					var eoseContextFound = Enum.TryParse<MessageContextEnum>(eoseSubscriptionId.Split('_')[0], true, out var eoseMessageContext);
-
-					message.SubscriptionId = eoseSubscriptionId.Split('_')[1];
-					if (eoseContextFound)
-					{
-						message.Context = eoseMessageContext;
-					}
-
 					break;
 				case MessageTypeEnum.Ok:
 					var okEventId = ja[1].ToString();

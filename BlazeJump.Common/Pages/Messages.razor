@@ -33,7 +33,7 @@
 		@if (MessagesDisplay.MessageBuckets.Count > 0 && MessagesDisplay.MessageBuckets.Last().Value.Count == 5)
 		{
 			<Card>
-				<a @onclick="() => MessagesDisplay.LoadMessages()">Load more</a>
+				<a @onclick="() => MessagesDisplay.LoadMore()">Load more</a>
 			</Card>
 		})
 		@if (Hex == null)

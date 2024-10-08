@@ -57,7 +57,7 @@ namespace BlazeJump.Common.Services.Message
 		{
 			var signableEvent = nEvent.GetSignableNEvent();
 			var serialisedNEvent = JsonConvert.SerializeObject(signableEvent);
-			var verified = _cryptoService.Verify(nEvent.Sig, serialisedNEvent, nEvent.Pubkey);
+			var verified = _cryptoService.Verify(nEvent.Sig, serialisedNEvent, nEvent.UserId);
 			return verified;
 		}
 		public async Task Send(KindEnum kind, string message)
@@ -73,10 +73,9 @@ namespace BlazeJump.Common.Services.Message
 			return new NEvent
 			{
 				Id = "0",
-				Pubkey = _userProfileService.NPubKey,
+				UserId = _userProfileService.NPubKey,
 				Kind = kind,
 				Content = message,
-				ParentNEventId = null,
 				Created_At = DateTimeOffset.UtcNow.ToUnixTimeSeconds(),
 			};
 		}

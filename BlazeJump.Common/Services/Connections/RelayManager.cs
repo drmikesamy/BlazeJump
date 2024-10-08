@@ -22,7 +22,7 @@ namespace BlazeJump.Common.Services.Connections
 
 		private void AddToQueue(object sender, MessageReceivedEventArgs e)
 		{
-			ReceivedMessages.Enqueue(e.Message, new Tuple<int, long>(e.Message.Priority, Stopwatch.GetTimestamp()));
+			ReceivedMessages.Enqueue(e.Message, new Tuple<int, long>(0, Stopwatch.GetTimestamp()));
 		}
 
 		public async Task OpenConnection(string uri)

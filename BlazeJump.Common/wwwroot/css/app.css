@@ -208,11 +208,13 @@ section {
   grid-template-columns: min-content auto;
 }
 
-.profile-picture img {
+.profile-picture {
   width: calc(50px + 2vw);
   height: calc(50px + 2vw);
   border-radius: 50%;
   border: 5px solid white;
+  background-size: cover;
+  background-position: center;
 }
 
 .video-player {
@@ -221,15 +223,11 @@ section {
 }
 
 .profile-header {
-  justify-items: center;
   text-align: center;
 }
-.profile-header img {
+.profile-header .profile-picture {
   width: calc(140px + 3vw);
   height: calc(140px + 3vw);
-  border-radius: 50%;
-  background-size: cover;
-  border: 5px solid white;
 }
 
 .name-bio-band {
@@ -239,6 +237,8 @@ section {
 }
 
 .profile-pic-band {
+  display: grid;
+  justify-content: center;
   padding: calc(0.5rem + 0.5vw);
 }
 
