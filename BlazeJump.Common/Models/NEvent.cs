@@ -21,7 +21,7 @@ namespace BlazeJump.Common.Models
 		[JsonIgnore]
 		public DateTime CreatedAtDateTime => Helpers.UnixTimeStampToDateTime(Created_At).ToLocalTime();
         [JsonIgnore]
-        public virtual List<NEvent> Replies { get; set; } = new List<NEvent>();
+        public virtual Dictionary<string, NEvent> Replies { get; set; } = new Dictionary<string, NEvent>();
         [JsonIgnore]
         public int ReplyCount => Replies.Count;
         [JsonIgnore]

@@ -1,13 +1,9 @@
 ﻿using BlazeJump.Common.Enums;
 using BlazeJump.Common.Models;
 using BlazeJump.Common.Services.Connections;
-using AutoMapper;
 using BlazeJump.Common.Services.Crypto;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
-using BlazeJump.Common.Services.Connections.Events;
 using BlazeJump.Common.Services.UserProfile;
-using System.Linq;
 
 namespace BlazeJump.Common.Services.Message
 {
@@ -17,8 +13,11 @@ namespace BlazeJump.Common.Services.Message
 		private ICryptoService _cryptoService;
 		private IUserProfileService _userProfileService;
 		private Dictionary<string, NEvent> sendMessageQueue = new Dictionary<string, NEvent>();
-		public event EventHandler<MessageReceivedEventArgs> MessageReceived;
+		public Dictionary<string, List<NMessage>> ReceivedMessages { get; set; } = new Dictionary<string, List<NMessage>>();
+		public Dictionary<string, User> UserStore { get; set; } = new Dictionary<string, User>();
+		public Dictionary<string, string> EventSubscriptionIds { get; set; } = new Dictionary<string, string>();
 
+		public event EventHandler<string> EndOfFetchNotification;
 		public MessageService(IRelayManager relayManager, ICryptoService cryptoService, IUserProfileService userProfileService)
 		{
 			_relayManager = relayManager;
@@ -30,10 +29,58 @@ namespace BlazeJump.Common.Services.Message
 		{
 			while (true)
 			{
-				await Task.Delay(100);
-				if(_relayManager.ReceivedMessages.Count > 0	)
+				await Task.Delay(1);
+				if (_relayManager.ReceivedMessages.Count > 0)
 				{
-					MessageReceived.Invoke(this, new MessageReceivedEventArgs("", _relayManager.ReceivedMessages.Dequeue()));
+					Console.WriteLine($"{_relayManager.ReceivedMessages.Count} messages in receive queue.");
+					var message = _relayManager.ReceivedMessages.Dequeue();
+					Console.WriteLine($"Processing {message.MessageType} message with id {message.Event?.Id ?? "NULL"}");
+					if (!ReceivedMessages.ContainsKey(message.SubscriptionId))
+					{
+						ReceivedMessages.TryAdd(message.SubscriptionId, new List<NMessage>());
+					}
+					if (message.Event?.Kind == KindEnum.Metadata)
+					{
+						Console.WriteLine($"Adding user {message.Event.User.Username} to store.");
+						UserStore.TryAdd(message.Event.UserId, message.Event.User);
+					}
+					if (message.Event?.Tags != null && message.Event?.Tags.Count > 0)
+					{
+						var root = message.Event?.Tags?.FirstOrDefault(t => t.Key == TagEnum.e && t.Value3 == "root");
+						var reply = message.Event?.Tags?.FirstOrDefault(t => t.Key == TagEnum.e && t.Value3 == "reply");
+						if (root != null
+							&& EventSubscriptionIds.TryGetValue(root.Value, out var subscriptionId)
+							&& ReceivedMessages.TryGetValue(subscriptionId, out var parentMessages))
+						{
+							var parentMessage = parentMessages.SingleOrDefault(m => m.Event?.Id == root.Value);
+							if (parentMessage != null)
+							{
+								Console.WriteLine($"Adding event {message.Event?.Id ?? "NULL"} to parent event {parentMessage.Event.Id}.");
+								parentMessage.Event.Replies.TryAdd(message.Event.Id, message.Event);
+							}
+						}
+						if (reply != null
+							&& EventSubscriptionIds.TryGetValue(reply.Value, out var subscriptionIdreply)
+							&& ReceivedMessages.TryGetValue(subscriptionIdreply, out var parentMessagesreply))
+						{
+							var parentMessagereply = parentMessagesreply.SingleOrDefault(m => m.Event?.Id == reply.Value);
+							if (parentMessagereply != null)
+							{
+								Console.WriteLine($"Adding event {message.Event?.Id ?? "NULL"} to parent event {parentMessagereply.Event.Id}.");
+								parentMessagereply.Event.Replies.TryAdd(message.Event.Id, message.Event);
+							}
+						}
+					}
+					ReceivedMessages[message.SubscriptionId].Add(message);
+					if (message.Event?.Id != null)
+					{
+						EventSubscriptionIds.TryAdd(message.Event?.Id, message.SubscriptionId);
+					}
+					if (message.MessageType == MessageTypeEnum.Eose)
+					{
+						Console.WriteLine($"Refreshing view.");
+						EndOfFetchNotification?.Invoke(this, message.SubscriptionId);
+					}
 				}
 			}
 		}

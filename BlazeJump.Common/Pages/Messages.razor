@@ -8,32 +8,36 @@
 @using BlazeJump.Common.Services.Message;
 @using BlazeJump.Common.Services.Notification;
 @using BlazeJump.Common.Services.UserProfile;
-@using BlazeJump.Common.Services.Display;
 @using System.Text.Json
 @inject IRelayManager RelayManager
 @inject IMessageService MessageService
 @inject ICryptoService CryptoService
 @inject INotificationService NotificationService;
-@inject IMessagesDisplay MessagesDisplay;
 
 <div class="background-container">
 	<div class="content-container">
-
-		@if (MessagesDisplay.PageType != null && MessagesDisplay.PageType == PageTypeEnum.User && MessagesDisplay.Users.TryGetValue(MessagesDisplay.Hex, out var featuredUser))
+		@if (PageTypeParsed != null 
+		&& PageTypeParsed == PageTypeEnum.User 
+		&& Hex != null
+		&& MessageService.UserStore.TryGetValue(Hex, out var user)
+		&& user != null)
 		{
-			<UserCard User="featuredUser"></UserCard>
+				<UserCard User=user></UserCard>
 		}
-		@foreach (var bucket in MessagesDisplay.MessageBuckets)
+		@foreach (var subscriptionId in MessageBuckets.Keys)
 		{
-			@foreach (var message in bucket.Value)
+			@if(MessageService.ReceivedMessages.TryGetValue(subscriptionId, out var messages) && messages.Count > 0)
 			{
-				<MessageCard Message=message></MessageCard>
+				@foreach (var message in messages)
+				{
+					<MessageCard Message=message></MessageCard>
+				}
 			}
 		}
-		@if (MessagesDisplay.MessageBuckets.Count > 0 && MessagesDisplay.MessageBuckets.Last().Value.Count == 5)
+		@if (MessageService.ReceivedMessages.TryGetValue(MessageBuckets.Keys.LastOrDefault() ?? "", out var messagesForLoad) && messagesForLoad.Count >= 5)
 		{
 			<Card>
-				<a @onclick="() => MessagesDisplay.LoadMore()">Load more</a>
+				<a @onclick="() => Load()">Load more</a>
 			</Card>
 		})
 		@if (Hex == null)
@@ -41,35 +45,7 @@
 			<Card>
 				<p>Nothing to see here. Click <NavLink href="user/82341f882b6eabcd2ba7f1ef90aad961cf074af15b9ef44a09f9d2a8fbfbe6a2">here</NavLink> for Jack Dorsey's profile.</p>
 			</Card>
-		}
- 		@* <pre>@(JsonSerializer.Serialize(MessagesDisplay.MessageBuckets, new JsonSerializerOptions() { WriteIndented = true }))</pre> *@
+		}		
 	</div>
 </div>
 
-@code {
-	[Parameter]
-	public string? PageType { get; set; }
-	[Parameter]
-	public string? Hex { get; set; }
-	public PageTypeEnum PageTypeEnum2 { get; set; }
-	public bool PageTypeLoaded { get; set; } = false;
-
-	protected override async Task OnParametersSetAsync()
-	{
-		MessagesDisplay.StateUpdated += UpdateState;
-		NotificationService.Loading = true;
-		PageTypeEnum pageType;
-		PageTypeLoaded = Enum.TryParse(PageType, true, out pageType);
-		if (PageTypeLoaded && !string.IsNullOrEmpty(Hex)){
-			PageTypeEnum2 = pageType;
-			await MessagesDisplay.Init(pageType, Hex);
-		}		
-		NotificationService.Loading = false;
-	}
-
-	public void UpdateState(object? o, EventArgs e)
-	{
-		StateHasChanged();
-	}
-
-}

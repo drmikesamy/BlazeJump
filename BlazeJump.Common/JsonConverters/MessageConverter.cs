@@ -56,6 +56,7 @@ namespace BlazeJump.Common.Enums
 
 					break;
 				case MessageTypeEnum.Eose:
+					message.SubscriptionId = ja[1].ToString();
 					break;
 				case MessageTypeEnum.Ok:
 					var okEventId = ja[1].ToString();

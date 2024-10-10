@@ -4,5 +4,6 @@
 	{	
 		event EventHandler UpdateState;
 		bool Loading { get; set; }
+		void UpdateTheState();
 	}
 }

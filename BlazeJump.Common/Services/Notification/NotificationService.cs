@@ -19,5 +19,9 @@
 				}
 			}
 		}
+		public void UpdateTheState()
+		{
+			UpdateState?.Invoke(this, EventArgs.Empty);
+		}
 	}
 }

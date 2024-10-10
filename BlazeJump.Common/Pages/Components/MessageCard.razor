@@ -1,48 +1,49 @@
 ﻿@using BlazeJump.Common.Enums;
 @using BlazeJump.Common.Models;
 @using BlazeJump.Common.Services.Message;
-@using BlazeJump.Common.Services.Display;
 @using BlazeJump.Common.Services.Crypto;
 @using BlazeJump.Helpers;
 @using Newtonsoft.Json;
 @inject IMessageService MessageService
-@inject IMessagesDisplay MessagesDisplay
 @inject NavigationManager NavManager
 
-<section>
-	<article class="card card-message">
-		<div class="profile-picture" style="background-image: url('@($"{User?.ProfilePic ?? $"/images/profilepics/{new Random().Next(1, 18)}.png"}")')">
-		</div>
-		<div class="card-body">
-			<h3>
-				<a @onclick=ViewUser style="cursor: pointer">@(User?.Username ?? $"{User?.Id?.Substring(0, 10)}...")</a>
-			</h3>
-			<p class="subtle-info-line">
-				@(TimeAgo.GetTimeAgo(NEvent.CreatedAtDateTime))
-			</p>
-			@* @ParseEmbeds.ParseEmbedsFromContent(NEvent?.Content).FirstOrDefault() *@
-			<p>@(NEvent?.Content ?? "(No content)")</p>
-			<p class="stats-line">
-				<a @onclick=ViewMessage style="cursor: pointer">@(Replies?.Count ?? 0) comments</a> |
-				@if (NEvent?.Verified ?? false)
-				{
-					<span>Verified</span>
-				}
-				else
-				{
-					<a @onclick="() => VerifyMessage(NEvent)" style="cursor: pointer">Verify</a>
-				}
-			</p>
-		</div>
-	</article>
-</section>
+@if (NEvent != null)
+{
+	<section>
+		<article class="card card-message">
+			<div class="profile-picture" style="background-image: url('@($"{User?.ProfilePic ?? $"/images/profilepics/{new Random().Next(1, 18)}.png"}")')">
+			</div>
+			<div class="card-body">
+				<h3>
+					<a @onclick=ViewUser style="cursor: pointer">@(User?.Username ?? $"{User?.Id?.Substring(0, 10)}...")</a>
+				</h3>
+				<p class="subtle-info-line">
+					@(TimeAgo.GetTimeAgo(NEvent.CreatedAtDateTime))
+				</p>
+				@* @ParseEmbeds.ParseEmbedsFromContent(NEvent?.Content).FirstOrDefault() *@
+				<p>@(NEvent?.Content ?? "(No content)")</p>
+				<p class="stats-line">
+					<a @onclick=ViewMessage style="cursor: pointer">@(NEvent.Replies?.Count ?? 0) comments</a> |
+					@if (NEvent?.Verified ?? false)
+					{
+						<span>Verified</span>
+					}
+					else
+					{
+						<a @onclick="() => VerifyMessage(NEvent)" style="cursor: pointer">Verify</a>
+					}
+				</p>
+			</div>
+		</article>
+	</section>
+}
+
 
 @code {
 	[Parameter]
 	public NMessage Message { get; set; }
 	public NEvent NEvent => Message.Event;
-	public User User => MessagesDisplay.Users.ContainsKey(NEvent.UserId) ? MessagesDisplay.Users[NEvent.UserId] : null;
-	public List<NMessage> Replies => MessagesDisplay.Replies.ContainsKey(NEvent.Id) ? MessagesDisplay.Replies[NEvent.Id] : null;
+	public User User => MessageService.UserStore.TryGetValue(Message.Event?.UserId ?? "", out var user) ? user : null;
 	public void ViewUser()
 	{
 		NavManager.NavigateTo($"user/{User?.Id}", true);

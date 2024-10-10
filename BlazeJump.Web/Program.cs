@@ -5,7 +5,6 @@ using BlazeJump.Common.Services.Identity;
 using BlazeJump.Common.Services.Message;
 using BlazeJump.Common.Services.Notification;
 using BlazeJump.Common.Services.UserProfile;
-using BlazeJump.Common.Services.Display;
 using BlazeJump.Web;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
@@ -28,7 +27,6 @@ builder.Services.AddScoped<ICryptoService, CryptoService>(
 builder.Services.AddScoped<IRelayManager, RelayManager>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<IIdentityService, IdentityService>();
-builder.Services.AddScoped<IMessagesDisplay, MessagesDisplay>();
 
 var mapperConfig = new MapperConfiguration(cfg =>
 {
