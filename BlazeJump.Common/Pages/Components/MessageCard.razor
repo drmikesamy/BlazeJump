@@ -20,8 +20,8 @@
 				<p class="subtle-info-line">
 					@(TimeAgo.GetTimeAgo(NEvent.CreatedAtDateTime))
 				</p>
-				@* @ParseEmbeds.ParseEmbedsFromContent(NEvent?.Content).FirstOrDefault() *@
-				<p>@(NEvent?.Content ?? "(No content)")</p>
+				@ParseEmbeds.ParsePreviewContent(NEvent?.Content).FirstOrDefault()
+				<p>@(NEvent?.Content.ParseInlineEmbeds() ?? (MarkupString)"(No content)")</p>
 				<p class="stats-line">
 					<a @onclick=ViewMessage style="cursor: pointer">@(NEvent.Replies?.Count ?? 0) comments</a> |
 					@if (NEvent?.Verified ?? false)
@@ -46,7 +46,7 @@
 	public User User => MessageService.UserStore.TryGetValue(Message.Event?.UserId ?? "", out var user) ? user : null;
 	public void ViewUser()
 	{
-		NavManager.NavigateTo($"user/{User?.Id}", true);
+		NavManager.NavigateTo($"user/{NEvent.UserId}", true);
 	}
 	public void ViewMessage()
 	{

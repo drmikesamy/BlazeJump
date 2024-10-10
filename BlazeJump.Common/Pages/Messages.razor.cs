@@ -12,6 +12,7 @@ namespace BlazeJump.Common.Pages
 		[Parameter]
 		public string? Hex { get; set; }
 		public Dictionary<string, bool> MessageBuckets { get; set; } = new();
+		public DateTime UntilMarker { get; set; } = DateTime.Now.AddDays(1);
 		protected override async Task OnParametersSetAsync()
 		{
 			NotificationService.Loading = true;
@@ -56,7 +57,7 @@ namespace BlazeJump.Common.Pages
 			{
 				Kinds = new int[] { (int)KindEnum.Text },
 				Since = DateTime.Now.AddYears(-20),
-				Until = MessageService.ReceivedMessages.TryGetValue(MessageBuckets.Keys.LastOrDefault() ?? "", out var messages) ? messages.LastOrDefault(m => m.Event?.Kind == KindEnum.Text)?.Event?.CreatedAtDateTime.AddMilliseconds(-1) ?? DateTime.Now.AddDays(1) : DateTime.Now.AddDays(1),
+				Until = UntilMarker,
 				Limit = 5,
 				TaggedEventIds = PageTypeParsed == PageTypeEnum.Event ? new List<string> { Hex } : null,
 				Authors = PageTypeParsed == PageTypeEnum.Event ? null : new List<string> { Hex }
@@ -102,10 +103,11 @@ namespace BlazeJump.Common.Pages
 		}
 		private void EndOfFetch(object? o, string subscriptionId)
 		{
-			if (MessageBuckets.TryGetValue(subscriptionId, out var relatedDataLoaded)
-				&& !relatedDataLoaded
-				&& MessageService.ReceivedMessages.TryGetValue(subscriptionId, out var messages))
+			if (MessageBuckets.ContainsKey(subscriptionId)
+				&& MessageService.SubscriptionIdToEventIdList.TryGetValue(subscriptionId, out var eventIds))
 			{
+				var messages = eventIds.Select(id => MessageService.MessageStore[id]).ToList();
+				UntilMarker = messages.LastOrDefault()?.Event?.CreatedAtDateTime.AddMilliseconds(-1) ?? DateTime.Now.AddDays(1);
 				List<Filter> filters = new();
 				SetUserFilter(ref filters, messages.Where(m => m.Event?.UserId != null).Select(m => m.Event.UserId).Distinct().ToList());
 				SetReplyFilter(ref filters, messages.Where(m => m.Event?.Id != null).Select(m => m.Event.Id).Distinct().ToList());
@@ -113,7 +115,6 @@ namespace BlazeJump.Common.Pages
 				{
 					_ = FetchPosts(filters, true);
 				}
-				MessageBuckets[subscriptionId] = true;
 			}
 			StateHasChanged();
 		}

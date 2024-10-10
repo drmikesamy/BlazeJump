@@ -8,7 +8,17 @@ namespace BlazeJump.Helpers
 	public static class ParseEmbeds
 	{
 		public static Regex youtubeUrlPattern = new Regex(@"(?:https?:\/\/)?(?:www\.)?(?:(?:(?:youtube.com\/watch\?[^?]*v=|youtu.be\/)([\w\-]+))(?:[^\s?]+)?)", RegexOptions.Compiled | RegexOptions.IgnoreCase);
-		public static List<MarkupString> ParseEmbedsFromContent(string content)
+		
+		public static MarkupString ParseInlineEmbeds(this string content)
+		{
+			var linkFinder = new Regex(@"((http|ftp|https):\/\/[\w\-_]+(\.[\w\-_]+)+([\w\-\.,@?^=%&amp;:/~\+#]*[\w\-\@?^=%&amp;/~\+#])?)", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+			foreach (Match m in linkFinder.Matches(content))
+			{
+				content = content.Replace(m.Value, $"<a href=\"{m.Value}\" target=\"_blank\">{m.Value}</a>");
+			}
+			return (MarkupString)content;
+		}
+		public static List<MarkupString> ParsePreviewContent(string content)
 		{
 			var linkFinder = new Regex(@"((http|ftp|https):\/\/[\w\-_]+(\.[\w\-_]+)+([\w\-\.,@?^=%&amp;:/~\+#]*[\w\-\@?^=%&amp;/~\+#])?)", RegexOptions.Compiled | RegexOptions.IgnoreCase);
 			var bech32Finder = new Regex(@"/[\x21-\x7E]{1,83}1[023456789acdefghjklmnpqrstuvwxyz]{6,}/", RegexOptions.Compiled | RegexOptions.IgnoreCase);

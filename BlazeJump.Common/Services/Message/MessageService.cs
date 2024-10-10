@@ -12,11 +12,11 @@ namespace BlazeJump.Common.Services.Message
 		private IRelayManager _relayManager;
 		private ICryptoService _cryptoService;
 		private IUserProfileService _userProfileService;
-		private Dictionary<string, NEvent> sendMessageQueue = new Dictionary<string, NEvent>();
-		public Dictionary<string, List<NMessage>> ReceivedMessages { get; set; } = new Dictionary<string, List<NMessage>>();
-		public Dictionary<string, User> UserStore { get; set; } = new Dictionary<string, User>();
-		public Dictionary<string, string> EventSubscriptionIds { get; set; } = new Dictionary<string, string>();
-
+		private Dictionary<string, NEvent> sendMessageQueue = new();
+		public Dictionary<string, List<string>> SubscriptionIdToEventIdList { get; set; } = new();
+		public Dictionary<string, NMessage> MessageStore { get; set; } = new();
+		public Dictionary<string, string> EventIdToSubscriptionId { get; set; } = new();
+		public Dictionary<string, User> UserStore { get; set; } = new();
 		public event EventHandler<string> EndOfFetchNotification;
 		public MessageService(IRelayManager relayManager, ICryptoService cryptoService, IUserProfileService userProfileService)
 		{
@@ -34,52 +34,48 @@ namespace BlazeJump.Common.Services.Message
 				{
 					Console.WriteLine($"{_relayManager.ReceivedMessages.Count} messages in receive queue.");
 					var message = _relayManager.ReceivedMessages.Dequeue();
-					Console.WriteLine($"Processing {message.MessageType} message with id {message.Event?.Id ?? "NULL"}");
-					if (!ReceivedMessages.ContainsKey(message.SubscriptionId))
+
+					if (message.MessageType == MessageTypeEnum.Eose)
 					{
-						ReceivedMessages.TryAdd(message.SubscriptionId, new List<NMessage>());
+						Console.WriteLine($"EOSE message received. Refreshing view.");
+						EndOfFetchNotification?.Invoke(this, message.SubscriptionId);
+						continue;
 					}
-					if (message.Event?.Kind == KindEnum.Metadata)
+
+					if (message.Event == null)
+					{
+						Console.WriteLine($"Message has no event. Skipping.");
+						continue;
+					}
+
+					Console.WriteLine($"Processing {message.MessageType} message with id {message.Event.Id}");
+
+					SubscriptionIdToEventIdList.TryAdd(message.SubscriptionId, new List<string>());
+					MessageStore.TryAdd(message.Event.Id, message);
+					SubscriptionIdToEventIdList[message.SubscriptionId].Add(message.Event.Id);
+					EventIdToSubscriptionId.TryAdd(message.Event.Id, message.SubscriptionId);
+
+					if (message.Event.Kind == KindEnum.Metadata)
 					{
 						Console.WriteLine($"Adding user {message.Event.User.Username} to store.");
 						UserStore.TryAdd(message.Event.UserId, message.Event.User);
 					}
-					if (message.Event?.Tags != null && message.Event?.Tags.Count > 0)
+					if (message.Event.Tags != null && message.Event?.Tags.Count > 0)
 					{
-						var root = message.Event?.Tags?.FirstOrDefault(t => t.Key == TagEnum.e && t.Value3 == "root");
-						var reply = message.Event?.Tags?.FirstOrDefault(t => t.Key == TagEnum.e && t.Value3 == "reply");
+						var root = message.Event.Tags?.FirstOrDefault(t => t.Key == TagEnum.e && t.Value3 == "root");
+						var reply = message.Event.Tags?.FirstOrDefault(t => t.Key == TagEnum.e && t.Value3 == "reply");
 						if (root != null
-							&& EventSubscriptionIds.TryGetValue(root.Value, out var subscriptionId)
-							&& ReceivedMessages.TryGetValue(subscriptionId, out var parentMessages))
+							&& MessageStore.TryGetValue(root.Value, out var parentMessage))
 						{
-							var parentMessage = parentMessages.SingleOrDefault(m => m.Event?.Id == root.Value);
-							if (parentMessage != null)
-							{
-								Console.WriteLine($"Adding event {message.Event?.Id ?? "NULL"} to parent event {parentMessage.Event.Id}.");
+								Console.WriteLine($"Adding event {message.Event.Id} to parent event {parentMessage.Event.Id}.");
 								parentMessage.Event.Replies.TryAdd(message.Event.Id, message.Event);
-							}
 						}
 						if (reply != null
-							&& EventSubscriptionIds.TryGetValue(reply.Value, out var subscriptionIdreply)
-							&& ReceivedMessages.TryGetValue(subscriptionIdreply, out var parentMessagesreply))
+							&& MessageStore.TryGetValue(reply.Value, out var parentMessagereply))
 						{
-							var parentMessagereply = parentMessagesreply.SingleOrDefault(m => m.Event?.Id == reply.Value);
-							if (parentMessagereply != null)
-							{
-								Console.WriteLine($"Adding event {message.Event?.Id ?? "NULL"} to parent event {parentMessagereply.Event.Id}.");
+								Console.WriteLine($"Adding event {message.Event.Id} to parent event {parentMessagereply.Event.Id}.");
 								parentMessagereply.Event.Replies.TryAdd(message.Event.Id, message.Event);
-							}
 						}
-					}
-					ReceivedMessages[message.SubscriptionId].Add(message);
-					if (message.Event?.Id != null)
-					{
-						EventSubscriptionIds.TryAdd(message.Event?.Id, message.SubscriptionId);
-					}
-					if (message.MessageType == MessageTypeEnum.Eose)
-					{
-						Console.WriteLine($"Refreshing view.");
-						EndOfFetchNotification?.Invoke(this, message.SubscriptionId);
 					}
 				}
 			}

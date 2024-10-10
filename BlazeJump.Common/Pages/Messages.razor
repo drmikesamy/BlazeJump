@@ -26,15 +26,16 @@
 		}
 		@foreach (var subscriptionId in MessageBuckets.Keys)
 		{
-			@if(MessageService.ReceivedMessages.TryGetValue(subscriptionId, out var messages) && messages.Count > 0)
+			@if(MessageService.SubscriptionIdToEventIdList.TryGetValue(subscriptionId, out var messageIds) 
+			&& messageIds.Count > 0)
 			{
-				@foreach (var message in messages)
+				@foreach (var message in messageIds.Select(i => MessageService.MessageStore[i]))
 				{
 					<MessageCard Message=message></MessageCard>
 				}
 			}
 		}
-		@if (MessageService.ReceivedMessages.TryGetValue(MessageBuckets.Keys.LastOrDefault() ?? "", out var messagesForLoad) && messagesForLoad.Count >= 5)
+		@if (MessageService.SubscriptionIdToEventIdList.TryGetValue(MessageBuckets.Keys.LastOrDefault() ?? "", out var messageIdsForLoad) && messageIdsForLoad.Count >= 5)
 		{
 			<Card>
 				<a @onclick="() => Load()">Load more</a>
