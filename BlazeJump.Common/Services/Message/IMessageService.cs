@@ -7,11 +7,10 @@ namespace BlazeJump.Common.Services.Message
 	public interface IMessageService
 	{
 		event EventHandler<string> EndOfFetchNotification;
-		Dictionary<string, List<string>> SubscriptionIdToEventIdList { get; set; }
+		RelationRegister RelationRegister { get; set; }
 		Dictionary<string, NMessage> MessageStore { get; set; }
-		Dictionary<string, string> EventIdToSubscriptionId { get; set; }
-		Dictionary<string, User> UserStore { get; set; }
-		Task Fetch(MessageTypeEnum requestMessageType, List<Filter> filters, string subscriptionId);
+		Dictionary<string, List<string>> TopLevelFetchRegister { get; set; }
+		Task Fetch(List<Filter> filters, string? subscriptionId = null, MessageTypeEnum? messageType = null);
 		bool Verify(NEvent nEvent);
 		Task Send(KindEnum kind, string message);
 	}

@@ -1,6 +1,7 @@
 using BlazeJump.Common.Enums;
 using BlazeJump.Common.Models;
 using Microsoft.AspNetCore.Components;
+using System.Reflection.Metadata.Ecma335;
 
 namespace BlazeJump.Common.Pages
 {
@@ -11,7 +12,6 @@ namespace BlazeJump.Common.Pages
 		public PageTypeEnum? PageTypeParsed { get; set; }
 		[Parameter]
 		public string? Hex { get; set; }
-		public Dictionary<string, bool> MessageBuckets { get; set; } = new();
 		public DateTime UntilMarker { get; set; } = DateTime.Now.AddDays(1);
 		protected override async Task OnParametersSetAsync()
 		{
@@ -72,7 +72,7 @@ namespace BlazeJump.Common.Pages
 				Kinds = new int[] { (int)KindEnum.Metadata },
 				Since = DateTime.Now.AddYears(-20),
 				Until = DateTime.Now.AddDays(1),
-				Authors = pubkeys
+				Authors = pubkeys.Distinct().ToList()
 			});
 		}
 		private void SetReplyFilter(ref List<Filter> filters, List<string> parentEventIds)
@@ -84,7 +84,7 @@ namespace BlazeJump.Common.Pages
 				Kinds = new int[] { (int)KindEnum.Text },
 				Since = DateTime.Now.AddYears(-20),
 				Until = DateTime.Now.AddDays(1),
-				TaggedEventIds = parentEventIds
+				TaggedEventIds = parentEventIds.Distinct().ToList()
 			});
 		}
 		private async Task FetchPosts(List<Filter> filters, bool isRelatedData = false)
@@ -93,8 +93,8 @@ namespace BlazeJump.Common.Pages
 			{
 				var fetchId = Guid.NewGuid().ToString();
 				if (!isRelatedData)
-					MessageBuckets.Add(fetchId, false);
-				await MessageService.Fetch(MessageTypeEnum.Req, filters, fetchId);
+					MessageService.TopLevelFetchRegister.Add(fetchId, new List<string>());
+				await MessageService.Fetch(filters, fetchId);
 			}
 		}
 		private void UpdateState(object? o, EventArgs e)
@@ -103,14 +103,14 @@ namespace BlazeJump.Common.Pages
 		}
 		private void EndOfFetch(object? o, string subscriptionId)
 		{
-			if (MessageBuckets.ContainsKey(subscriptionId)
-				&& MessageService.SubscriptionIdToEventIdList.TryGetValue(subscriptionId, out var eventIds))
+			if (MessageService.TopLevelFetchRegister.TryGetValue(subscriptionId, out var eventIds))
 			{
 				var messages = eventIds.Select(id => MessageService.MessageStore[id]).ToList();
 				UntilMarker = messages.LastOrDefault()?.Event?.CreatedAtDateTime.AddMilliseconds(-1) ?? DateTime.Now.AddDays(1);
+
 				List<Filter> filters = new();
-				SetUserFilter(ref filters, messages.Where(m => m.Event?.UserId != null).Select(m => m.Event.UserId).Distinct().ToList());
-				SetReplyFilter(ref filters, messages.Where(m => m.Event?.Id != null).Select(m => m.Event.Id).Distinct().ToList());
+				SetUserFilter(ref filters, MessageService.RelationRegister.GetRelations(eventIds, KindEnum.Metadata).ToList());
+				SetReplyFilter(ref filters, MessageService.RelationRegister.GetRelations(eventIds, KindEnum.Text).ToList());
 				if (filters.Count() > 0)
 				{
 					_ = FetchPosts(filters, true);

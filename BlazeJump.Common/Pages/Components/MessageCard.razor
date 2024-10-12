@@ -43,7 +43,7 @@
 	[Parameter]
 	public NMessage Message { get; set; }
 	public NEvent NEvent => Message.Event;
-	public User User => MessageService.UserStore.TryGetValue(Message.Event?.UserId ?? "", out var user) ? user : null;
+	public User User => MessageService.MessageStore.TryGetValue(Message.Event?.UserId ?? "", out var message) ? message.Event.User : null;
 	public void ViewUser()
 	{
 		NavManager.NavigateTo($"user/{NEvent.UserId}", true);

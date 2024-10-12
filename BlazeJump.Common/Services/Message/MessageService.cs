@@ -4,19 +4,48 @@ using BlazeJump.Common.Services.Connections;
 using BlazeJump.Common.Services.Crypto;
 using Newtonsoft.Json;
 using BlazeJump.Common.Services.UserProfile;
+using Microsoft.Maui.Controls;
 
 namespace BlazeJump.Common.Services.Message
 {
+	public class RelationRegister
+	{
+		private Dictionary<string, Dictionary<KindEnum, List<string>>> _relationRegister = new();
+		public void AddRelation(string parentEventId, KindEnum childEventKind, string childEventId)
+		{
+			if (!_relationRegister.ContainsKey(parentEventId))
+			{
+				_relationRegister.Add(parentEventId, new Dictionary<KindEnum, List<string>>());
+			}
+			if (!_relationRegister[parentEventId].ContainsKey(childEventKind))
+			{
+				_relationRegister[parentEventId].Add(childEventKind, new List<string>());
+			}
+			_relationRegister[parentEventId][childEventKind].Add(childEventId);
+		}
+		public IEnumerable<string> GetRelations(List<string> parentEventIds, KindEnum childEventKind)
+		{
+			foreach (var parentEventId in parentEventIds)
+			{
+				if (_relationRegister.TryGetValue(parentEventId, out var kindsAndChildEventIds)
+				&& kindsAndChildEventIds.TryGetValue(childEventKind, out var childEventIds))
+				{
+					foreach(var childEventId in childEventIds)
+					{
+						yield return childEventId;
+					}
+				}
+			}
+		}
+	}
 	public class MessageService : IMessageService
 	{
 		private IRelayManager _relayManager;
 		private ICryptoService _cryptoService;
 		private IUserProfileService _userProfileService;
-		private Dictionary<string, NEvent> sendMessageQueue = new();
-		public Dictionary<string, List<string>> SubscriptionIdToEventIdList { get; set; } = new();
 		public Dictionary<string, NMessage> MessageStore { get; set; } = new();
-		public Dictionary<string, string> EventIdToSubscriptionId { get; set; } = new();
-		public Dictionary<string, User> UserStore { get; set; } = new();
+		public Dictionary<string, List<string>> TopLevelFetchRegister { get; set; } = new();
+		public RelationRegister RelationRegister { get; set; } = new();
 		public event EventHandler<string> EndOfFetchNotification;
 		public MessageService(IRelayManager relayManager, ICryptoService cryptoService, IUserProfileService userProfileService)
 		{
@@ -49,40 +78,38 @@ namespace BlazeJump.Common.Services.Message
 					}
 
 					Console.WriteLine($"Processing {message.MessageType} message with id {message.Event.Id}");
-
-					SubscriptionIdToEventIdList.TryAdd(message.SubscriptionId, new List<string>());
 					MessageStore.TryAdd(message.Event.Id, message);
-					SubscriptionIdToEventIdList[message.SubscriptionId].Add(message.Event.Id);
-					EventIdToSubscriptionId.TryAdd(message.Event.Id, message.SubscriptionId);
-
-					if (message.Event.Kind == KindEnum.Metadata)
+					if(TopLevelFetchRegister.TryGetValue(message.SubscriptionId, out var topLevelEventList))
 					{
-						Console.WriteLine($"Adding user {message.Event.User.Username} to store.");
-						UserStore.TryAdd(message.Event.UserId, message.Event.User);
+						topLevelEventList.Add(message.Event.Id);
 					}
-					if (message.Event.Tags != null && message.Event?.Tags.Count > 0)
+					ProcessRelations(message);
+				}
+			}
+		}
+		private void ProcessRelations(NMessage message)
+		{
+			RelationRegister.AddRelation(message.Event.Id, KindEnum.Metadata, message.Event.UserId);
+			foreach (var tag in message.Event.Tags)
+			{
+				if(tag.Value != null)
+				{
+					switch (tag.Key)
 					{
-						var root = message.Event.Tags?.FirstOrDefault(t => t.Key == TagEnum.e && t.Value3 == "root");
-						var reply = message.Event.Tags?.FirstOrDefault(t => t.Key == TagEnum.e && t.Value3 == "reply");
-						if (root != null
-							&& MessageStore.TryGetValue(root.Value, out var parentMessage))
-						{
-								Console.WriteLine($"Adding event {message.Event.Id} to parent event {parentMessage.Event.Id}.");
-								parentMessage.Event.Replies.TryAdd(message.Event.Id, message.Event);
-						}
-						if (reply != null
-							&& MessageStore.TryGetValue(reply.Value, out var parentMessagereply))
-						{
-								Console.WriteLine($"Adding event {message.Event.Id} to parent event {parentMessagereply.Event.Id}.");
-								parentMessagereply.Event.Replies.TryAdd(message.Event.Id, message.Event);
-						}
+						case TagEnum.e:
+							RelationRegister.AddRelation(tag.Value, KindEnum.Text, message.Event.Id);				
+							break;
+						case TagEnum.p:
+							RelationRegister.AddRelation(message.Event.Id, KindEnum.Metadata, tag.Value);
+							break;
 					}
 				}
 			}
 		}
-		public async Task Fetch(MessageTypeEnum requestMessageType, List<Filter> filters, string subscriptionId)
+
+		public async Task Fetch(List<Filter> filters, string? subscriptionId = null, MessageTypeEnum? messageType = null)
 		{
-			await _relayManager.QueryRelays(subscriptionId, requestMessageType, filters);
+			await _relayManager.QueryRelays(subscriptionId ?? Guid.NewGuid().ToString(), messageType ?? MessageTypeEnum.Req, filters);
 		}
 		private bool Sign(ref NEvent nEvent)
 		{
@@ -109,7 +136,6 @@ namespace BlazeJump.Common.Services.Message
 			var subscriptionHash = Guid.NewGuid().ToString();
 			Sign(ref nEvent);
 			await _relayManager.SendNEvent(nEvent, _relayManager.Relays, subscriptionHash);
-			sendMessageQueue.TryAdd(nEvent.Id, nEvent);
 		}
 		private NEvent CreateNEvent(KindEnum kind, string message, string parentId = null)
 		{

@@ -16,37 +16,33 @@
 
 <div class="background-container">
 	<div class="content-container">
-		@if (PageTypeParsed != null 
-		&& PageTypeParsed == PageTypeEnum.User 
-		&& Hex != null
-		&& MessageService.UserStore.TryGetValue(Hex, out var user)
-		&& user != null)
+		@if (PageTypeParsed != null
+				&& PageTypeParsed == PageTypeEnum.User
+				&& Hex != null
+				&& MessageService.MessageStore.TryGetValue(Hex, out var user)
+				&& user != null)
 		{
-				<UserCard User=user></UserCard>
+			<UserCard User=user.Event.User></UserCard>
 		}
-		@foreach (var subscriptionId in MessageBuckets.Keys)
+		@foreach (var messageBucket in MessageService.TopLevelFetchRegister)
 		{
-			@if(MessageService.SubscriptionIdToEventIdList.TryGetValue(subscriptionId, out var messageIds) 
-			&& messageIds.Count > 0)
+			@foreach (var eventId in messageBucket.Value)
 			{
-				@foreach (var message in messageIds.Select(i => MessageService.MessageStore[i]))
+				@if (MessageService.MessageStore.TryGetValue(eventId, out var message))
 				{
 					<MessageCard Message=message></MessageCard>
 				}
 			}
 		}
-		@if (MessageService.SubscriptionIdToEventIdList.TryGetValue(MessageBuckets.Keys.LastOrDefault() ?? "", out var messageIdsForLoad) && messageIdsForLoad.Count >= 5)
-		{
-			<Card>
-				<a @onclick="() => Load()">Load more</a>
-			</Card>
-		})
+		<Card>
+			<a @onclick="() => Load()">Load more</a>
+		</Card>
 		@if (Hex == null)
 		{
 			<Card>
 				<p>Nothing to see here. Click <NavLink href="user/82341f882b6eabcd2ba7f1ef90aad961cf074af15b9ef44a09f9d2a8fbfbe6a2">here</NavLink> for Jack Dorsey's profile.</p>
 			</Card>
-		}		
+		}
 	</div>
 </div>
 
