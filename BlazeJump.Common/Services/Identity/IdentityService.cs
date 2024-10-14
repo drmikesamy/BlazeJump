@@ -46,7 +46,7 @@ namespace BlazeJump.Common.Services.Identity
 		{
 			var filter = new Filter
 			{
-				Kinds = new int[] { (int)KindEnum.NostrConnect },
+				Kinds = new List<int> { (int)KindEnum.NostrConnect },
 				Since = DateTime.Now.AddSeconds(-15),
 				Until = DateTime.Now.AddSeconds(15),
 				TaggedPublicKeys = new List<string> { payload.Pubkey }

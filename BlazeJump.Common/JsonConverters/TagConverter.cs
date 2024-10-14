@@ -19,18 +19,21 @@ namespace BlazeJump.Common.Enums
 			JArray ja = JArray.Load(reader);
 			var jaLength = ja.Count();
 
-			Enum.TryParse(ja[0]?.ToString(), true, out TagEnum tagType);
+			if(Enum.IsDefined(typeof(TagEnum), ja[0]?.ToString()))
+			{
+				Enum.TryParse(ja[0]?.ToString(), true, out TagEnum tagType);
 
-			tag.Key = tagType;
-			if (jaLength >= 2)
-				tag.Value = ja[1]?.ToString();
-			if (jaLength >= 3)
-				tag.Value2 = ja[2]?.ToString();
-			if (jaLength >= 4)
-				tag.Value3 = ja[3]?.ToString();
-			if (jaLength >= 5)
-				tag.Value4 = ja[4]?.ToString();
 
+				tag.Key = tagType;
+				if (jaLength >= 2)
+					tag.Value = ja[1]?.ToString();
+				if (jaLength >= 3)
+					tag.Value2 = ja[2]?.ToString();
+				if (jaLength >= 4)
+					tag.Value3 = ja[3]?.ToString();
+				if (jaLength >= 5)
+					tag.Value4 = ja[4]?.ToString();
+			}
 			return tag;
 		}
 

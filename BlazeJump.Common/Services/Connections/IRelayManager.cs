@@ -6,6 +6,7 @@ namespace BlazeJump.Common.Services.Connections
 {
     public interface IRelayManager
     {
+		event EventHandler StartProcessTimer;
 		PriorityQueue<NMessage, Tuple<int, long>> ReceivedMessages { get; set; }
 		List<string> Relays { get; }
 		Dictionary<string, RelayConnection> RelayConnections { get; set; }

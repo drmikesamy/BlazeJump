@@ -10,7 +10,7 @@ namespace BlazeJump.Common.Models
 		[JsonProperty("authors", NullValueHandling = NullValueHandling.Ignore)] 
 		public List<string>? Authors { get; set; }
 		[JsonProperty("kinds", NullValueHandling = NullValueHandling.Ignore)] 
-		public int[]? Kinds { get; set; }
+		public List<int>? Kinds { get; set; }
 		[JsonProperty("#e", NullValueHandling = NullValueHandling.Ignore)] 
 		public List<string>? TaggedEventIds { get; set; }
 		[JsonProperty("#p", NullValueHandling = NullValueHandling.Ignore)] 

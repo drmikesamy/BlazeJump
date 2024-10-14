@@ -1,3 +1,4 @@
+using BlazeJump.Common.Builders;
 using BlazeJump.Common.Enums;
 using BlazeJump.Common.Models;
 using Microsoft.AspNetCore.Components;
@@ -29,63 +30,71 @@ namespace BlazeJump.Common.Pages
 		}
 		public async Task Load(bool initialLoad = false)
 		{
-			List<Filter> filters = new();
+			FilterBuilder filters = new();
 			if (initialLoad)
 			{
 				SetFeatureFilter(ref filters);
 			}
 			SetBodyFilter(ref filters);
-			await FetchPosts(filters);
+			await FetchPosts(filters.Build());
 		}
-		private void SetFeatureFilter(ref List<Filter> filters)
+		private void SetFeatureFilter(ref FilterBuilder filters)
 		{
 			if (PageTypeParsed == PageTypeEnum.Event)
 			{
-				filters.Add(new Filter
-				{
-					Kinds = new int[] { (int)KindEnum.Text },
-					Since = DateTime.Now.AddYears(-20),
-					Until = DateTime.Now.AddDays(1),
-					Limit = 1,
-					EventIds = new List<string> { Hex },
-				});
+				filters
+					.AddFilter()
+					.AddKind(KindEnum.Text)
+					.AddEventId(Hex);
 			}
 		}
-		private void SetBodyFilter(ref List<Filter> filters)
+		private void SetBodyFilter(ref FilterBuilder filters)
 		{
-			filters.Add(new Filter
+			if (PageTypeParsed == PageTypeEnum.Event)
 			{
-				Kinds = new int[] { (int)KindEnum.Text },
-				Since = DateTime.Now.AddYears(-20),
-				Until = UntilMarker,
-				Limit = 5,
-				TaggedEventIds = PageTypeParsed == PageTypeEnum.Event ? new List<string> { Hex } : null,
-				Authors = PageTypeParsed == PageTypeEnum.Event ? null : new List<string> { Hex }
-			});
+				filters
+					.AddFilter()
+					.AddKind(KindEnum.Text)
+					.WithToDate(UntilMarker)
+					.WithLimit(5)
+					.AddTaggedEventId(Hex);
+			}
+			else
+			{
+				filters
+					.AddFilter()
+					.AddKind(KindEnum.Text)
+					.WithToDate(UntilMarker)
+					.WithLimit(5)
+					.AddAuthor(Hex);
+			}	
 		}
-		private void SetUserFilter(ref List<Filter> filters, List<string> pubkeys)
+		private void SetUserFilter(ref FilterBuilder filters, List<string> pubkeys)
 		{
 			if (pubkeys.Count() == 0)
 				return;
-			filters.Add(new Filter
-			{
-				Kinds = new int[] { (int)KindEnum.Metadata },
-				Since = DateTime.Now.AddYears(-20),
-				Until = DateTime.Now.AddDays(1),
-				Authors = pubkeys.Distinct().ToList()
-			});
+			filters
+				.AddFilter()
+					.AddKind(KindEnum.Metadata)
+					.AddAuthors(pubkeys.Distinct().ToList());
 		}
-		private void SetReplyFilter(ref List<Filter> filters, List<string> parentEventIds)
+		private void SetTextEventFilter(ref FilterBuilder filters, List<string> textEventIds)
+		{
+			if (textEventIds.Count() == 0)
+				return;
+			filters
+				.AddFilter()
+					.AddKind(KindEnum.Text)
+					.AddEventIds(textEventIds.Distinct().ToList());
+		}
+		private void SetReplyFilter(ref FilterBuilder filters, List<string> parentEventIds)
 		{
 			if (parentEventIds.Count() == 0)
 				return;
-			filters.Add(new Filter
-			{
-				Kinds = new int[] { (int)KindEnum.Text },
-				Since = DateTime.Now.AddYears(-20),
-				Until = DateTime.Now.AddDays(1),
-				TaggedEventIds = parentEventIds.Distinct().ToList()
-			});
+			filters
+				.AddFilter()
+					.AddKind(KindEnum.Text)
+					.AddTaggedEventIds(parentEventIds.Distinct().ToList());
 		}
 		private async Task FetchPosts(List<Filter> filters, bool isRelatedData = false)
 		{
@@ -108,9 +117,19 @@ namespace BlazeJump.Common.Pages
 				var messages = eventIds.Select(id => MessageService.MessageStore[id]).ToList();
 				UntilMarker = messages.LastOrDefault()?.Event?.CreatedAtDateTime.AddMilliseconds(-1) ?? DateTime.Now.AddDays(1);
 
-				List<Filter> filters = new();
-				SetUserFilter(ref filters, MessageService.RelationRegister.GetRelations(eventIds, KindEnum.Metadata).ToList());
-				SetReplyFilter(ref filters, MessageService.RelationRegister.GetRelations(eventIds, KindEnum.Text).ToList());
+				FilterBuilder filterBuilder = new();
+
+				SetReplyFilter(ref filterBuilder, eventIds);
+				SetUserFilter(ref filterBuilder, messages.Select(m => m.Event.UserId).Distinct().ToList());
+				if(MessageService.RelationRegister.TryGetRelations(eventIds, FetchTypeEnum.TaggedReplyingToIds, out var childEventIdsReply))
+				{
+					SetTextEventFilter(ref filterBuilder, childEventIdsReply);
+				}
+				if (MessageService.RelationRegister.TryGetRelations(eventIds, FetchTypeEnum.TaggedRootIds, out var childEventIdsRoot))
+				{
+					SetTextEventFilter(ref filterBuilder, childEventIdsRoot);
+				}
+				var filters = filterBuilder.Build();
 				if (filters.Count() > 0)
 				{
 					_ = FetchPosts(filters, true);

@@ -12,6 +12,7 @@ namespace BlazeJump.Common.Services.Connections
 		public Dictionary<string, RelayConnection> RelayConnections { get; set; }
 		public List<string> Relays => RelayConnections.Keys.ToList();
 		public PriorityQueue<NMessage, Tuple<int, long>> ReceivedMessages { get; set; } = new PriorityQueue<NMessage, Tuple<int, long>>();
+		public event EventHandler StartProcessTimer;
 
 		public RelayManager()
 		{
@@ -23,6 +24,7 @@ namespace BlazeJump.Common.Services.Connections
 		private void AddToQueue(object sender, MessageReceivedEventArgs e)
 		{
 			ReceivedMessages.Enqueue(e.Message, new Tuple<int, long>(0, Stopwatch.GetTimestamp()));
+			StartProcessTimer?.Invoke(this, EventArgs.Empty);
 		}
 
 		public async Task OpenConnection(string uri)

@@ -5,37 +5,42 @@ using BlazeJump.Common.Services.Crypto;
 using Newtonsoft.Json;
 using BlazeJump.Common.Services.UserProfile;
 using Microsoft.Maui.Controls;
+using System;
+using System.Diagnostics;
 
 namespace BlazeJump.Common.Services.Message
 {
 	public class RelationRegister
 	{
-		private Dictionary<string, Dictionary<KindEnum, List<string>>> _relationRegister = new();
-		public void AddRelation(string parentEventId, KindEnum childEventKind, string childEventId)
+		private Dictionary<string, Dictionary<FetchTypeEnum, List<string>>> _relationRegister = new();
+		public void AddRelation(string parentEventId, FetchTypeEnum fetchType, string childEventId)
 		{
 			if (!_relationRegister.ContainsKey(parentEventId))
 			{
-				_relationRegister.Add(parentEventId, new Dictionary<KindEnum, List<string>>());
+				_relationRegister.Add(parentEventId, new Dictionary<FetchTypeEnum, List<string>>());
 			}
-			if (!_relationRegister[parentEventId].ContainsKey(childEventKind))
+			if (!_relationRegister[parentEventId].ContainsKey(fetchType))
 			{
-				_relationRegister[parentEventId].Add(childEventKind, new List<string>());
+				_relationRegister[parentEventId].Add(fetchType, new List<string>());
 			}
-			_relationRegister[parentEventId][childEventKind].Add(childEventId);
+			_relationRegister[parentEventId][fetchType].Add(childEventId);
 		}
-		public IEnumerable<string> GetRelations(List<string> parentEventIds, KindEnum childEventKind)
+		public bool TryGetRelations(List<string> parentEventIds, FetchTypeEnum fetchType, out List<string> childEventIds)
 		{
+			childEventIds = new List<string>();
 			foreach (var parentEventId in parentEventIds)
 			{
 				if (_relationRegister.TryGetValue(parentEventId, out var kindsAndChildEventIds)
-				&& kindsAndChildEventIds.TryGetValue(childEventKind, out var childEventIds))
+				&& kindsAndChildEventIds.TryGetValue(fetchType, out var childIds))
 				{
-					foreach(var childEventId in childEventIds)
-					{
-						yield return childEventId;
-					}
+					childEventIds.AddRange(childIds);
 				}
 			}
+			if (childEventIds.Count > 0)
+			{
+				return true;
+			}
+			return false;
 		}
 	}
 	public class MessageService : IMessageService
@@ -52,55 +57,69 @@ namespace BlazeJump.Common.Services.Message
 			_relayManager = relayManager;
 			_cryptoService = cryptoService;
 			_userProfileService = userProfileService;
-			_ = ProcessReceivedMessages();
+			_relayManager.StartProcessTimer += ProcessReceivedMessages;
 		}
-		private async Task ProcessReceivedMessages()
+		private void ProcessReceivedMessages(object o, EventArgs eventArgs)
 		{
-			while (true)
+			while (_relayManager.ReceivedMessages.Count > 0)
 			{
-				await Task.Delay(1);
-				if (_relayManager.ReceivedMessages.Count > 0)
+				Console.WriteLine($"{_relayManager.ReceivedMessages.Count} messages in receive queue.");
+				var message = _relayManager.ReceivedMessages.Dequeue();
+
+				if (message.MessageType == MessageTypeEnum.Eose)
 				{
-					Console.WriteLine($"{_relayManager.ReceivedMessages.Count} messages in receive queue.");
-					var message = _relayManager.ReceivedMessages.Dequeue();
-
-					if (message.MessageType == MessageTypeEnum.Eose)
-					{
-						Console.WriteLine($"EOSE message received. Refreshing view.");
-						EndOfFetchNotification?.Invoke(this, message.SubscriptionId);
-						continue;
-					}
-
-					if (message.Event == null)
-					{
-						Console.WriteLine($"Message has no event. Skipping.");
-						continue;
-					}
-
-					Console.WriteLine($"Processing {message.MessageType} message with id {message.Event.Id}");
-					MessageStore.TryAdd(message.Event.Id, message);
-					if(TopLevelFetchRegister.TryGetValue(message.SubscriptionId, out var topLevelEventList))
-					{
-						topLevelEventList.Add(message.Event.Id);
-					}
-					ProcessRelations(message);
+					Console.WriteLine($"EOSE message received. Refreshing view.");
+					EndOfFetchNotification?.Invoke(this, message.SubscriptionId);
+					continue;
 				}
+
+				if (message.Event == null)
+				{
+					Console.WriteLine($"Message has no event. Skipping.");
+					continue;
+				}
+
+				Console.WriteLine($"Processing {message.MessageType} message with id {message.Event.Id}");
+				if (message.Event.Kind == KindEnum.Metadata)
+				{
+					MessageStore.TryAdd(message.Event.UserId, message);
+				}
+				else
+				{
+					MessageStore.TryAdd(message.Event.Id, message);
+				}
+
+				if (TopLevelFetchRegister.TryGetValue(message.SubscriptionId, out var topLevelEventList)
+					&& !topLevelEventList.Contains(message.Event.Id))
+				{
+					topLevelEventList.Add(message.Event.Id);
+				}
+				ProcessRelations(message);
 			}
 		}
 		private void ProcessRelations(NMessage message)
 		{
-			RelationRegister.AddRelation(message.Event.Id, KindEnum.Metadata, message.Event.UserId);
 			foreach (var tag in message.Event.Tags)
 			{
-				if(tag.Value != null)
+				if (tag.Value != null)
 				{
 					switch (tag.Key)
 					{
 						case TagEnum.e:
-							RelationRegister.AddRelation(tag.Value, KindEnum.Text, message.Event.Id);				
+							if(tag.Value3 == "reply")
+							{
+								RelationRegister.AddRelation(message.Event.Id, FetchTypeEnum.TaggedReplyingToIds, tag.Value);						
+							}
+							else if (tag.Value3 == "root")
+							{
+								RelationRegister.AddRelation(message.Event.Id, FetchTypeEnum.TaggedRootIds, tag.Value);
+							}
+							RelationRegister.AddRelation(tag.Value, FetchTypeEnum.Replies, message.Event.Id);
 							break;
 						case TagEnum.p:
-							RelationRegister.AddRelation(message.Event.Id, KindEnum.Metadata, tag.Value);
+							RelationRegister.AddRelation(message.Event.Id, FetchTypeEnum.TaggedUserMetadata, tag.Value);
+							break;
+						default:
 							break;
 					}
 				}

@@ -20,10 +20,12 @@
 				<p class="subtle-info-line">
 					@(TimeAgo.GetTimeAgo(NEvent.CreatedAtDateTime))
 				</p>
+				<p>Tagged root: @(TaggedRoot?.FirstOrDefault()?.Id ?? "none")</p>
+				<p>Tagged reply: @(TaggedReply?.FirstOrDefault()?.Id ?? "none")</p>
 				@ParseEmbeds.ParsePreviewContent(NEvent?.Content).FirstOrDefault()
 				<p>@(NEvent?.Content.ParseInlineEmbeds() ?? (MarkupString)"(No content)")</p>
 				<p class="stats-line">
-					<a @onclick=ViewMessage style="cursor: pointer">@(NEvent.Replies?.Count ?? 0) comments</a> |
+					<a @onclick=ViewMessage style="cursor: pointer">@(Children?.Count ?? 0) comments</a> |
 					@if (NEvent?.Verified ?? false)
 					{
 						<span>Verified</span>
@@ -39,22 +41,3 @@
 }
 
 
-@code {
-	[Parameter]
-	public NMessage Message { get; set; }
-	public NEvent NEvent => Message.Event;
-	public User User => MessageService.MessageStore.TryGetValue(Message.Event?.UserId ?? "", out var message) ? message.Event.User : null;
-	public void ViewUser()
-	{
-		NavManager.NavigateTo($"user/{NEvent.UserId}", true);
-	}
-	public void ViewMessage()
-	{
-		NavManager.NavigateTo($"event/{NEvent.Id}", true);
-	}
-	public void VerifyMessage(NEvent message)
-	{
-		message.Verified = MessageService.Verify(NEvent);
-		StateHasChanged();
-	}
-}
