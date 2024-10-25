@@ -11,8 +11,9 @@ namespace BlazeJump.Common.Pages.Components
 		public NEvent NEvent => Message.Event;
 		public User User => MessageService.MessageStore.TryGetValue(NEvent.UserId, out var user) ? user.Event.User : new User();
 		public List<NEvent> Children => MessageService.RelationRegister.TryGetRelations(new List<string> { NEvent.Id }, FetchTypeEnum.Replies, out var replies) ? replies.Select(id => MessageService.MessageStore[id].Event).ToList() : new List<NEvent>();
-		public List<NEvent> TaggedReply => MessageService.RelationRegister.TryGetRelations(new List<string> { NEvent.Id }, FetchTypeEnum.TaggedReplyingToIds, out var replies) ? replies.Select(id => MessageService.MessageStore[id].Event).ToList() : new List<NEvent>();
-		public List<NEvent> TaggedRoot => MessageService.RelationRegister.TryGetRelations(new List<string> { NEvent.Id }, FetchTypeEnum.TaggedRootIds, out var replies) ? replies.Select(id => MessageService.MessageStore[id].Event).ToList() : new List<NEvent>();
+		public NMessage TaggedReply => MessageService.RelationRegister.TryGetRelations(new List<string> { NEvent.Id }, FetchTypeEnum.TaggedReplyingToIds, out var replies) ? replies.Select(id => MessageService.MessageStore[id]).FirstOrDefault() : null;
+		public int TaggedReplyCount => MessageService.RelationRegister.TryGetRelations(new List<string> { NEvent.Id }, FetchTypeEnum.TaggedReplyingToIds, out var replies) ? replies.Select(id => MessageService.MessageStore[id]).Count() : 0;
+		public NMessage TaggedRoot => MessageService.RelationRegister.TryGetRelations(new List<string> { NEvent.Id }, FetchTypeEnum.TaggedRootIds, out var replies) ? replies.Select(id => MessageService.MessageStore[id]).FirstOrDefault() : null;
 		public void ViewUser()
 		{
 			NavManager.NavigateTo($"user/{NEvent.UserId}", true);

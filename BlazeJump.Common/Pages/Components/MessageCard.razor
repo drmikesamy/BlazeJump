@@ -20,8 +20,15 @@
 				<p class="subtle-info-line">
 					@(TimeAgo.GetTimeAgo(NEvent.CreatedAtDateTime))
 				</p>
-				<p>Tagged root: @(TaggedRoot?.FirstOrDefault()?.Id ?? "none")</p>
-				<p>Tagged reply: @(TaggedReply?.FirstOrDefault()?.Id ?? "none")</p>
+				@if (TaggedRoot != null)
+				{
+					<MessageCard Message=TaggedRoot></MessageCard>
+				}
+				@if (TaggedReply != null)
+				{
+					<MessageCard Message=TaggedReply></MessageCard>
+				}
+				<p>@TaggedReplyCount</p>
 				@ParseEmbeds.ParsePreviewContent(NEvent?.Content).FirstOrDefault()
 				<p>@(NEvent?.Content.ParseInlineEmbeds() ?? (MarkupString)"(No content)")</p>
 				<p class="stats-line">
