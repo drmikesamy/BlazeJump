@@ -7,16 +7,18 @@ using System.Diagnostics;
 
 namespace BlazeJump.Common.Services.Connections
 {
-	public class RelayManager : IRelayManager
+	public class RelayManager : IRelayManager, IRelayConnectionProvider
 	{
-		public Dictionary<string, RelayConnection> RelayConnections { get; set; }
+		public Dictionary<string, IRelayConnection> RelayConnections { get; set; }
 		public List<string> Relays => RelayConnections.Keys.ToList();
 		public PriorityQueue<NMessage, Tuple<int, long>> ReceivedMessages { get; set; } = new PriorityQueue<NMessage, Tuple<int, long>>();
 		public event EventHandler ProcessMessageQueue;
+		private readonly IRelayConnectionProvider _connectionProvider;
 
-		public RelayManager()
+		public RelayManager(IRelayConnectionProvider connectionProvider)
 		{
-			RelayConnections = new Dictionary<string, RelayConnection> {
+			_connectionProvider = connectionProvider;
+			RelayConnections = new Dictionary<string, IRelayConnection> {
 				{ "wss://nostr.wine", new RelayConnection("wss://nostr.wine") }
 			};
 		}
@@ -31,10 +33,16 @@ namespace BlazeJump.Common.Services.Connections
 		{
 			if (RelayConnections.TryGetValue(uri, out var value) && value.WebSocket.State == WebSocketState.Open)
 				return;
-			RelayConnections.TryAdd(uri, new RelayConnection(uri));
+			IRelayConnection newConnection = _connectionProvider.CreateRelayConnection(uri);
+			RelayConnections.TryAdd(uri, newConnection);
 			await RelayConnections[uri].Init();
 			Console.WriteLine("Event subscription");
 			RelayConnections[uri].NewMessageReceived += AddToQueue;
+		}
+
+		public IRelayConnection CreateRelayConnection(string uri)
+		{
+			return new RelayConnection(uri);
 		}
 
 		public async Task CloseConnection(string uri)
@@ -60,22 +68,27 @@ namespace BlazeJump.Common.Services.Connections
 			await Task.WhenAll(connectionTasks);
 		}
 
-		public async Task SendNEvent(NEvent nEvent, List<string> uris, string subscriptionHash)
+		public async Task SendNEvent(NEvent nEvent, string subscriptionHash)
 		{
 			var connectionTasks = new List<Task>();
 			object[] obj = { "EVENT", nEvent };
-			string serialisedNMessage = JsonConvert.SerializeObject(obj);
+			string serialisedNEvent = JsonConvert.SerializeObject(obj);
 
-			foreach (var uri in uris)
+			foreach (var uri in Relays)
 			{
 				Task connectionTask = Task.Run(async () =>
 				{
 					await OpenConnection(uri);
-					await RelayConnections[uri].SendNEvent(serialisedNMessage, subscriptionHash);
+					await RelayConnections[uri].SendNEvent(serialisedNEvent, subscriptionHash);
 				});
 				connectionTasks.Add(connectionTask);
 			}
 			await Task.WhenAll(connectionTasks);
 		}
+	}
+
+	public interface IRelayConnectionProvider
+	{
+		IRelayConnection CreateRelayConnection(string uri);
 	}
 }

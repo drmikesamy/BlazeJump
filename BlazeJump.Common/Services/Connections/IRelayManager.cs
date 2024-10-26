@@ -9,10 +9,10 @@ namespace BlazeJump.Common.Services.Connections
 		event EventHandler ProcessMessageQueue;
 		PriorityQueue<NMessage, Tuple<int, long>> ReceivedMessages { get; set; }
 		List<string> Relays { get; }
-		Dictionary<string, RelayConnection> RelayConnections { get; set; }
+		Dictionary<string, IRelayConnection> RelayConnections { get; set; }
 		Task OpenConnection(string uri);
 		Task CloseConnection(string uri);
 		Task QueryRelays(string subscriptionId, MessageTypeEnum requestMessageType, List<Filter> filters, int timeout = 15000);
-		Task SendNEvent(NEvent nEvent, List<string> uris, string subscriptionHash);
+		Task SendNEvent(NEvent nEvent, string subscriptionHash);
 	}
 }

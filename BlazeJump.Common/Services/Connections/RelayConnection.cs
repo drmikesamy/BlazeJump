@@ -7,7 +7,7 @@ using System.Text;
 
 namespace BlazeJump.Common.Services.Connections
 {
-	public class RelayConnection
+	public class RelayConnection : IRelayConnection
 	{
 		private CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
 		private readonly string _uri;
@@ -62,7 +62,7 @@ namespace BlazeJump.Common.Services.Connections
 				}
 			}
 		}
-		public async Task SendRequest(MessageTypeEnum requestMessageType, string subscriptionId, List<Filter> filters)
+		private async Task SendRequest(MessageTypeEnum requestMessageType, string subscriptionId, List<Filter> filters)
 		{
 			object[] obj = new object[2 + filters.Count];
 			obj[0] = requestMessageType.ToString().ToUpper();
@@ -78,7 +78,7 @@ namespace BlazeJump.Common.Services.Connections
 
 			await WebSocket.SendAsync(dataToSend, WebSocketMessageType.Text, true, _cancellationTokenSource.Token);
 		}
-		public async Task MessageLoop()
+		private async Task MessageLoop()
 		{
 			var messages = new List<string>();
 			Console.WriteLine($"setting up listener for {_uri}");
@@ -140,7 +140,7 @@ namespace BlazeJump.Common.Services.Connections
 				await WebSocket.SendAsync(dataToSend, WebSocketMessageType.Text, true, _cancellationTokenSource.Token);
 			}
 		}
-		public async Task UnSubscribeAsync(string subscriptionId)
+		private async Task UnSubscribeAsync(string subscriptionId)
 		{
 			if (WebSocket.State == WebSocketState.Open)
 			{

@@ -121,11 +121,11 @@ namespace BlazeJump.Common.Pages
 
 				SetReplyFilter(ref filterBuilder, eventIds);
 				SetUserFilter(ref filterBuilder, messages.Select(m => m.Event.UserId).Distinct().ToList());
-				if(MessageService.RelationRegister.TryGetRelations(eventIds, FetchTypeEnum.TaggedReplyingToIds, out var childEventIdsReply))
+				if(MessageService.RelationRegister.TryGetRelations(eventIds, FetchTypeEnum.TaggedParentIds, out var childEventIdsReply))
 				{
 					SetTextEventFilter(ref filterBuilder, childEventIdsReply);
 				}
-				if (MessageService.RelationRegister.TryGetRelations(eventIds, FetchTypeEnum.TaggedRootIds, out var childEventIdsRoot))
+				if (MessageService.RelationRegister.TryGetRelations(eventIds, FetchTypeEnum.TaggedRootId, out var childEventIdsRoot))
 				{
 					SetTextEventFilter(ref filterBuilder, childEventIdsRoot);
 				}

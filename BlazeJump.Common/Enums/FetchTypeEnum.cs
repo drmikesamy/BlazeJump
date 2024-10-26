@@ -3,11 +3,11 @@
     public enum FetchTypeEnum
 	{
         Metadata = 0,
-		TaggedUserMetadata = 1,
+		TaggedMetadata = 1,
 		Text = 2,
 		Replies = 3,
 		Reactions = 4,
-		TaggedReplyingToIds = 5,
-		TaggedRootIds = 6,
+		TaggedParentIds = 5,
+		TaggedRootId = 6,
 	}
 }

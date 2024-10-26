@@ -27,7 +27,7 @@ namespace BlazeJump.Common.Tests.ServiceTests
         }
 
         [Test]
-        public void ProcessMessageQueueEvent_ProcessesQueuedMessagesAndAddsToMessageStore()
+        public void ProcessMessageQueueEvent_ProcessesQueuedMessages()
         {
             // Arrange
             var queue = new PriorityQueue<NMessage, Tuple<int, long>>();
@@ -35,14 +35,47 @@ namespace BlazeJump.Common.Tests.ServiceTests
                 new NMessage
                 {
                     SubscriptionId = "second", MessageType = MessageTypeEnum.Event,
-                    Event = new NEvent { Kind = KindEnum.Metadata, Id = "secondEventId", UserId = "secondUserId" }
+                    Event = new NEvent
+                    {
+                        Kind = KindEnum.Metadata, 
+                        Id = "secondEventId", 
+                        UserId = "secondUserId",
+                        Tags = new List<EventTag>
+                        {
+                            new EventTag
+                            {
+                                Key = TagEnum.p,
+                                Value = "taggedUserId"
+                            },
+                        }
+                    }
                 }, new Tuple<int, long>(1, Stopwatch.GetTimestamp()));
             
             queue.Enqueue(
                 new NMessage
                 {
                     SubscriptionId = "first", MessageType = MessageTypeEnum.Event,
-                    Event = new NEvent { Kind = KindEnum.Text, Id = "firstEventId", UserId = "firstUserId" }
+                    Event = new NEvent
+                    {
+                        Kind = KindEnum.Text, 
+                        Id = "firstEventId", 
+                        UserId = "firstUserId",
+                        Tags = new List<EventTag>
+                        {
+                            new EventTag
+                            {
+                                Key = TagEnum.e,
+                                Value = "taggedParentEventId",
+                                Value3 = "reply"
+                            },
+                            new EventTag
+                            {
+                                Key = TagEnum.e,
+                                Value = "taggedRootEventId",
+                                Value3 = "root"
+                            },
+                        }
+                    }
                 }, new Tuple<int, long>(0, Stopwatch.GetTimestamp()));
             
             queue.Enqueue(
@@ -50,12 +83,22 @@ namespace BlazeJump.Common.Tests.ServiceTests
                 new Tuple<int, long>(2, Stopwatch.GetTimestamp()));
             
             _relayManager.ReceivedMessages.Returns(x => queue);
+            
+            _sut.TopLevelFetchRegister.Add("first", new List<string>());
 
             // Act
             _relayManager.ProcessMessageQueue += Raise.Event<EventHandler>(new object(), null);
 
             // Assert
+            _sut.RelationRegister.TryGetRelations(new List<string>() { "firstEventId" }, FetchTypeEnum.TaggedRootId, out var firstEventRootId);
+            _sut.RelationRegister.TryGetRelations(new List<string>() { "firstEventId" }, FetchTypeEnum.TaggedParentIds, out var firstEventParentId);
+            _sut.RelationRegister.TryGetRelations(new List<string>() { "secondEventId" }, FetchTypeEnum.TaggedMetadata, out var secondEventTaggedUserId);
+            
             Assert.That(_sut.MessageStore.Count(), Is.EqualTo(2));
+            Assert.That(firstEventRootId.First(), Is.EqualTo("taggedRootEventId"));
+            Assert.That(firstEventParentId.First(), Is.EqualTo("taggedParentEventId"));
+            Assert.That(secondEventTaggedUserId.First(), Is.EqualTo("taggedUserId"));
+            Assert.That(_sut.TopLevelFetchRegister.Count(), Is.EqualTo(1));
         }
 
         [Test]
@@ -95,15 +138,14 @@ namespace BlazeJump.Common.Tests.ServiceTests
             var message = "test message";
             _cryptoService.Sign(Arg.Any<string>()).Returns("signature");
             _relayManager.Relays.Returns(new List<string> { "wss://test.ws" });
-            _relayManager.SendNEvent(Arg.Any<NEvent>(), Arg.Any<List<string>>(), Arg.Any<string>())
+            _relayManager.SendNEvent(Arg.Any<NEvent>(), Arg.Any<string>())
                 .Returns(Task.FromResult(1));
 
             NEvent? actualNEvent = null;
-            List<string>? actualUris = null;
             string? actualSubscriptionHash = null;
 
             await _relayManager.SendNEvent(Arg.Do<NEvent>(n => actualNEvent = n),
-                Arg.Do<List<string>>(u => actualUris = u), Arg.Do<string>(s => actualSubscriptionHash = s));
+                Arg.Do<string>(s => actualSubscriptionHash = s));
             _userProfileService.NPubKey.Returns("pubkey");
 
             // Act
@@ -111,7 +153,6 @@ namespace BlazeJump.Common.Tests.ServiceTests
 
             // Assert
             Assert.That(actualNEvent!.Content, Is.EqualTo(message));
-            Assert.That(actualUris!.First(), Is.EqualTo("wss://test.ws"));
         }
     }
 }

@@ -75,16 +75,16 @@ namespace BlazeJump.Common.Services.Message
 						case TagEnum.e:
 							if(tag.Value3 == "reply")
 							{
-								RelationRegister.AddRelation(message.Event.Id, FetchTypeEnum.TaggedReplyingToIds, tag.Value);						
+								RelationRegister.AddRelation(message.Event.Id, FetchTypeEnum.TaggedParentIds, tag.Value);						
 							}
 							else if (tag.Value3 == "root")
 							{
-								RelationRegister.AddRelation(message.Event.Id, FetchTypeEnum.TaggedRootIds, tag.Value);
+								RelationRegister.AddRelation(message.Event.Id, FetchTypeEnum.TaggedRootId, tag.Value);
 							}
 							RelationRegister.AddRelation(tag.Value, FetchTypeEnum.Replies, message.Event.Id);
 							break;
 						case TagEnum.p:
-							RelationRegister.AddRelation(message.Event.Id, FetchTypeEnum.TaggedUserMetadata, tag.Value);
+							RelationRegister.AddRelation(message.Event.Id, FetchTypeEnum.TaggedMetadata, tag.Value);
 							break;
 						default:
 							break;
@@ -121,7 +121,7 @@ namespace BlazeJump.Common.Services.Message
 			var nEvent = CreateNEvent(kind, message);
 			var subscriptionHash = Guid.NewGuid().ToString();
 			Sign(ref nEvent);
-			await _relayManager.SendNEvent(nEvent, _relayManager.Relays, subscriptionHash);
+			await _relayManager.SendNEvent(nEvent, subscriptionHash);
 		}
 		private NEvent CreateNEvent(KindEnum kind, string message, string parentId = null)
 		{
