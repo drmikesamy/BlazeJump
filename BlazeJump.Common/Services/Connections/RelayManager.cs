@@ -1,13 +1,13 @@
 ﻿using BlazeJump.Common.Models;
 using Newtonsoft.Json;
 using BlazeJump.Common.Services.Connections.Events;
-using System.Net.WebSockets;
 using BlazeJump.Common.Enums;
 using System.Diagnostics;
+using BlazeJump.Common.Services.Connections.Providers;
 
 namespace BlazeJump.Common.Services.Connections
 {
-	public class RelayManager : IRelayManager, IRelayConnectionProvider
+	public class RelayManager : IRelayManager
 	{
 		public Dictionary<string, IRelayConnection> RelayConnections { get; set; }
 		public List<string> Relays => RelayConnections.Keys.ToList();
@@ -19,7 +19,7 @@ namespace BlazeJump.Common.Services.Connections
 		{
 			_connectionProvider = connectionProvider;
 			RelayConnections = new Dictionary<string, IRelayConnection> {
-				{ "wss://nostr.wine", new RelayConnection("wss://nostr.wine") }
+				{ "wss://nostr.wine", _connectionProvider.CreateRelayConnection("wss://nostr.wine") }
 			};
 		}
 
@@ -31,18 +31,15 @@ namespace BlazeJump.Common.Services.Connections
 
 		public async Task OpenConnection(string uri)
 		{
-			if (RelayConnections.TryGetValue(uri, out var value) && value.WebSocket.State == WebSocketState.Open)
+			if (RelayConnections.TryGetValue(uri, out IRelayConnection connection) && connection.IsOpen)
+			{
 				return;
+			}
 			IRelayConnection newConnection = _connectionProvider.CreateRelayConnection(uri);
 			RelayConnections.TryAdd(uri, newConnection);
 			await RelayConnections[uri].Init();
 			Console.WriteLine("Event subscription");
 			RelayConnections[uri].NewMessageReceived += AddToQueue;
-		}
-
-		public IRelayConnection CreateRelayConnection(string uri)
-		{
-			return new RelayConnection(uri);
 		}
 
 		public async Task CloseConnection(string uri)
@@ -85,10 +82,5 @@ namespace BlazeJump.Common.Services.Connections
 			}
 			await Task.WhenAll(connectionTasks);
 		}
-	}
-
-	public interface IRelayConnectionProvider
-	{
-		IRelayConnection CreateRelayConnection(string uri);
 	}
 }

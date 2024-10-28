@@ -11,9 +11,9 @@
 				@foreach (var relayConnection in RelayManager.RelayConnections)
 				{
 					<li>
-						@relayConnection.Key @relayConnection.Value.WebSocket.State.ToString()
-						<button type="button" hidden="@(relayConnection.Value.WebSocket.State == WebSocketState.Open)" @onclick="() => RelayManager.OpenConnection(relayConnection.Key)">Start</button>
-						<button type="button" hidden="@(relayConnection.Value.WebSocket.State != WebSocketState.Open)" @onclick="() => RelayManager.CloseConnection(relayConnection.Key)">Stop</button>
+						@relayConnection.Key @(relayConnection.Value.IsOpen ? "Open" : "Closed")
+						<button type="button" hidden="@(relayConnection.Value.IsOpen)" @onclick="() => RelayManager.OpenConnection(relayConnection.Key)">Start</button>
+						<button type="button" hidden="@(relayConnection.Value.IsOpen)" @onclick="() => RelayManager.CloseConnection(relayConnection.Key)">Stop</button>
 					</li>
 				}
 			</ul>

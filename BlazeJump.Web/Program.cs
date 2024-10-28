@@ -10,6 +10,7 @@ using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
 using Microsoft.JSInterop;
 using System.Reflection;
+using BlazeJump.Common.Services.Connections.Providers;
 
 var builder = WebAssemblyHostBuilder.CreateDefault(args);
 builder.RootComponents.Add<App>("#app");
@@ -24,7 +25,8 @@ builder.Services.AddScoped<ICryptoService, CryptoService>(
 		var jsRuntime = ctx.GetService<IJSRuntime>();
 		return new CryptoService(new BrowserCrypto(jsRuntime));
 	});
-builder.Services.AddScoped<IRelayManager, RelayManager>();
+builder.Services.AddScoped<IRelayManager, RelayManager>(
+	x => new RelayManager(new RelayConnectionProvider()));
 builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<IIdentityService, IdentityService>();
 

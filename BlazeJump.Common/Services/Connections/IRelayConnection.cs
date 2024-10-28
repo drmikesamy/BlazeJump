@@ -7,8 +7,8 @@ namespace BlazeJump.Common.Services.Connections;
 
 public interface IRelayConnection
 {
+    bool IsOpen { get; }
     Dictionary<string, bool> ActiveSubscriptions { get; set; }
-    ClientWebSocket WebSocket { get; set; }
     event EventHandler<MessageReceivedEventArgs> NewMessageReceived;
     Task Init();
     Task SubscribeAsync(MessageTypeEnum requestMessageType, string subscriptionId, List<Filter> filters);

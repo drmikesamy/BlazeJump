@@ -1,8 +1,8 @@
-﻿using System.Net.WebSockets;
-using BlazeJump.Common.Models;
+﻿using BlazeJump.Common.Models;
 using BlazeJump.Common.Services.Connections;
 using BlazeJump.Common.Services.Connections.Events;
 using BlazeJump.Common.Enums;
+using BlazeJump.Common.Services.Connections.Providers;
 using NSubstitute;
 
 namespace BlazeJump.Common.Tests.ServiceTests
@@ -19,7 +19,7 @@ namespace BlazeJump.Common.Tests.ServiceTests
         {
             _relayConnectionProvider = Substitute.For<IRelayConnectionProvider>();
             _relayConnection = Substitute.For<IRelayConnection>();
-            _relayConnection.WebSocket.Returns(new ClientWebSocket());
+            _relayConnection.IsOpen.Returns(false);
             _relayManager = new RelayManager(_relayConnectionProvider);
         }
 
