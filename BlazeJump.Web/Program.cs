@@ -26,7 +26,7 @@ builder.Services.AddScoped<ICryptoService, CryptoService>(
 		return new CryptoService(new BrowserCrypto(jsRuntime));
 	});
 builder.Services.AddScoped<IRelayManager, RelayManager>(
-	x => new RelayManager(new RelayConnectionProvider()));
+	_ => new RelayManager(new RelayConnectionProvider()));
 builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<IIdentityService, IdentityService>();
 
