@@ -11,6 +11,16 @@ section {
 .card-message {
     grid-template-columns: min-content auto;
 }
+.card-message-quote {
+    grid-template-columns: min-content auto;
+    border: 1px solid grey;
+    .profile-picture {
+        width: 3vw;
+        height: 3vw;
+    }
+    font-size: calc($base-font-size * 0.5);
+    @include responsive-content-padding;
+}
 
 .profile-picture {
     width: calc(50px + 2vw);

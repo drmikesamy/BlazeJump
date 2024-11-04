@@ -20,19 +20,14 @@
 				<p class="subtle-info-line">
 					@(TimeAgo.GetTimeAgo(NEvent.CreatedAtDateTime))
 				</p>
-				@if (TaggedRoot != null)
-				{
-					<MessageCard Message=TaggedRoot></MessageCard>
-				}
 				@if (TaggedReply != null)
 				{
-					<MessageCard Message=TaggedReply></MessageCard>
+					<MessageQuote Message=TaggedReply></MessageQuote>
 				}
-				<p>@TaggedReplyCount</p>
 				@ParseEmbeds.ParsePreviewContent(NEvent?.Content).FirstOrDefault()
 				<p>@(NEvent?.Content.ParseInlineEmbeds() ?? (MarkupString)"(No content)")</p>
 				<p class="stats-line">
-					<a @onclick=ViewMessage style="cursor: pointer">@(Children?.Count ?? 0) comments</a> |
+					<a @onclick=ViewMessage style="cursor: pointer">@(Children?.Distinct().Count() ?? 0) comments</a> |
 					@if (NEvent?.Verified ?? false)
 					{
 						<span>Verified</span>

@@ -6,7 +6,7 @@ namespace BlazeJump.Common.Services.Message
 {
 	public interface IMessageService
 	{
-		event EventHandler<string> EndOfFetchNotification;
+		Task FetchPage(string hex, PageTypeEnum pageType, bool firstLoad = false, bool isRelatedData = false);
 		RelationRegister RelationRegister { get; set; }
 		Dictionary<string, NMessage> MessageStore { get; set; }
 		Dictionary<string, List<string>> TopLevelFetchRegister { get; set; }

@@ -1,0 +1,23 @@
+﻿@using BlazeJump.Common.Services.Message;
+@using BlazeJump.Helpers;
+@inject IMessageService MessageService
+@inject NavigationManager NavManager
+
+@if (NEvent != null)
+{
+    <section>
+        <article class="card card-message-quote">
+            <div class="profile-picture" style="background-image: url('@($"{User?.ProfilePic ?? $"/images/profilepics/{new Random().Next(1, 18)}.png"}")')">
+            </div>
+            <div class="card-body">
+                <h3>
+                    <a @onclick=ViewUser style="cursor: pointer">@(User?.Username ?? $"{User?.Id?.Substring(0, 10)}...")</a>
+                </h3>
+                <p class="subtle-info-line">
+                    @(TimeAgo.GetTimeAgo(NEvent.CreatedAtDateTime))
+                </p>
+                <p>@(NEvent?.Content.ParseInlineEmbeds() ?? (MarkupString)"(No content)")</p>
+            </div>
+        </article>
+    </section>
+}

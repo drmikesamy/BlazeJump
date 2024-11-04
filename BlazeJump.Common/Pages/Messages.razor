@@ -17,26 +17,31 @@
 <div class="background-container">
 	<div class="content-container">
 		@if (PageTypeParsed != null
-				&& PageTypeParsed == PageTypeEnum.User
 				&& Hex != null
-				&& MessageService.MessageStore.TryGetValue(Hex, out var user)
-				&& user != null)
+				&& MessageService.MessageStore.TryGetValue(Hex, out var featuredMessage)
+				&& featuredMessage != null)
 		{
-			<UserCard User=user.Event.User></UserCard>
-		}
-		@foreach (var messageBucket in MessageService.TopLevelFetchRegister)
-		{
-			@foreach (var eventId in messageBucket.Value)
+			@if (PageTypeParsed == PageTypeEnum.User)
 			{
-				@if (MessageService.MessageStore.TryGetValue(eventId, out var message))
+				<UserCard User=featuredMessage!.Event!.User!></UserCard>
+			}
+			@foreach (var messageBucket in MessageService.TopLevelFetchRegister)
+			{
+				@foreach (var eventId in messageBucket.Value)
 				{
-					<MessageCard Message=message></MessageCard>
+					@if (MessageService.MessageStore.TryGetValue(eventId, out var message))
+					{
+						<MessageCard Message=message></MessageCard>
+					}
 				}
 			}
+			@if (PageTypeParsed.Value == PageTypeEnum.User)
+			{
+				<Card>
+					<a @onclick="() => _ = MessageService.FetchPage(Hex, PageTypeEnum.User, false)">Load more</a>
+				</Card>
+			}
 		}
-		<Card>
-			<a @onclick="() => Load()">Load more</a>
-		</Card>
 		@if (Hex == null)
 		{
 			<Card>

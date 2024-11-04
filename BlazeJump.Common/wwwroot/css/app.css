@@ -1,4 +1,4 @@
-﻿/*
+/*
 Theme Name: BlazeJump
 Author: ObjectWizard
 Version: 1.0
@@ -208,6 +208,17 @@ section {
   grid-template-columns: min-content auto;
 }
 
+.card-message-quote {
+  grid-template-columns: min-content auto;
+  border: 1px solid grey;
+  font-size: 8px;
+  padding: calc(0.5rem + 0.5vw);
+}
+.card-message-quote .profile-picture {
+  width: 3vw;
+  height: 3vw;
+}
+
 .profile-picture {
   width: calc(50px + 2vw);
   height: calc(50px + 2vw);
@@ -387,3 +398,5 @@ nav.horizontal-scroll-menu ul li a.active {
 .loading-modal.visible {
   opacity: 1;
 }
+
+/*# sourceMappingURL=app.css.map */
