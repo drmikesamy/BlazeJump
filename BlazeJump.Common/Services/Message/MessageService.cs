@@ -162,7 +162,7 @@ namespace BlazeJump.Common.Services.Message
                             break;
                         case TagEnum.p:
                             Console.WriteLine($"Processing user meta tag for event with Id {message.Event.Id}");
-                            RelationRegister.AddRelation(message.Event.Id, RelationTypeEnum.TaggedMetadata, tag.Value);
+                            RelationRegister.AddRelation(message.Event.Id, RelationTypeEnum.Metadata, tag.Value);
                             break;
                         default:
                             break;

@@ -1,4 +1,5 @@
-﻿@using BlazeJump.Common.Services.Message;
+﻿@using BlazeJump.Common.Enums
+@using BlazeJump.Common.Services.Message;
 @using BlazeJump.Helpers;
 @inject IMessageService MessageService
 @inject NavigationManager NavManager
@@ -17,6 +18,20 @@
                     @(TimeAgo.GetTimeAgo(NEvent.CreatedAtDateTime))
                 </p>
                 <p>@(NEvent?.Content.ParseInlineEmbeds() ?? (MarkupString)"(No content)")</p>
+                <p class="stats-line">
+                    @if (MessageService.RelationRegister.TryGetRelation(NEvent!.Id, RelationTypeEnum.Replies, out var replies))
+                    {
+                    <a @onclick=ViewMessage style="cursor: pointer">@replies.Count() comments</a><span> | </span>
+                    }
+                    @if (NEvent?.Verified ?? false)
+                    {
+                    <span>Verified</span>
+                    }
+                    else
+                    {
+                    <a @onclick="() => VerifyMessage(NEvent)" style="cursor: pointer">Verify</a>
+                    }
+                </p>
             </div>
         </article>
     </section>
