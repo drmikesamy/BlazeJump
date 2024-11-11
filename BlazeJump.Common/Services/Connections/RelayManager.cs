@@ -20,7 +20,7 @@ namespace BlazeJump.Common.Services.Connections
 			_connectionProvider = connectionProvider;
 			RelayConnections = new Dictionary<string, IRelayConnection> {
 				{ "wss://nostr.wine", _connectionProvider.CreateRelayConnection("wss://nostr.wine") },
-				// { "wss://relay.nostr.band", _connectionProvider.CreateRelayConnection("wss://relay.nostr.band") }
+				{ "wss://relay.nostr.band", _connectionProvider.CreateRelayConnection("wss://relay.nostr.band") }
 			};
 		}
 
