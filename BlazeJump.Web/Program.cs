@@ -17,18 +17,18 @@ builder.RootComponents.Add<App>("#app");
 builder.RootComponents.Add<HeadOutlet>("head::after");
 
 builder.Services.AddHttpClient("BlazeJump.ServerAPI", client => client.BaseAddress = new Uri(builder.HostEnvironment.BaseAddress));
-builder.Services.AddScoped<IUserProfileService, UserProfileService>();
-builder.Services.AddScoped<IMessageService, MessageService>();
-builder.Services.AddScoped<ICryptoService, CryptoService>(
+builder.Services.AddSingleton<IUserProfileService, UserProfileService>();
+builder.Services.AddSingleton<IMessageService, MessageService>();
+builder.Services.AddSingleton<ICryptoService, CryptoService>(
 	(ctx) =>
 	{
 		var jsRuntime = ctx.GetService<IJSRuntime>();
 		return new CryptoService(new BrowserCrypto(jsRuntime));
 	});
-builder.Services.AddScoped<IRelayManager, RelayManager>(
+builder.Services.AddSingleton<IRelayManager, RelayManager>(
 	_ => new RelayManager(new RelayConnectionProvider()));
-builder.Services.AddScoped<INotificationService, NotificationService>();
-builder.Services.AddScoped<IIdentityService, IdentityService>();
+builder.Services.AddSingleton<INotificationService, NotificationService>();
+builder.Services.AddSingleton<IIdentityService, IdentityService>();
 
 var mapperConfig = new MapperConfiguration(cfg =>
 {

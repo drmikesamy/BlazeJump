@@ -9,7 +9,6 @@ namespace BlazeJump.Common.Services.Message
 		Task FetchPage(string hex, PageTypeEnum pageType, bool firstLoad = false, bool isRelatedData = false);
 		RelationRegister RelationRegister { get; set; }
 		Dictionary<string, NMessage> MessageStore { get; set; }
-		Dictionary<string, List<string>> TopLevelFetchRegister { get; set; }
 		Task Fetch(List<Filter> filters, string? subscriptionId = null, MessageTypeEnum? messageType = null);
 		bool Verify(NEvent nEvent);
 		Task Send(KindEnum kind, string message);

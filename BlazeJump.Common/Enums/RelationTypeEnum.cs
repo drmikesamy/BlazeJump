@@ -1,6 +1,7 @@
 ﻿namespace BlazeJump.Common.Enums
 {
-    public enum FetchTypeEnum
+	[System.Flags]
+    public enum RelationTypeEnum
 	{
         Metadata = 0,
 		TaggedMetadata = 1,
@@ -9,5 +10,8 @@
 		Reactions = 4,
 		TaggedParentIds = 5,
 		TaggedRootId = 6,
+		UserTopLevelEvents = 7,
+		TopLevelEvents = 8,
+		TopLevelSubscription = 9
 	}
 }

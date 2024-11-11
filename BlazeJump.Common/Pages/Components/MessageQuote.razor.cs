@@ -10,7 +10,7 @@ namespace BlazeJump.Common.Pages.Components
         public NMessage Message { get; set; }
         public NEvent NEvent => Message.Event;
         public User User => MessageService.MessageStore.TryGetValue(NEvent.UserId, out var user) ? user.Event.User : new User();
-        public NMessage TaggedReply => MessageService.RelationRegister.TryGetRelations(new List<string> { NEvent.Id }, FetchTypeEnum.TaggedParentIds, out var replies) ? replies.Select(id => MessageService.MessageStore.ContainsKey(id) ? MessageService.MessageStore[id] : new NMessage()).FirstOrDefault() : null;
+        public NMessage TaggedReply => MessageService.RelationRegister.TryGetRelations(new List<string> { NEvent.Id }, RelationTypeEnum.TaggedParentIds, out var replies) ? replies.Select(id => MessageService.MessageStore.ContainsKey(id) ? MessageService.MessageStore[id] : new NMessage()).FirstOrDefault() : null;
         public void ViewUser()
         {
             NavManager.NavigateTo($"user/{NEvent.UserId}", true);

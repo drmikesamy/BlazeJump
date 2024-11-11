@@ -15,39 +15,42 @@
 @inject INotificationService NotificationService;
 
 <div class="background-container">
-	<div class="content-container">
-		@if (PageTypeParsed != null
-				&& Hex != null
-				&& MessageService.MessageStore.TryGetValue(Hex, out var featuredMessage)
-				&& featuredMessage != null)
-		{
-			@if (PageTypeParsed == PageTypeEnum.User)
-			{
-				<UserCard User=featuredMessage!.Event!.User!></UserCard>
-			}
-			@foreach (var messageBucket in MessageService.TopLevelFetchRegister)
-			{
-				@foreach (var eventId in messageBucket.Value)
-				{
-					@if (MessageService.MessageStore.TryGetValue(eventId, out var message))
-					{
-						<MessageCard Message=message></MessageCard>
-					}
-				}
-			}
-			@if (PageTypeParsed.Value == PageTypeEnum.User)
-			{
-				<Card>
-					<a @onclick="() => _ = MessageService.FetchPage(Hex, PageTypeEnum.User, false)">Load more</a>
-				</Card>
-			}
-		}
-		@if (Hex == null)
-		{
-			<Card>
-				<p>Nothing to see here. Click <NavLink href="user/82341f882b6eabcd2ba7f1ef90aad961cf074af15b9ef44a09f9d2a8fbfbe6a2">here</NavLink> for Jack Dorsey's profile.</p>
-			</Card>
-		}
-	</div>
-</div>
+    <div class="content-container">
+        @if (PageTypeParsed != null
+             && Hex != null
+             && MessageService.MessageStore.TryGetValue(Hex, out var featuredMessage)
+             && featuredMessage != null)
+        {
+            @if (PageTypeParsed == PageTypeEnum.User)
+            {
+                <UserCard User=featuredMessage!.Event!.User!></UserCard>
+            }
 
+            @if (MessageService.RelationRegister.TryGetRelation(Hex, RelationTypeEnum.TopLevelSubscription, out var topLevelSubscriptions)
+                 && MessageService.RelationRegister.TryGetRelations(topLevelSubscriptions, RelationTypeEnum.TopLevelEvents, out var topLevelEventIds))
+            {
+                @foreach (var eventId in topLevelEventIds)
+                {
+                    @if (MessageService.MessageStore.TryGetValue(eventId, out var message)
+                         && message!.Event!.Kind == KindEnum.Text)
+                    {
+                        <MessageCard Message=message></MessageCard>
+                    }
+                }
+            }
+
+            @if (PageTypeParsed.Value == PageTypeEnum.User)
+            {
+                <Card>
+                    <a @onclick="() => _ = MessageService.FetchPage(Hex, PageTypeEnum.User, false)">Load more</a>
+                </Card>
+            }
+        }
+        @if (Hex == null)
+        {
+            <Card>
+                <p>Nothing to see here. Click <NavLink href="user/82341f882b6eabcd2ba7f1ef90aad961cf074af15b9ef44a09f9d2a8fbfbe6a2">here</NavLink> for Jack Dorsey's profile.</p>
+            </Card>
+        }
+    </div>
+</div>

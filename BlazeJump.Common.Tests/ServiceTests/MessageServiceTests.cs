@@ -6,6 +6,7 @@ using BlazeJump.Common.Services.Connections;
 using BlazeJump.Common.Services.Crypto;
 using BlazeJump.Common.Services.UserProfile;
 using BlazeJump.Common.Services.Message;
+using BlazeJump.Common.Services.Notification;
 
 namespace BlazeJump.Common.Tests.ServiceTests
 {
@@ -15,6 +16,7 @@ namespace BlazeJump.Common.Tests.ServiceTests
         private IRelayManager _relayManager;
         private ICryptoService _cryptoService;
         private IUserProfileService _userProfileService;
+        private INotificationService _notificationService;
         private MessageService _sut;
 
         [SetUp]
@@ -23,7 +25,8 @@ namespace BlazeJump.Common.Tests.ServiceTests
             _relayManager = Substitute.For<IRelayManager>();
             _cryptoService = Substitute.For<ICryptoService>();
             _userProfileService = Substitute.For<IUserProfileService>();
-            _sut = new MessageService(_relayManager, _cryptoService, _userProfileService);
+            _notificationService = Substitute.For<INotificationService>();
+            _sut = new MessageService(_relayManager, _cryptoService, _userProfileService, _notificationService);
         }
 
         [Test]
@@ -40,14 +43,6 @@ namespace BlazeJump.Common.Tests.ServiceTests
                         Kind = KindEnum.Metadata, 
                         Id = "secondEventId", 
                         UserId = "secondUserId",
-                        Tags = new List<EventTag>
-                        {
-                            new EventTag
-                            {
-                                Key = TagEnum.p,
-                                Value = "taggedUserId"
-                            },
-                        }
                     }
                 }, new Tuple<int, long>(1, Stopwatch.GetTimestamp()));
             
@@ -83,22 +78,17 @@ namespace BlazeJump.Common.Tests.ServiceTests
                 new Tuple<int, long>(2, Stopwatch.GetTimestamp()));
             
             _relayManager.ReceivedMessages.Returns(x => queue);
-            
-            _sut.TopLevelFetchRegister.Add("first", new List<string>());
 
             // Act
             _relayManager.ProcessMessageQueue += Raise.Event<EventHandler>(new object(), null);
 
             // Assert
-            _sut.RelationRegister.TryGetRelations(new List<string>() { "firstEventId" }, FetchTypeEnum.TaggedRootId, out var firstEventRootId);
-            _sut.RelationRegister.TryGetRelations(new List<string>() { "firstEventId" }, FetchTypeEnum.TaggedParentIds, out var firstEventParentId);
-            _sut.RelationRegister.TryGetRelations(new List<string>() { "secondEventId" }, FetchTypeEnum.TaggedMetadata, out var secondEventTaggedUserId);
+            _sut.RelationRegister.TryGetRelations(new List<string>() { "firstEventId" }, RelationTypeEnum.TaggedRootId, out var firstEventRootId);
+            _sut.RelationRegister.TryGetRelations(new List<string>() { "firstEventId" }, RelationTypeEnum.TaggedParentIds, out var firstEventParentId);
             
             Assert.That(_sut.MessageStore.Count(), Is.EqualTo(2));
             Assert.That(firstEventRootId.First(), Is.EqualTo("taggedRootEventId"));
             Assert.That(firstEventParentId.First(), Is.EqualTo("taggedParentEventId"));
-            Assert.That(secondEventTaggedUserId.First(), Is.EqualTo("taggedUserId"));
-            Assert.That(_sut.TopLevelFetchRegister.Count(), Is.EqualTo(1));
         }
 
         [Test]

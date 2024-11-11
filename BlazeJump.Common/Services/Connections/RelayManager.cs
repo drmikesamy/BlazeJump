@@ -19,12 +19,14 @@ namespace BlazeJump.Common.Services.Connections
 		{
 			_connectionProvider = connectionProvider;
 			RelayConnections = new Dictionary<string, IRelayConnection> {
-				{ "wss://nostr.wine", _connectionProvider.CreateRelayConnection("wss://nostr.wine") }
+				{ "wss://nostr.wine", _connectionProvider.CreateRelayConnection("wss://nostr.wine") },
+				// { "wss://relay.nostr.band", _connectionProvider.CreateRelayConnection("wss://relay.nostr.band") }
 			};
 		}
 
 		private void AddToQueue(object sender, MessageReceivedEventArgs e)
 		{
+			Console.WriteLine($"Adding Event {e.Message?.Event?.Id} to queue");
 			ReceivedMessages.Enqueue(e.Message, new Tuple<int, long>(0, Stopwatch.GetTimestamp()));
 			ProcessMessageQueue?.Invoke(this, EventArgs.Empty);
 		}
@@ -57,8 +59,15 @@ namespace BlazeJump.Common.Services.Connections
 			{
 				Task connectionTask = Task.Run(async () =>
 				{
-					await OpenConnection(uri);
-					await RelayConnections[uri].SubscribeAsync(requestMessageType, subscriptionId, filters);
+					try
+					{
+						await OpenConnection(uri);
+						await RelayConnections[uri].SubscribeAsync(requestMessageType, subscriptionId, filters);
+					}
+					catch
+					{
+						Console.WriteLine($"Failed to connect to relay {uri}");
+					}
 				});
 				connectionTasks.Add(connectionTask);
 			}

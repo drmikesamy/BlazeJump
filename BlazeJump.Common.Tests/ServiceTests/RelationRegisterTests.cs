@@ -22,16 +22,16 @@ namespace BlazeJump.Common.Tests.ServiceTests
         {
             // Arrange
             string parentEventId = "parentEvent1";
-            FetchTypeEnum fetchType = FetchTypeEnum.Replies;
+            RelationTypeEnum relationType = RelationTypeEnum.Replies;
             string childEventId1 = "childEvent1";
             string childEventId2 = "childEvent2";
 
             // Act
-            _relationRegister.AddRelation(parentEventId, fetchType, childEventId1);
-            _relationRegister.AddRelation(parentEventId, fetchType, childEventId2);
+            _relationRegister.AddRelation(parentEventId, relationType, childEventId1);
+            _relationRegister.AddRelation(parentEventId, relationType, childEventId2);
 
             // Assert
-            Assert.IsTrue(_relationRegister.TryGetRelations(new List<string> { parentEventId }, fetchType, out var childEventIds));
+            Assert.IsTrue(_relationRegister.TryGetRelations(new List<string> { parentEventId }, relationType, out var childEventIds));
             Assert.That(childEventIds[0], Is.EqualTo("childEvent1"));
             Assert.That(childEventIds[1], Is.EqualTo("childEvent2"));
         }
@@ -41,10 +41,10 @@ namespace BlazeJump.Common.Tests.ServiceTests
         {
             // Arrange
             string parentEventId = "parentEvent1";
-            FetchTypeEnum fetchType = FetchTypeEnum.Replies;
+            RelationTypeEnum relationType = RelationTypeEnum.Replies;
 
             // Act
-            var result = _relationRegister.TryGetRelations(new List<string> { parentEventId }, fetchType, out var childEventIds);
+            var result = _relationRegister.TryGetRelations(new List<string> { parentEventId }, relationType, out var childEventIds);
 
             // Assert
             Assert.IsFalse(result);
@@ -56,13 +56,13 @@ namespace BlazeJump.Common.Tests.ServiceTests
         {
             // Arrange
             string parentEventId = "parentEvent1";
-            FetchTypeEnum fetchType = FetchTypeEnum.Replies;
+            RelationTypeEnum relationType = RelationTypeEnum.Replies;
             string childEventId = "childEvent1";
 
-            _relationRegister.AddRelation(parentEventId, fetchType, childEventId);
+            _relationRegister.AddRelation(parentEventId, relationType, childEventId);
 
             // Act
-            var result = _relationRegister.TryGetRelations(new List<string> { parentEventId }, fetchType, out var childEventIds);
+            var result = _relationRegister.TryGetRelations(new List<string> { parentEventId }, relationType, out var childEventIds);
 
             // Assert
             Assert.IsTrue(result);

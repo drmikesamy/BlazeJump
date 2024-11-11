@@ -20,14 +20,18 @@
 				<p class="subtle-info-line">
 					@(TimeAgo.GetTimeAgo(NEvent.CreatedAtDateTime))
 				</p>
-				@if (TaggedReply != null)
+				@if (MessageService.RelationRegister.TryGetRelation(NEvent.Id, RelationTypeEnum.TaggedParentIds, out var quote)
+				&& MessageService.MessageStore.TryGetValue(quote.First(), out var quoteMessage))
 				{
-					<MessageQuote Message=TaggedReply></MessageQuote>
+					<MessageQuote Message=quoteMessage></MessageQuote>
 				}
 				@ParseEmbeds.ParsePreviewContent(NEvent?.Content).FirstOrDefault()
 				<p>@(NEvent?.Content.ParseInlineEmbeds() ?? (MarkupString)"(No content)")</p>
 				<p class="stats-line">
-					<a @onclick=ViewMessage style="cursor: pointer">@(Children?.Distinct().Count() ?? 0) comments</a> |
+					@if (MessageService.RelationRegister.TryGetRelation(NEvent!.Id, RelationTypeEnum.Replies, out var replies))
+					{
+						<a @onclick=ViewMessage style="cursor: pointer">@replies.Count() comments</a><span> | </span>
+					}
 					@if (NEvent?.Verified ?? false)
 					{
 						<span>Verified</span>
