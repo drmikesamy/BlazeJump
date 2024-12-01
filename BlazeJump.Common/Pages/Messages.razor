@@ -13,6 +13,7 @@
 @inject IMessageService MessageService
 @inject ICryptoService CryptoService
 @inject INotificationService NotificationService;
+@inject NavigationManager NavManager;
 
 <div class="background-container">
     <div class="content-container">
@@ -23,11 +24,11 @@
         {
             @if (PageTypeParsed == PageTypeEnum.User)
             {
-                <UserCard User=featuredMessage!.Event!.User!></UserCard>
+                <UserCard UserEvent=featuredMessage!.Event!></UserCard>
             }
 
             @if (MessageService.RelationRegister.TryGetRelation(Hex, RelationTypeEnum.TopLevelSubscription, out var topLevelSubscriptions)
-                 && MessageService.RelationRegister.TryGetRelations(topLevelSubscriptions, RelationTypeEnum.TopLevelEvents, out var topLevelEventIds))
+                 && MessageService.RelationRegister.TryGetRelations(topLevelSubscriptions, RelationTypeEnum.Guid, out var topLevelEventIds))
             {
                 @foreach (var eventId in topLevelEventIds)
                 {
@@ -38,7 +39,6 @@
                     }
                 }
             }
-
             @if (PageTypeParsed.Value == PageTypeEnum.User)
             {
                 <Card>
@@ -49,8 +49,28 @@
         @if (Hex == null)
         {
             <Card>
-                <p>Nothing to see here. Click <NavLink href="user/82341f882b6eabcd2ba7f1ef90aad961cf074af15b9ef44a09f9d2a8fbfbe6a2">here</NavLink> for Jack Dorsey's profile.</p>
+                <label for="userLookup">
+                    Start typing a username or hex to add a user:
+                </label>
+                <input 
+                    id="userLookup" 
+                    type="text"
+                    @bind="_searchString" 
+                    @bind:event="oninput" 
+                    @bind:after="UpdateSearch"
+                />
             </Card>
+            @if (MessageService.RelationRegister.TryGetRelation(_searchString, RelationTypeEnum.UserLookup, out var guid)
+                 && MessageService.RelationRegister.TryGetRelation(guid.First(), RelationTypeEnum.UserGuid, out var userIds))
+            {
+                @foreach (var userId in userIds)
+                {
+                    @if (MessageService.MessageStore.TryGetValue(userId, out var user))
+                    {
+                        <UserCard UserEvent=user!.Event!></UserCard>
+                    }
+                }
+            }
         }
     </div>
 </div>

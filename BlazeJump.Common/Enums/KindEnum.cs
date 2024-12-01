@@ -19,6 +19,7 @@
         ReplaceableEventsReserved = 10000,
         RelayListMetadata = 10002,
         EphemeralEventsReserved = 20000,
-        NostrConnect = 24133
+        NostrConnect = 24133,
+        Communities = 34550
     }
 }

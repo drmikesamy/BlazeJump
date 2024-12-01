@@ -253,6 +253,12 @@ section {
   padding: calc(0.5rem + 0.5vw);
 }
 
+.card-row {
+  display: grid;
+  grid-gap: calc(0.5rem + 0.5vw);
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+}
+
 nav.primary-nav {
   padding: 0rem 1rem;
   background-color: black;

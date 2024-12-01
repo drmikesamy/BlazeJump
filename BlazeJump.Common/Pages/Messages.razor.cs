@@ -13,6 +13,7 @@ namespace BlazeJump.Common.Pages
 		public PageTypeEnum? PageTypeParsed { get; set; }
 		[Parameter]
 		public string? Hex { get; set; }
+		private string _searchString { get; set; } = string.Empty;
 		protected override async Task OnParametersSetAsync()
 		{
 			NotificationService.Loading = true;
@@ -30,6 +31,11 @@ namespace BlazeJump.Common.Pages
 		private void UpdateState(object sender, EventArgs e)
 		{
 			StateHasChanged();
+		}
+
+		private void UpdateSearch()
+		{
+			_ = MessageService.LookupUser(_searchString);
 		}
 	}
 }

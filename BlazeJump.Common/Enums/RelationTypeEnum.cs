@@ -11,7 +11,9 @@
 		TaggedParentIds = 5,
 		TaggedRootId = 6,
 		UserTopLevelEvents = 7,
-		TopLevelEvents = 8,
-		TopLevelSubscription = 9
+		Guid = 8,
+		TopLevelSubscription = 9,
+		UserLookup = 10,
+		UserGuid = 11
 	}
 }

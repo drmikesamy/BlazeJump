@@ -57,3 +57,10 @@ section {
     justify-content: center;
     @include responsive-content-padding;
 }
+
+//grid
+.card-row {
+    display: grid;
+    @include responsive-grid-gap;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+}

@@ -32,6 +32,24 @@ namespace BlazeJump.Common.Services.Message
             _notificationService = notificationService;
         }
 
+        public async Task LookupUser(string searchString)
+        {
+            if (RelationRegister.TryGetRelation(searchString, RelationTypeEnum.UserLookup, out var guid))
+            {
+                return;
+            }
+            var filterBuilder = new FilterBuilder();
+            var filterList = filterBuilder
+                .AddFilter()
+                .AddKind(KindEnum.Metadata)
+                .AddSearch(searchString)
+                .WithLimit(10)
+                .Build();
+            var lookupGuid = Guid.NewGuid().ToString();
+            RelationRegister.AddRelation(searchString, RelationTypeEnum.UserLookup, lookupGuid);
+            await Fetch(filterList, lookupGuid);
+        }
+
         public async Task FetchPage(string hex, PageTypeEnum pageType, bool firstLoad = false,
             bool isRelatedData = false)
         {
@@ -71,10 +89,10 @@ namespace BlazeJump.Common.Services.Message
 
             var filterList = filters.Build();
             var subscriptionId = Guid.NewGuid().ToString();
-            if (!isRelatedData)
+            if (!isRelatedData && pageType != PageTypeEnum.UserList)
             {
                 RelationRegister.AddRelation(hex, RelationTypeEnum.TopLevelSubscription, subscriptionId);
-                RelationRegister.AddRelation(subscriptionId, RelationTypeEnum.TopLevelEvents, hex);
+                RelationRegister.AddRelation(subscriptionId, RelationTypeEnum.Guid, hex);
             }
 
             await Fetch(filterList, subscriptionId);
@@ -113,8 +131,10 @@ namespace BlazeJump.Common.Services.Message
                     case KindEnum.Metadata:
                         MessageStore.TryAdd(message.Event.UserId, message);
                         break;
-                    
                     case KindEnum.Text:
+                        MessageStore.TryAdd(message.Event.Id, message);
+                        break;                    
+                    case KindEnum.Contacts:
                         MessageStore.TryAdd(message.Event.Id, message);
                         break;
                 }
@@ -127,15 +147,19 @@ namespace BlazeJump.Common.Services.Message
         {
             Console.WriteLine($"Processing text message top level with Id {message.Event.Id}");
             if (message?.Event?.Kind == KindEnum.Text
-                && RelationRegister.TryGetRelation(message.SubscriptionId, RelationTypeEnum.TopLevelEvents, out var topLevelEventList))
+                && RelationRegister.TryGetRelation(message.SubscriptionId, RelationTypeEnum.Guid, out var topLevelEventList))
             {
-                RelationRegister.AddRelation(message.SubscriptionId, RelationTypeEnum.TopLevelEvents, message.Event.Id);
+                RelationRegister.AddRelation(message.SubscriptionId, RelationTypeEnum.Guid, message.Event.Id);
                 RelationRegister.AddRelation(message.Event.Id, RelationTypeEnum.Metadata, message.Event.UserId);
                 
                 if (UntilMarker > message.Event.CreatedAtDateTime)
                 {
                     UntilMarker = message.Event.CreatedAtDateTime.AddMilliseconds(-1);
                 }
+            }
+            else if (message?.Event?.Kind == KindEnum.Metadata)
+            {
+                RelationRegister.AddRelation(message.SubscriptionId, RelationTypeEnum.UserGuid, message.Event.UserId);
             }
 
             foreach (var tag in message.Event.Tags)
@@ -172,7 +196,7 @@ namespace BlazeJump.Common.Services.Message
         }
         private void EndOfFetch(string subscriptionId)
         {
-            if (RelationRegister.TryGetRelation(subscriptionId, RelationTypeEnum.TopLevelEvents, out var eventIds))
+            if (RelationRegister.TryGetRelation(subscriptionId, RelationTypeEnum.Guid, out var eventIds))
             {
                 FilterBuilder filterBuilder = new();
 

@@ -65,6 +65,26 @@ namespace BlazeJump.Common.Builders
             _filter.TaggedEventIds.AddRange(taggedEventIds);
             return this;
         }
+        public FilterBuilder AddTaggedKeywords(List<string> taggedKeywords)
+        {
+            if (_filter.TaggedKeywords == null)
+            {
+                _filter.TaggedKeywords = new List<string>();
+            }
+
+            _filter.TaggedKeywords.AddRange(taggedKeywords);
+            return this;
+        }
+        public FilterBuilder AddTaggedKeyword(string taggedKeyword)
+        {
+            if (_filter.TaggedKeywords == null)
+            {
+                _filter.TaggedKeywords = new List<string>();
+            }
+
+            _filter.TaggedKeywords.Add(taggedKeyword);
+            return this;
+        }
 
         public FilterBuilder AddEventId(string eventId)
         {
@@ -109,6 +129,11 @@ namespace BlazeJump.Common.Builders
             _filter.Authors.AddRange(authors);
             return this;
         }
+        public FilterBuilder AddSearch(string query)
+        {
+            _filter.Search = query;
+            return this;
+        }
 
         public List<Filter> Build()
         {
@@ -117,7 +142,10 @@ namespace BlazeJump.Common.Builders
             foreach (var filter in _filters.ToList())
             {
                 if ((filter.Authors == null || filter.Authors.Count == 0)
+                    && (filter.Search == null)
                     && (filter.TaggedEventIds == null || filter.TaggedEventIds.Count == 0)
+                    && (filter.TaggedKeywords == null || filter.TaggedKeywords.Count == 0)
+                    && (filter.Kinds == null || filter.Kinds.Count == 0)
                     && (filter.EventIds == null || filter.EventIds.Count == 0))
                 {
                     _filters.Remove(filter);

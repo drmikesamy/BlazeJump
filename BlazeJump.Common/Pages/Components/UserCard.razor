@@ -5,19 +5,19 @@
 @inject IMessageService MessageService
 @inject NavigationManager NavManager
 
-<section class="profile-header full-width-section" style="background-image: url('@($"{User.Banner}")')">
+<section class="profile-header full-width-section" style="background-image: url('@($"{UserEvent?.User?.Banner}")')">
 	<article class="profile-pic-band">
-		<div class="profile-picture" style="background-image: url('@($"{User?.ProfilePic ?? $"/images/profilepics/{new Random().Next(1, 18)}.png"}")')">
+		<div class="profile-picture" style="background-image: url('@($"{UserEvent?.User?.ProfilePic ?? $"/images/profilepics/{new Random().Next(1, 18)}.png"}")')">
 		</div>
 	</article>
 	<article class="name-bio-band">
-		<a href="user/@(User.Id)"><h2>@(User.Username ?? $"{User.Id.Substring(0, 10)}...")</h2></a>
-		<p>@(User.Bio)</p>
+		<a href="user/@(UserEvent.UserId)"><h2>@(UserEvent?.User?.Username ?? $"{UserEvent?.UserId?.Substring(0, 10)}...")</h2></a>
+		<p>@(UserEvent?.User?.Bio)</p>
 	</article>
 </section>
 
 
 @code {
 	[Parameter]
-	public User User { get; set; }
+	public NEvent UserEvent { get; set; }
 }

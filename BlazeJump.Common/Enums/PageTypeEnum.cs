@@ -3,6 +3,7 @@
     public enum PageTypeEnum
     {
         User = 0,
-        Event = 1
+        Event = 1,
+        UserList = 2,
     }
 }
