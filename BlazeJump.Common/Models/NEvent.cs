@@ -1,4 +1,5 @@
 using BlazeJump.Common.Enums;
+using BlazeJump.Common.Helpers;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 
@@ -19,7 +20,7 @@ namespace BlazeJump.Common.Models
 		[JsonIgnore]
         public User? User { get; set; }
 		[JsonIgnore]
-		public DateTime CreatedAtDateTime => Helpers.UnixTimeStampToDateTime(Created_At).ToLocalTime();
+		public DateTime CreatedAtDateTime => GeneralHelpers.UnixTimeStampToDateTime(Created_At).ToLocalTime();
         [JsonIgnore]
         public virtual Dictionary<string, NEvent> Replies { get; set; } = new Dictionary<string, NEvent>();
         [JsonIgnore]

@@ -22,7 +22,7 @@ namespace BlazeJump.Common.Tests.ServiceTests
         {
             // Arrange
             string parentEventId = "parentEvent1";
-            RelationTypeEnum relationType = RelationTypeEnum.Replies;
+            RelationTypeEnum relationType = RelationTypeEnum.ETagToReferringEventId;
             string childEventId1 = "childEvent1";
             string childEventId2 = "childEvent2";
 
@@ -41,7 +41,7 @@ namespace BlazeJump.Common.Tests.ServiceTests
         {
             // Arrange
             string parentEventId = "parentEvent1";
-            RelationTypeEnum relationType = RelationTypeEnum.Replies;
+            RelationTypeEnum relationType = RelationTypeEnum.ETagToReferringEventId;
 
             // Act
             var result = _relationRegister.TryGetRelations(new List<string> { parentEventId }, relationType, out var childEventIds);
@@ -56,7 +56,7 @@ namespace BlazeJump.Common.Tests.ServiceTests
         {
             // Arrange
             string parentEventId = "parentEvent1";
-            RelationTypeEnum relationType = RelationTypeEnum.Replies;
+            RelationTypeEnum relationType = RelationTypeEnum.ETagToReferringEventId;
             string childEventId = "childEvent1";
 
             _relationRegister.AddRelation(parentEventId, relationType, childEventId);

@@ -4,28 +4,28 @@ namespace BlazeJump.Common.Services.Message;
 
 public class RelationRegister
 {
-    private readonly Dictionary<string, Dictionary<RelationTypeEnum, Dictionary<string, bool>>> _relationRegister = new();
+    public Dictionary<string, Dictionary<RelationTypeEnum, Dictionary<string, bool>>> Relationships { get; set; } = new();
 
     public void AddRelation(string parentEventId, RelationTypeEnum relationType, string childEventId)
     {
-        if (!_relationRegister.ContainsKey(parentEventId))
+        if (!Relationships.ContainsKey(parentEventId))
         {
-            _relationRegister.Add(parentEventId, new Dictionary<RelationTypeEnum, Dictionary<string, bool>>());
+            Relationships.Add(parentEventId, new Dictionary<RelationTypeEnum, Dictionary<string, bool>>());
         }
 
-        if (!_relationRegister[parentEventId].ContainsKey(relationType))
+        if (!Relationships[parentEventId].ContainsKey(relationType))
         {
-            _relationRegister[parentEventId].Add(relationType, new Dictionary<string, bool>());
+            Relationships[parentEventId].Add(relationType, new Dictionary<string, bool>());
         }
 
-        _relationRegister[parentEventId][relationType].TryAdd(childEventId, true);
+        Relationships[parentEventId][relationType].TryAdd(childEventId, true);
     }
 
     public bool TryGetRelation(string parentEventId, RelationTypeEnum relationType, out List<string> childEventIds)
     {
         childEventIds = null;
         Dictionary<string, bool> childEventIdDict = null;
-        _relationRegister.TryGetValue(parentEventId, out var kindsAndChildEventIds);
+        Relationships.TryGetValue(parentEventId, out var kindsAndChildEventIds);
         var found = kindsAndChildEventIds?.TryGetValue(relationType, out childEventIdDict) ?? false;
         childEventIds = found ? childEventIdDict.Keys.ToList() : new List<string>();
         return found;
@@ -36,7 +36,7 @@ public class RelationRegister
         childEventIds = new List<string>();
         foreach (var parentEventId in parentEventIds)
         {
-            if (_relationRegister.TryGetValue(parentEventId, out var kindsAndChildEventIds)
+            if (Relationships.TryGetValue(parentEventId, out var kindsAndChildEventIds)
                 && kindsAndChildEventIds.TryGetValue(relationType, out var childIds))
             {
                 childEventIds.AddRange(childIds.Keys);
@@ -49,5 +49,15 @@ public class RelationRegister
         }
 
         return false;
+    }
+
+    public bool RelationExists(string parentEventId, RelationTypeEnum relationType)
+    {
+        return Relationships.ContainsKey(parentEventId)
+            && Relationships[parentEventId].ContainsKey(relationType);
+    }
+    public Dictionary<string, Dictionary<RelationTypeEnum, Dictionary<string, bool>>> GetAll()
+    {
+        return Relationships;
     }
 }

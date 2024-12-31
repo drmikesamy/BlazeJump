@@ -8,6 +8,16 @@ section {
     display: grid;
     @include responsive-grid-gap;
 }
+
+.card-featured{
+    .card-username{
+        font-size: calc($base-font-size * 3);
+    }
+    .card-content{
+        font-size: calc($base-font-size * 2.5);
+    }
+}
+
 .card-message {
     grid-template-columns: min-content auto;
 }

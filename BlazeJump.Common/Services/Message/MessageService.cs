@@ -8,6 +8,7 @@ using Microsoft.Maui.Controls;
 using System;
 using System.Diagnostics;
 using BlazeJump.Common.Builders;
+using BlazeJump.Common.Helpers;
 using BlazeJump.Common.Services.Notification;
 
 namespace BlazeJump.Common.Services.Message
@@ -34,10 +35,11 @@ namespace BlazeJump.Common.Services.Message
 
         public async Task LookupUser(string searchString)
         {
-            if (RelationRegister.TryGetRelation(searchString, RelationTypeEnum.UserLookup, out var guid))
+            if (RelationRegister.TryGetRelation(searchString, RelationTypeEnum.SearchToSubscriptionId, out var guid))
             {
                 return;
             }
+
             var filterBuilder = new FilterBuilder();
             var filterList = filterBuilder
                 .AddFilter()
@@ -46,55 +48,32 @@ namespace BlazeJump.Common.Services.Message
                 .WithLimit(10)
                 .Build();
             var lookupGuid = Guid.NewGuid().ToString();
-            RelationRegister.AddRelation(searchString, RelationTypeEnum.UserLookup, lookupGuid);
+            RelationRegister.AddRelation(lookupGuid, RelationTypeEnum.SubscriptionGuidToIds, lookupGuid);
+            RelationRegister.AddRelation(searchString, RelationTypeEnum.SearchToSubscriptionId, lookupGuid);
             await Fetch(filterList, lookupGuid);
         }
 
-        public async Task FetchPage(string hex, PageTypeEnum pageType, bool firstLoad = false,
-            bool isRelatedData = false)
+        public async Task FetchPage(string hex)
         {
-            if (firstLoad && MessageStore.ContainsKey(hex))
-            {
-                return;
-            }
-
-            if (firstLoad)
-            {
-                UntilMarker = DateTime.Now.AddDays(1);
-            }
-
             FilterBuilder filters = new();
-            if (firstLoad
-                && pageType == PageTypeEnum.Event)
-            {
-                filters
-                    .AddFilter()
-                    .AddKind(KindEnum.Text)
-                    .AddEventId(hex);
-                filters
-                    .AddFilter()
-                    .AddKind(KindEnum.Text)
-                    .WithToDate(UntilMarker)
-                    .AddTaggedEventId(hex);
-            }
-            else if (pageType == PageTypeEnum.User)
-            {
-                filters
-                    .AddFilter()
-                    .AddKind(KindEnum.Text)
-                    .WithToDate(UntilMarker)
-                    .WithLimit(5)
-                    .AddAuthor(hex);
-            }
-
+            filters
+                .AddFilter()
+                .AddKind(KindEnum.Text)
+                .AddEventId(hex);
+            filters
+                .AddFilter()
+                .AddKind(KindEnum.Text)
+                .WithToDate(UntilMarker)
+                .AddTaggedEventId(hex);
+            filters
+                .AddFilter()
+                .AddKind(KindEnum.Text)
+                .WithToDate(UntilMarker)
+                .WithLimit(5)
+                .AddAuthor(hex);
             var filterList = filters.Build();
             var subscriptionId = Guid.NewGuid().ToString();
-            if (!isRelatedData && pageType != PageTypeEnum.UserList)
-            {
-                RelationRegister.AddRelation(hex, RelationTypeEnum.TopLevelSubscription, subscriptionId);
-                RelationRegister.AddRelation(subscriptionId, RelationTypeEnum.Guid, hex);
-            }
-
+            RelationRegister.AddRelation(subscriptionId, RelationTypeEnum.RootLevelSubscription, hex);
             await Fetch(filterList, subscriptionId);
         }
 
@@ -125,7 +104,9 @@ namespace BlazeJump.Common.Services.Message
                     Console.WriteLine($"Message has no event. Skipping.");
                     continue;
                 }
-                Console.WriteLine($"Processing {message.MessageType} message with id {message.Event.Id} and Kind {message.Event.Kind}");
+
+                Console.WriteLine(
+                    $"Processing {message.MessageType} message with id {message.Event.Id} and Kind {message.Event.Kind}");
                 switch (message.Event.Kind)
                 {
                     case KindEnum.Metadata:
@@ -133,11 +114,9 @@ namespace BlazeJump.Common.Services.Message
                         break;
                     case KindEnum.Text:
                         MessageStore.TryAdd(message.Event.Id, message);
-                        break;                    
-                    case KindEnum.Contacts:
-                        MessageStore.TryAdd(message.Event.Id, message);
                         break;
                 }
+
                 Console.WriteLine($"Processing relations for {message.MessageType} message with id {message.Event.Id}");
                 ProcessRelations(message);
             }
@@ -145,23 +124,15 @@ namespace BlazeJump.Common.Services.Message
 
         private void ProcessRelations(NMessage message)
         {
-            Console.WriteLine($"Processing text message top level with Id {message.Event.Id}");
-            if (message?.Event?.Kind == KindEnum.Text
-                && RelationRegister.TryGetRelation(message.SubscriptionId, RelationTypeEnum.Guid, out var topLevelEventList))
-            {
-                RelationRegister.AddRelation(message.SubscriptionId, RelationTypeEnum.Guid, message.Event.Id);
-                RelationRegister.AddRelation(message.Event.Id, RelationTypeEnum.Metadata, message.Event.UserId);
-                
-                if (UntilMarker > message.Event.CreatedAtDateTime)
-                {
-                    UntilMarker = message.Event.CreatedAtDateTime.AddMilliseconds(-1);
-                }
-            }
-            else if (message?.Event?.Kind == KindEnum.Metadata)
-            {
-                RelationRegister.AddRelation(message.SubscriptionId, RelationTypeEnum.UserGuid, message.Event.UserId);
-            }
+            RelationRegister.AddRelation(message.Event.UserId, RelationTypeEnum.EventsByUser, message.Event.Id);
+            RelationRegister.AddRelation(message.Event.Id, RelationTypeEnum.UserByEvent, message.Event.UserId);
 
+            if (RelationRegister.TryGetRelation(message.SubscriptionId, RelationTypeEnum.SubscriptionGuidToIds,
+                    out var guid))
+            {
+                RelationRegister.AddRelation(message.SubscriptionId, RelationTypeEnum.SubscriptionGuidToIds, message.Event.UserId);
+            }
+            
             foreach (var tag in message.Event.Tags)
             {
                 if (tag.Value != null)
@@ -169,24 +140,7 @@ namespace BlazeJump.Common.Services.Message
                     switch (tag.Key)
                     {
                         case TagEnum.e:
-                            if (tag.Value3 == "reply")
-                            {
-                                Console.WriteLine($"Processing reply tag for event with Id {message.Event.Id}");
-                                RelationRegister.AddRelation(message.Event.Id, RelationTypeEnum.TaggedParentIds,
-                                    tag.Value);
-                            }
-                            else if (tag.Value3 == "root")
-                            {
-                                Console.WriteLine($"Processing root tag for event with Id {message.Event.Id}");
-                                RelationRegister.AddRelation(message.Event.Id, RelationTypeEnum.TaggedRootId,
-                                    tag.Value);
-                            }
-                            Console.WriteLine($"Processing relation for message that {message.Event.Id} replies to.");
-                            RelationRegister.AddRelation(tag.Value, RelationTypeEnum.Replies, message.Event.Id);
-                            break;
-                        case TagEnum.p:
-                            Console.WriteLine($"Processing user meta tag for event with Id {message.Event.Id}");
-                            RelationRegister.AddRelation(message.Event.Id, RelationTypeEnum.Metadata, tag.Value);
+                            RelationRegister.AddRelation(tag.Value, RelationTypeEnum.EventChildren, message.Event.Id);
                             break;
                         default:
                             break;
@@ -194,53 +148,38 @@ namespace BlazeJump.Common.Services.Message
                 }
             }
         }
+
         private void EndOfFetch(string subscriptionId)
         {
-            if (RelationRegister.TryGetRelation(subscriptionId, RelationTypeEnum.Guid, out var eventIds))
+            if (RelationRegister.TryGetRelation(subscriptionId, RelationTypeEnum.RootLevelSubscription, out var rootId)
+                && (RelationRegister.TryGetRelations(rootId, RelationTypeEnum.EventChildren, out var topLevelEventIds)
+                || RelationRegister.TryGetRelations(rootId, RelationTypeEnum.EventsByUser, out topLevelEventIds)))
             {
-                FilterBuilder filterBuilder = new();
-
-                filterBuilder
-                    .AddFilter()
-                    .AddKind(KindEnum.Text)
-                    .AddTaggedEventIds(eventIds.Distinct().ToList());
-
-                if (RelationRegister.TryGetRelations(eventIds, RelationTypeEnum.Metadata, out var userIds))
-                {
-                    filterBuilder
-                        .AddFilter()
-                        .AddKind(KindEnum.Metadata)
-                        .AddAuthors(userIds.Where(id => !MessageStore.ContainsKey(id)).Distinct().ToList());
-                }
-
-                if (RelationRegister.TryGetRelations(eventIds, RelationTypeEnum.TaggedParentIds,
-                        out var childEventIdsReply))
-                {
-                    var missingEventIdsReply = childEventIdsReply.Where(id => !MessageStore.ContainsKey(id)).ToList();
+                    FilterBuilder filterBuilder = new();
 
                     filterBuilder
                         .AddFilter()
                         .AddKind(KindEnum.Text)
-                        .AddEventIds(missingEventIdsReply.Distinct().ToList());
-                }
+                        .AddTaggedEventIds(topLevelEventIds.Distinct().ToList());
+                    
+                    topLevelEventIds.Add(rootId.First());
 
-                if (RelationRegister.TryGetRelations(eventIds, RelationTypeEnum.TaggedRootId,
-                        out var childEventIdsRoot))
-                {
-                    var missingEventIdsRoot = childEventIdsRoot.Where(id => !MessageStore.ContainsKey(id)).ToList();
+                    if (RelationRegister.TryGetRelations(topLevelEventIds, RelationTypeEnum.UserByEvent,
+                            out var userIds))
+                    {
+                        filterBuilder
+                            .AddFilter()
+                            .AddKind(KindEnum.Metadata)
+                            .AddAuthors(userIds.Where(id => !MessageStore.ContainsKey(id)).Distinct().ToList());
+                    }
 
-                    filterBuilder
-                        .AddFilter()
-                        .AddKind(KindEnum.Text)
-                        .AddEventIds(missingEventIdsRoot.Distinct().ToList());
-                }
+                    var filters = filterBuilder.Build();
 
-                var filters = filterBuilder.Build();
-
-                var fetchId = Guid.NewGuid().ToString();
-                _ = Fetch(filters, fetchId);
+                    var fetchId = Guid.NewGuid().ToString();
+                    _ = Fetch(filters, fetchId);
             }
         }
+
         private bool Sign(ref NEvent nEvent)
         {
             if (_cryptoService.EtherealPublicKey == null)
@@ -254,6 +193,7 @@ namespace BlazeJump.Common.Services.Message
             nEvent.Sig = signature;
             return true;
         }
+
         public bool Verify(NEvent nEvent)
         {
             var signableEvent = nEvent.GetSignableNEvent();

@@ -3,17 +3,14 @@
 	[System.Flags]
     public enum RelationTypeEnum
 	{
-        Metadata = 0,
-		TaggedMetadata = 1,
-		Text = 2,
-		Replies = 3,
-		Reactions = 4,
-		TaggedParentIds = 5,
-		TaggedRootId = 6,
-		UserTopLevelEvents = 7,
-		Guid = 8,
-		TopLevelSubscription = 9,
-		UserLookup = 10,
-		UserGuid = 11
+		ETagToReferringEventId = 3,
+		EventIdToReplyEventId = 5,
+		RootEventIdToETags = 6,
+		SearchToSubscriptionId = 10,
+		SubscriptionGuidToIds = 11,
+		RootLevelSubscription = 14,
+		EventChildren = 15,
+		EventsByUser = 16,
+		UserByEvent = 17
 	}
 }

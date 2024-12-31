@@ -83,8 +83,8 @@ namespace BlazeJump.Common.Tests.ServiceTests
             _relayManager.ProcessMessageQueue += Raise.Event<EventHandler>(new object(), null);
 
             // Assert
-            _sut.RelationRegister.TryGetRelations(new List<string>() { "firstEventId" }, RelationTypeEnum.TaggedRootId, out var firstEventRootId);
-            _sut.RelationRegister.TryGetRelations(new List<string>() { "firstEventId" }, RelationTypeEnum.TaggedParentIds, out var firstEventParentId);
+            _sut.RelationRegister.TryGetRelations(new List<string>() { "firstEventId" }, RelationTypeEnum.RootEventIdToETags, out var firstEventRootId);
+            _sut.RelationRegister.TryGetRelations(new List<string>() { "firstEventId" }, RelationTypeEnum.EventIdToReplyEventId, out var firstEventParentId);
             
             Assert.That(_sut.MessageStore.Count(), Is.EqualTo(2));
             Assert.That(firstEventRootId.First(), Is.EqualTo("taggedRootEventId"));

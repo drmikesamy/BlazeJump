@@ -9,41 +9,36 @@
 
 @if (NEvent != null)
 {
-	<section>
-		<article class="card card-message">
-			<div class="profile-picture" style="background-image: url('@($"{User?.ProfilePic ?? $"/images/profilepics/{new Random().Next(1, 18)}.png"}")')">
-			</div>
-			<div class="card-body">
-				<h3>
-					<a @onclick=ViewUser style="cursor: pointer">@(User?.Username ?? $"{User?.Id?.Substring(0, 10)}...")</a>
-				</h3>
-				<p class="subtle-info-line">
-					@(TimeAgo.GetTimeAgo(NEvent.CreatedAtDateTime))
-				</p>
-				@if (MessageService.RelationRegister.TryGetRelation(NEvent.Id, RelationTypeEnum.TaggedParentIds, out var quote)
-				&& MessageService.MessageStore.TryGetValue(quote.First(), out var quoteMessage))
-				{
-					<MessageQuote Message=quoteMessage></MessageQuote>
-				}
-				@ParseEmbeds.ParsePreviewContent(NEvent?.Content).FirstOrDefault()
-				<p>@(NEvent?.Content.ParseInlineEmbeds() ?? (MarkupString)"(No content)")</p>
-				<p class="stats-line">
-					@if (MessageService.RelationRegister.TryGetRelation(NEvent!.Id, RelationTypeEnum.Replies, out var replies))
-					{
-						<a @onclick=ViewMessage style="cursor: pointer">@replies.Count() comments</a><span> | </span>
-					}
-					@if (NEvent?.Verified ?? false)
-					{
-						<span>Verified</span>
-					}
-					else
-					{
-						<a @onclick="() => VerifyMessage(NEvent)" style="cursor: pointer">Verify</a>
-					}
-				</p>
-			</div>
-		</article>
-	</section>
+    <section>
+        <article class="card card-message @(Featured ? "featured" : "")">
+            <div class="profile-picture" style="background-image: url('@($"{User?.ProfilePic ?? $"/images/profilepics/{new Random().Next(1, 18)}.png"}")')">
+            </div>
+            <div class="card-body">
+                <h3 class="card-username">
+                    <a @onclick=ViewUser style="cursor: pointer">@(User?.Username ?? $"{User?.Id?.Substring(0, 10)}...")</a>
+                </h3>
+                <p class="subtle-info-line">
+                    @(TimeAgo.GetTimeAgo(NEvent.CreatedAtDateTime))
+                </p>
+                @if (MessageService.RelationRegister.TryGetRelation(NEvent.Id, RelationTypeEnum.EventIdToReplyEventId, out var quote)
+                     && MessageService.MessageStore.TryGetValue(quote.First(), out var quoteMessage))
+                {
+                    <MessageQuote Message=quoteMessage></MessageQuote>
+                }
+                @ParseEmbeds.ParsePreviewContent(NEvent?.Content).FirstOrDefault()
+                <p class="card-content">@(NEvent?.Content.ParseInlineEmbeds() ?? (MarkupString)"(No content)")</p>
+                <p class="stats-line">
+                    <a @onclick=ViewMessage style="cursor: pointer">@(MessageService.RelationRegister.TryGetRelation(NEvent!.Id, RelationTypeEnum.EventChildren, out var replies) ? replies?.Count() : 0) comments</a><span> | </span>
+                    @if (NEvent?.Verified ?? false)
+                    {
+                        <span>Verified</span>
+                    }
+                    else
+                    {
+                        <a @onclick="() => VerifyMessage(NEvent)" style="cursor: pointer">Verify</a>
+                    }
+                </p>
+            </div>
+        </article>
+    </section>
 }
-
-

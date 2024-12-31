@@ -8,6 +8,7 @@ namespace BlazeJump.Helpers
 	public static class ParseEmbeds
 	{
 		public static Regex youtubeUrlPattern = new Regex(@"(?:https?:\/\/)?(?:www\.)?(?:(?:(?:youtube.com\/watch\?[^?]*v=|youtu.be\/)([\w\-]+))(?:[^\s?]+)?)", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+		public static Regex vimeoUrlPattern = new Regex(@"(http|https)?:\/\/(www\.|player\.)?vimeo\.com\/(?:channels\/(?:\w+\/)?|groups\/([^\/]*)\/videos\/|video\/|)(\d+)(?:|\/\?)", RegexOptions.Compiled | RegexOptions.IgnoreCase);
 		
 		public static MarkupString ParseInlineEmbeds(this string content)
 		{
@@ -26,6 +27,10 @@ namespace BlazeJump.Helpers
 			foreach (Match m in linkFinder.Matches(content))
 			{
 				if (youtubeUrlPattern.IsMatch(m.Value))
+				{
+					htmlItems.Add(ParseVideoUrl(m.Value));
+				}
+				if (vimeoUrlPattern.IsMatch(m.Value))
 				{
 					htmlItems.Add(ParseVideoUrl(m.Value));
 				}

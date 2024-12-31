@@ -4,30 +4,66 @@ html {
     color: $text-colour;
 }
 
+$base-dimension: 0.5vw;
+$base-modifier: 0.9rem;
+$featured-modifier: 1.2;
+
+$h1-size: calc($base-modifier*2.9 + $base-dimension);
+$h2-size: calc($base-modifier*2.0 + $base-dimension);
+$h3-size: calc($base-modifier*1.2 + $base-dimension);
+$h4-size: calc($base-modifier*0.7 + $base-dimension);
+$h5-size: calc($base-modifier*0.5 + $base-dimension);
+$h6-size: calc($base-modifier*0.2 + $base-dimension);
+$p-size: calc($base-modifier + $base-dimension);
+
 h1 {
-    font-size: calc(2.6rem + 0.5vw);
+    font-size: $h1-size;
 }
 h2 {
-    font-size: calc(1.8rem + 0.5vw);
+    font-size: $h2-size;
 }
 h3 {
-    font-size: calc(1.1rem + 0.5vw);
+    font-size: $h3-size;
 }
 h4 {
-    font-size: calc(0.6rem + 0.5vw);
+    font-size: $h4-size;
 }
 h5 {
-    font-size: calc(0.4rem + 0.5vw);
+    font-size: $h5-size;
 }
 h6 {
-    font-size: calc(0.2rem + 0.5vw);
+    font-size: $h6-size;
 }
 p {
-    font-size: calc(0.9rem + 0.5vw);
+    font-size: $p-size;
+}
+
+.featured{
+    h1 {
+        font-size: $h1-size * $featured-modifier;
+    }
+    h2 {
+        font-size: $h2-size * $featured-modifier;
+    }
+    h3 {
+        font-size: $h3-size * $featured-modifier;
+    }
+    h4 {
+        font-size: $h4-size * $featured-modifier;
+    }
+    h5 {
+        font-size: $h5-size * $featured-modifier;
+    }
+    h6 {
+        font-size: $h6-size * $featured-modifier;
+    }
+    p {
+        font-size: $p-size * $featured-modifier;
+    }
 }
 
 nav.primary-nav {
-    font-size: calc(1.1rem + 0.5vw);
+    font-size: $h3-size;
 }
 
 

@@ -11,7 +11,7 @@
 		</div>
 	</article>
 	<article class="name-bio-band">
-		<a href="user/@(UserEvent.UserId)"><h2>@(UserEvent?.User?.Username ?? $"{UserEvent?.UserId?.Substring(0, 10)}...")</h2></a>
+		<a href="@(UserEvent.UserId)"><h2>@(UserEvent?.User?.Username ?? $"{UserEvent?.UserId?.Substring(0, 10)}...")</h2></a>
 		<p>@(UserEvent?.User?.Bio)</p>
 	</article>
 </section>

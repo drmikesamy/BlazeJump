@@ -1,5 +1,5 @@
 ﻿@page "/"
-@page "/{PageType}/{Hex}"
+@page "/{RootId}"
 @using BlazeJump.Common.Enums;
 @using BlazeJump.Common.Pages.Components
 @using BlazeJump.Common.Services.Connections;
@@ -7,8 +7,6 @@
 @using BlazeJump.Common.Services.Crypto;
 @using BlazeJump.Common.Services.Message;
 @using BlazeJump.Common.Services.Notification;
-@using BlazeJump.Common.Services.UserProfile;
-@using System.Text.Json
 @inject IRelayManager RelayManager
 @inject IMessageService MessageService
 @inject ICryptoService CryptoService
@@ -17,18 +15,20 @@
 
 <div class="background-container">
     <div class="content-container">
-        @if (PageTypeParsed != null
-             && Hex != null
-             && MessageService.MessageStore.TryGetValue(Hex, out var featuredMessage)
-             && featuredMessage != null)
+        @if (HexRootId != null
+             && MessageService.MessageStore.TryGetValue(HexRootId, out var rootMessage))
         {
-            @if (PageTypeParsed == PageTypeEnum.User)
+            @if (rootMessage?.Event?.Kind == KindEnum.Metadata)
             {
-                <UserCard UserEvent=featuredMessage!.Event!></UserCard>
+                <UserCard UserEvent=rootMessage!.Event!></UserCard>
+            }
+            else if (rootMessage?.Event?.Kind == KindEnum.Text)
+            {
+                <MessageCard Message=rootMessage Featured="true"></MessageCard>
             }
 
-            @if (MessageService.RelationRegister.TryGetRelation(Hex, RelationTypeEnum.TopLevelSubscription, out var topLevelSubscriptions)
-                 && MessageService.RelationRegister.TryGetRelations(topLevelSubscriptions, RelationTypeEnum.Guid, out var topLevelEventIds))
+            @if (MessageService.RelationRegister.TryGetRelation(HexRootId, RelationTypeEnum.EventChildren, out var topLevelEventIds)
+                 || MessageService.RelationRegister.TryGetRelation(HexRootId, RelationTypeEnum.EventsByUser, out topLevelEventIds))
             {
                 @foreach (var eventId in topLevelEventIds)
                 {
@@ -39,29 +39,29 @@
                     }
                 }
             }
-            @if (PageTypeParsed.Value == PageTypeEnum.User)
+
+            @if (rootMessage?.Event?.Kind == KindEnum.Metadata)
             {
                 <Card>
-                    <a @onclick="() => _ = MessageService.FetchPage(Hex, PageTypeEnum.User, false)">Load more</a>
+                    <a @onclick="() => _ = MessageService.FetchPage(RootId)">Load more</a>
                 </Card>
             }
         }
-        @if (Hex == null)
+        @if (HexRootId == null)
         {
             <Card>
                 <label for="userLookup">
                     Start typing a username or hex to add a user:
                 </label>
-                <input 
-                    id="userLookup" 
+                <input
+                    id="userLookup"
                     type="text"
-                    @bind="_searchString" 
-                    @bind:event="oninput" 
-                    @bind:after="UpdateSearch"
-                />
+                    @bind="_searchString"
+                    @bind:event="oninput"
+                    @bind:after="UpdateSearch"/>
             </Card>
-            @if (MessageService.RelationRegister.TryGetRelation(_searchString, RelationTypeEnum.UserLookup, out var guid)
-                 && MessageService.RelationRegister.TryGetRelation(guid.First(), RelationTypeEnum.UserGuid, out var userIds))
+            @if (MessageService.RelationRegister.TryGetRelation(_searchString, RelationTypeEnum.SearchToSubscriptionId, out var guid)
+                 && MessageService.RelationRegister.TryGetRelation(guid.First(), RelationTypeEnum.SubscriptionGuidToIds, out var userIds))
             {
                 @foreach (var userId in userIds)
                 {
@@ -74,3 +74,32 @@
         }
     </div>
 </div>
+
+
+@* <table border="1"> *@
+@*     <thead> *@
+@*     <tr> *@
+@*         <th>Key</th> *@
+@*         <th>Type</th> *@
+@*         <th>Value</th> *@
+@*     </tr> *@
+@*     </thead> *@
+@*     <tbody> *@
+@*     @foreach (var relation in MessageService.RelationRegister.Relationships) *@
+@*     { *@
+@*         @foreach (var relationItem in relation.Value) *@
+@*         { *@
+@*             <tr> *@
+@*                 <td>@relation.Key.ToString()</td> *@
+@*                 <td>@relationItem.Key.ToString()</td> *@
+@*                 <td> *@
+@*                     @foreach (var value in relationItem.Value) *@
+@*                     { *@
+@*                         @value.Key.ToString()<br/> *@
+@*                     } *@
+@*                 </td> *@
+@*             </tr> *@
+@*         } *@
+@*     } *@
+@*     </tbody> *@
+@* </table> *@
