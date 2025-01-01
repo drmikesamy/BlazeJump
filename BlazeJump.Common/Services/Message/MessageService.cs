@@ -21,7 +21,6 @@ namespace BlazeJump.Common.Services.Message
         private INotificationService _notificationService;
         public Dictionary<string, NMessage> MessageStore { get; set; } = new();
         public RelationRegister RelationRegister { get; set; } = new();
-        public DateTime UntilMarker { get; set; } = DateTime.Now.AddDays(1);
 
         public MessageService(IRelayManager relayManager, ICryptoService cryptoService,
             IUserProfileService userProfileService, INotificationService notificationService)
@@ -53,8 +52,10 @@ namespace BlazeJump.Common.Services.Message
             await Fetch(filterList, lookupGuid);
         }
 
-        public async Task FetchPage(string hex)
+        public async Task FetchPage(string hex, DateTime? untilMarker = null)
         {
+            var until = untilMarker ?? DateTime.Now.AddDays(1);
+            
             FilterBuilder filters = new();
             filters
                 .AddFilter()
@@ -63,12 +64,12 @@ namespace BlazeJump.Common.Services.Message
             filters
                 .AddFilter()
                 .AddKind(KindEnum.Text)
-                .WithToDate(UntilMarker)
+                .WithToDate(until)
                 .AddTaggedEventId(hex);
             filters
                 .AddFilter()
                 .AddKind(KindEnum.Text)
-                .WithToDate(UntilMarker)
+                .WithToDate(until)
                 .WithLimit(5)
                 .AddAuthor(hex);
             var filterList = filters.Build();

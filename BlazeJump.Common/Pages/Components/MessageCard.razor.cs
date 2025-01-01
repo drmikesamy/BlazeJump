@@ -9,7 +9,7 @@ namespace BlazeJump.Common.Pages.Components
 		[Parameter]
 		public NMessage Message { get; set; }
 
-		[Parameter] public bool Featured { get; set; } = false;
+		[Parameter] public string Styling { get; set; }
 		public NEvent NEvent => Message.Event;
 		public User User => MessageService.MessageStore.TryGetValue(NEvent.UserId, out var user) ? user.Event.User : new User();
 		public void ViewUser()

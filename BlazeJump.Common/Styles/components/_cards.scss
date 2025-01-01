@@ -9,20 +9,11 @@ section {
     @include responsive-grid-gap;
 }
 
-.card-featured{
-    .card-username{
-        font-size: calc($base-font-size * 3);
-    }
-    .card-content{
-        font-size: calc($base-font-size * 2.5);
-    }
-}
-
 .card-message {
     grid-template-columns: min-content auto;
 }
-.card-message-quote {
-    grid-template-columns: min-content auto;
+
+.card-message.quote {
     border: 1px solid grey;
     .profile-picture {
         width: 3vw;
@@ -30,6 +21,13 @@ section {
     }
     font-size: calc($base-font-size * 0.5);
     @include responsive-content-padding;
+}
+
+.card-message.featured {
+    .profile-picture {
+        width: calc(60px + 4vw);
+        height: calc(60px + 4vw);
+    }
 }
 
 .profile-picture {

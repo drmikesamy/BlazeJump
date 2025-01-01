@@ -10,7 +10,7 @@
 @if (NEvent != null)
 {
     <section>
-        <article class="card card-message @(Featured ? "featured" : "")">
+        <article class="card card-message @Styling">
             <div class="profile-picture" style="background-image: url('@($"{User?.ProfilePic ?? $"/images/profilepics/{new Random().Next(1, 18)}.png"}")')">
             </div>
             <div class="card-body">
@@ -20,10 +20,10 @@
                 <p class="subtle-info-line">
                     @(TimeAgo.GetTimeAgo(NEvent.CreatedAtDateTime))
                 </p>
-                @if (MessageService.RelationRegister.TryGetRelation(NEvent.Id, RelationTypeEnum.EventIdToReplyEventId, out var quote)
-                     && MessageService.MessageStore.TryGetValue(quote.First(), out var quoteMessage))
+                @if (NEvent.ParentId != null
+                     && MessageService.MessageStore.TryGetValue(NEvent.ParentId, out var quoteMessage))
                 {
-                    <MessageQuote Message=quoteMessage></MessageQuote>
+                    <MessageCard Message=quoteMessage Styling="quote"></MessageCard>
                 }
                 @ParseEmbeds.ParsePreviewContent(NEvent?.Content).FirstOrDefault()
                 <p class="card-content">@(NEvent?.Content.ParseInlineEmbeds() ?? (MarkupString)"(No content)")</p>

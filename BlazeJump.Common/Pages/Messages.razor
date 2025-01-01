@@ -24,7 +24,7 @@
             }
             else if (rootMessage?.Event?.Kind == KindEnum.Text)
             {
-                <MessageCard Message=rootMessage Featured="true"></MessageCard>
+                <MessageCard Message=rootMessage  Styling="featured"></MessageCard>
             }
 
             @if (MessageService.RelationRegister.TryGetRelation(HexRootId, RelationTypeEnum.EventChildren, out var topLevelEventIds)
@@ -36,16 +36,17 @@
                          && message!.Event!.Kind == KindEnum.Text)
                     {
                         <MessageCard Message=message></MessageCard>
+                        @if (eventId == topLevelEventIds.Last())
+                        {
+                            <Card>
+                                <a @onclick="() => _ = MessageService.FetchPage(HexRootId, message.Event.CreatedAtDateTime.AddMicroseconds(-1))">Load more</a>
+                            </Card>
+                        }
                     }
                 }
             }
 
-            @if (rootMessage?.Event?.Kind == KindEnum.Metadata)
-            {
-                <Card>
-                    <a @onclick="() => _ = MessageService.FetchPage(RootId)">Load more</a>
-                </Card>
-            }
+
         }
         @if (HexRootId == null)
         {

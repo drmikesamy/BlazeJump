@@ -22,11 +22,9 @@ namespace BlazeJump.Common.Models
 		[JsonIgnore]
 		public DateTime CreatedAtDateTime => GeneralHelpers.UnixTimeStampToDateTime(Created_At).ToLocalTime();
         [JsonIgnore]
-        public virtual Dictionary<string, NEvent> Replies { get; set; } = new Dictionary<string, NEvent>();
+        public string RootId => Tags?.FirstOrDefault(t => t.Key == TagEnum.e && t.Value3 == "root")?.Value;
         [JsonIgnore]
-        public int ReplyCount => Replies.Count;
-        [JsonIgnore]
-        public int ReactionCount { get; set; } = 0;
+        public string ParentId => Tags?.FirstOrDefault(t => t.Key == TagEnum.e && t.Value3 == "reply")?.Value;
         [JsonIgnore]
         public bool Verified { get; set; } = false;
         public NEvent GetSignableNEvent()

@@ -7,7 +7,7 @@ namespace BlazeJump.Common.Services.Message
 	public interface IMessageService
 	{
 		Task LookupUser(string searchString);
-		Task FetchPage(string hex);
+		Task FetchPage(string hex, DateTime? untilMarker = null);
 		RelationRegister RelationRegister { get; set; }
 		Dictionary<string, NMessage> MessageStore { get; set; }
 		Task Fetch(List<Filter> filters, string? subscriptionId = null, MessageTypeEnum? messageType = null);

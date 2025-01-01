@@ -40,25 +40,25 @@ p {
 
 .featured{
     h1 {
-        font-size: $h1-size * $featured-modifier;
+        font-size: calc($h1-size * $featured-modifier);
     }
     h2 {
-        font-size: $h2-size * $featured-modifier;
+        font-size: calc($h2-size * $featured-modifier);
     }
     h3 {
-        font-size: $h3-size * $featured-modifier;
+        font-size: calc($h3-size * $featured-modifier);
     }
     h4 {
-        font-size: $h4-size * $featured-modifier;
+        font-size: calc($h4-size * $featured-modifier);
     }
     h5 {
-        font-size: $h5-size * $featured-modifier;
+        font-size: calc($h5-size * $featured-modifier);
     }
     h6 {
-        font-size: $h6-size * $featured-modifier;
+        font-size: calc($h6-size * $featured-modifier);
     }
     p {
-        font-size: $p-size * $featured-modifier;
+        font-size: calc($p-size * $featured-modifier);
     }
 }
 
