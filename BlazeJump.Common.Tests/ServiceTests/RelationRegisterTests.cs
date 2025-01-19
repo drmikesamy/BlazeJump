@@ -22,7 +22,7 @@ namespace BlazeJump.Common.Tests.ServiceTests
         {
             // Arrange
             string parentEventId = "parentEvent1";
-            RelationTypeEnum relationType = RelationTypeEnum.ETagToReferringEventId;
+            RelationTypeEnum relationType = RelationTypeEnum.EventChildren;
             string childEventId1 = "childEvent1";
             string childEventId2 = "childEvent2";
 
@@ -31,7 +31,7 @@ namespace BlazeJump.Common.Tests.ServiceTests
             _relationRegister.AddRelation(parentEventId, relationType, childEventId2);
 
             // Assert
-            Assert.IsTrue(_relationRegister.TryGetRelations(new List<string> { parentEventId }, relationType, out var childEventIds));
+            Assert.That(_relationRegister.TryGetRelations(new List<string> { parentEventId }, relationType, out var childEventIds), Is.True);
             Assert.That(childEventIds[0], Is.EqualTo("childEvent1"));
             Assert.That(childEventIds[1], Is.EqualTo("childEvent2"));
         }
@@ -41,14 +41,14 @@ namespace BlazeJump.Common.Tests.ServiceTests
         {
             // Arrange
             string parentEventId = "parentEvent1";
-            RelationTypeEnum relationType = RelationTypeEnum.ETagToReferringEventId;
+            RelationTypeEnum relationType = RelationTypeEnum.EventChildren;
 
             // Act
             var result = _relationRegister.TryGetRelations(new List<string> { parentEventId }, relationType, out var childEventIds);
 
             // Assert
-            Assert.IsFalse(result);
-            Assert.IsEmpty(childEventIds);
+            Assert.That(result, Is.False);
+            Assert.That(childEventIds, Is.Empty);
         }
 
         [Test]
@@ -56,7 +56,7 @@ namespace BlazeJump.Common.Tests.ServiceTests
         {
             // Arrange
             string parentEventId = "parentEvent1";
-            RelationTypeEnum relationType = RelationTypeEnum.ETagToReferringEventId;
+            RelationTypeEnum relationType = RelationTypeEnum.EventChildren;
             string childEventId = "childEvent1";
 
             _relationRegister.AddRelation(parentEventId, relationType, childEventId);
@@ -65,8 +65,8 @@ namespace BlazeJump.Common.Tests.ServiceTests
             var result = _relationRegister.TryGetRelations(new List<string> { parentEventId }, relationType, out var childEventIds);
 
             // Assert
-            Assert.IsTrue(result);
-            Assert.Contains(childEventId, childEventIds);
+            Assert.That(result, Is.True);
+            Assert.That(childEventId, Is.AnyOf(childEventIds));
         }
     }
 }

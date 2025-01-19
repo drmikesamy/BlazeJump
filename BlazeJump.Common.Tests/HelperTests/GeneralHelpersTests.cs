@@ -17,7 +17,7 @@ namespace BlazeJump.Common.Tests.HelperTests
             
             // Assert
             DateTime expectedDateTime = DateTime.Parse(expectedDate);
-            Assert.AreEqual(expectedDateTime, result);
+            Assert.Equals(expectedDateTime, result);
         }
 
         [TestCase("1970-01-01 00:00:00", 0)]
@@ -32,7 +32,7 @@ namespace BlazeJump.Common.Tests.HelperTests
             long result = DateTimeToUnixTimeStamp(dateTime);
             
             // Assert
-            Assert.AreEqual(expectedUnixTime, result);
+            Assert.Equals(expectedUnixTime, result);
         }
 
         [TestCase("82341f882b6eabcd2ba7f1ef90aad961cf074af15b9ef44a09f9d2a8fbfbe6a2", "npub1sg6plzptd64u62a878hep2kev88swjh3tw00gjsfl8f237lmu63q0uf63m")]
@@ -43,7 +43,7 @@ namespace BlazeJump.Common.Tests.HelperTests
             string result = HexToNpub(hexString);
             
             // Assert
-            Assert.AreEqual(expectedNpub, result);
+            Assert.Equals(expectedNpub, result);
         }
 
         [TestCase("npub1sg6plzptd64u62a878hep2kev88swjh3tw00gjsfl8f237lmu63q0uf63m", "82341f882b6eabcd2ba7f1ef90aad961cf074af15b9ef44a09f9d2a8fbfbe6a2")]
@@ -54,7 +54,7 @@ namespace BlazeJump.Common.Tests.HelperTests
             string result = NpubToHex(npubString);
             
             // Assert
-            Assert.AreEqual(expectedHex, result);
+            Assert.Equals(expectedHex, result);
         }
 
         [TestCase("3f4ed57d4846dd12dc4a97fef7fe1a85f2e0c5aea8d8df5de9c6afd625000c2b", "nsec18a8d2l2ggmw39hz2jll00ls6shewp3dw4rvd7h0fc6havfgqps4s4a94vw")]
@@ -65,7 +65,7 @@ namespace BlazeJump.Common.Tests.HelperTests
             string result = HexToNsec(hexString);
             
             // Assert
-            Assert.AreEqual(expectedNsec, result);
+            Assert.Equals(expectedNsec, result);
         }
 
         [TestCase("nsec1ds67xd9sdzy752g677e7l3956l06guafszpzwczxheeusu3wvhzqmyst2g", "6c35e334b06889ea291af7b3efc4b4d7dfa473a98082276046be73c8722e65c4")]
@@ -76,7 +76,7 @@ namespace BlazeJump.Common.Tests.HelperTests
             string result = NsecToHex(nsecString);
             
             // Assert
-            Assert.AreEqual(expectedHex, result);
+            Assert.Equals(expectedHex, result);
         }
 
         [Test]

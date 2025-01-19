@@ -12,7 +12,7 @@ namespace BlazeJump.Common.Pages
         [Parameter] public string? RootId { get; set; }
         private string? HexRootId => GeneralHelpers.NpubToHex(RootId);
         private string _searchString { get; set; } = string.Empty;
-
+        private string _messageToSend { get; set; } = string.Empty;
         protected override async Task OnParametersSetAsync()
         {
             NotificationService.Loading = true;

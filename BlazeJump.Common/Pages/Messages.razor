@@ -1,17 +1,12 @@
 ﻿@page "/"
 @page "/{RootId}"
+@using System.Text
 @using BlazeJump.Common.Enums;
 @using BlazeJump.Common.Pages.Components
-@using BlazeJump.Common.Services.Connections;
-@using BlazeJump.Common.Models;
-@using BlazeJump.Common.Services.Crypto;
 @using BlazeJump.Common.Services.Message;
 @using BlazeJump.Common.Services.Notification;
-@inject IRelayManager RelayManager
 @inject IMessageService MessageService
-@inject ICryptoService CryptoService
 @inject INotificationService NotificationService;
-@inject NavigationManager NavManager;
 
 <div class="background-container">
     <div class="content-container">
@@ -24,7 +19,13 @@
             }
             else if (rootMessage?.Event?.Kind == KindEnum.Text)
             {
-                <MessageCard Message=rootMessage  Styling="featured"></MessageCard>
+                <MessageCard Message=rootMessage Styling="featured"></MessageCard>
+                <Card>
+                    <input id="messageToSend"
+                           type="text"
+                           @bind="_messageToSend"/>
+                    <button @onclick="() => MessageService.Send(KindEnum.Text, _messageToSend)">Send</button>
+                </Card>
             }
 
             @if (MessageService.RelationRegister.TryGetRelation(HexRootId, RelationTypeEnum.EventChildren, out var topLevelEventIds)
@@ -45,8 +46,6 @@
                     }
                 }
             }
-
-
         }
         @if (HexRootId == null)
         {

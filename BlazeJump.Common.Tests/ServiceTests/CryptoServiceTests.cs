@@ -24,7 +24,7 @@ namespace BlazeJump.Tests.Services.Crypto
 			_cryptoService.CreateEtherealKeyPair();
 
 			// Assert
-			Assert.IsNotNull(_cryptoService.EtherealPublicKey);
+			Assert.That(_cryptoService.EtherealPublicKey, Is.Not.Null);
 		}
 
 		[Test]
@@ -34,9 +34,9 @@ namespace BlazeJump.Tests.Services.Crypto
 			var keyPair = _cryptoService.GetNewSecp256k1KeyPair();
 
 			// Assert
-			Assert.IsNotNull(keyPair);
-			Assert.IsNotNull(keyPair.PrivateKey);
-			Assert.IsNotNull(keyPair.PublicKey);
+			Assert.That(keyPair, Is.Not.Null);
+			Assert.That(keyPair.PrivateKey, Is.Not.Null);
+			Assert.That(keyPair.PublicKey, Is.Not.Null);
 		}
 
 		[Test]
@@ -53,9 +53,9 @@ namespace BlazeJump.Tests.Services.Crypto
 			var result = await _cryptoService.AesEncrypt(plainText, theirPublicKey);
 
 			// Assert
-			Assert.IsNotNull(result);
+			Assert.That(result, Is.Not.Null);
 			Assert.That(result.Item1, Is.EqualTo("encryptedText"));
-			Assert.IsNotNull(result.Item2);
+			Assert.That(result.Item2, Is.Not.Null);
 		}
 
 		[Test]
@@ -88,7 +88,7 @@ namespace BlazeJump.Tests.Services.Crypto
 			var signature = _cryptoService.Sign(message);
 
 			// Assert
-			Assert.IsNotNull(signature);
+			Assert.That(signature, Is.Not.Null);
 			Assert.That(signature.Length, Is.EqualTo(128));
 		}
 
@@ -105,7 +105,7 @@ namespace BlazeJump.Tests.Services.Crypto
 			var isValid = _cryptoService.Verify(signature, message, xOnlyPublicKey);
 
 			// Assert
-			Assert.IsTrue(isValid);
+			Assert.That(isValid, Is.True);
 		}
 	}
 }

@@ -34,7 +34,7 @@ namespace BlazeJump.Common.Tests.ServiceTests
             await _relayManager.OpenConnection(uri);
 
             // Assert
-            Assert.IsTrue(_relayManager.RelayConnections.ContainsKey(uri));
+            Assert.That(_relayManager.RelayConnections.ContainsKey(uri), Is.True);
             await _relayConnection.Received(1).Init();
         }
 

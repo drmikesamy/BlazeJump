@@ -10,6 +10,7 @@ using System.Diagnostics;
 using BlazeJump.Common.Builders;
 using BlazeJump.Common.Helpers;
 using BlazeJump.Common.Services.Notification;
+using BlazeJump.Helpers;
 
 namespace BlazeJump.Common.Services.Message
 {
@@ -192,6 +193,9 @@ namespace BlazeJump.Common.Services.Message
             var serialisedNEvent = JsonConvert.SerializeObject(signableEvent);
             var signature = _cryptoService.Sign(serialisedNEvent);
             nEvent.Sig = signature;
+            var signedSerialisedNEvent = JsonConvert.SerializeObject(signableEvent);
+            var sha256 = Convert.ToHexString(signedSerialisedNEvent.SHA256Hash());
+            nEvent.Id = sha256;
             return true;
         }
 

@@ -18,7 +18,7 @@ namespace BlazeJump.Common.Tests.HelperTests
 
             // Assert
             var expected = "Check this link: <a href=\"https://example.com\" target=\"_blank\">https://example.com</a> and <a href=\"https://another-link.com\" target=\"_blank\">https://another-link.com</a>";
-            Assert.AreEqual(expected, result.ToString());
+            Assert.Equals(expected, result.ToString());
         }
 
         [Test]
@@ -32,7 +32,7 @@ namespace BlazeJump.Common.Tests.HelperTests
 
             // Assert
             var expected = "<iframe class=\"video-player\" src=\"https://www.youtube.com/embed/dQw4w9WgXcQ\" title=\"YouTube video player\" frameborder=\"0\" allow=\"accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share\" allowfullscreen></iframe>";
-            Assert.AreEqual(expected, result[0].ToString());
+            Assert.Equals(expected, result[0].ToString());
         }
 
         [Test]
@@ -46,7 +46,7 @@ namespace BlazeJump.Common.Tests.HelperTests
 
             // Assert
             var expected = "<iframe class=\"video-player\" src=\"https://player.vimeo.com/video/123456789\" frameborder=\"0\" allow=\"autoplay; fullscreen; picture-in-picture\" allowfullscreen></iframe>";
-            Assert.AreEqual(expected, result[0].ToString());
+            Assert.Equals(expected, result[0].ToString());
         }
 
         [Test]
@@ -73,7 +73,7 @@ namespace BlazeJump.Common.Tests.HelperTests
 
             // Assert
             var expected = "<iframe class=\"video-player\" src=\"https://www.youtube.com/embed/dQw4w9WgXcQ\" title=\"YouTube video player\" frameborder=\"0\" allow=\"accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share\" allowfullscreen></iframe>";
-            Assert.AreEqual(expected, result.ToString());
+            Assert.Equals(expected, result.ToString());
         }
 
         [Test]
@@ -87,7 +87,7 @@ namespace BlazeJump.Common.Tests.HelperTests
 
             // Assert
             var expected = "<iframe class=\"video-player\" src=\"https://player.vimeo.com/video/123456789\" frameborder=\"0\" allow=\"autoplay; fullscreen; picture-in-picture\" allowfullscreen></iframe>";
-            Assert.AreEqual(expected, result.ToString());
+            Assert.Equals(expected, result.ToString());
         }
 
         [Test]
@@ -101,7 +101,7 @@ namespace BlazeJump.Common.Tests.HelperTests
 
             // Assert
             var expected = "<div class=\"error\"><p>Invalid Video URL</p></div>";
-            Assert.AreEqual(expected, result.ToString());
+            Assert.Equals(expected, result.ToString());
         }
 
         [Test]
@@ -114,7 +114,7 @@ namespace BlazeJump.Common.Tests.HelperTests
             var result = ParseEmbeds.StringAsMarkup(input);
 
             // Assert
-            Assert.AreEqual(input, result.ToString());
+            Assert.Equals(input, result.ToString());
         }
     }
 }

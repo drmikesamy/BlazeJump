@@ -67,7 +67,7 @@ namespace BlazeJump.Common.Tests.ServiceTests
             await _relayConnection.SubscribeAsync(MessageTypeEnum.Req, subscriptionId, filters);
 
             // Assert
-            Assert.IsTrue(_relayConnection.ActiveSubscriptions.ContainsKey(subscriptionId));
+            Assert.That(_relayConnection.ActiveSubscriptions.ContainsKey(subscriptionId), Is.True);
             await _clientWebSocketWrapper.Received(1).SendAsync(Arg.Any<ArraySegment<byte>>(), Arg.Any<WebSocketMessageType>(), Arg.Any<bool>(), Arg.Any<CancellationToken>());
         }
         
@@ -97,8 +97,8 @@ namespace BlazeJump.Common.Tests.ServiceTests
             // Act
             await _relayConnection.SubscribeAsync(MessageTypeEnum.Req, subscriptionId, filters);
 
-            // Assert
-            Assert.IsFalse(_relayConnection.ActiveSubscriptions.ContainsKey(subscriptionId));
+			// Assert
+			Assert.That(_relayConnection.ActiveSubscriptions.ContainsKey(subscriptionId), Is.False);
             await _clientWebSocketWrapper.Received(0).SendAsync(Arg.Any<ArraySegment<byte>>(), Arg.Any<WebSocketMessageType>(), Arg.Any<bool>(), Arg.Any<CancellationToken>());
         }
 
@@ -152,7 +152,7 @@ namespace BlazeJump.Common.Tests.ServiceTests
 
             // Assert
             await _clientWebSocketWrapper.Received(1).SendAsync(Arg.Any<ArraySegment<byte>>(), Arg.Any<WebSocketMessageType>(), Arg.Any<bool>(), Arg.Any<CancellationToken>());
-            Assert.IsFalse(_relayConnection.ActiveSubscriptions.ContainsKey(subscriptionId));
+            Assert.That(_relayConnection.ActiveSubscriptions.ContainsKey(subscriptionId), Is.False);
             _clientWebSocketWrapper.Received(1).Dispose();
         }
     }
