@@ -1,3 +1,4 @@
+using AutoMapper;
 using BlazeJump.Common.Enums;
 using BlazeJump.Common.Helpers;
 using Newtonsoft.Json;
@@ -5,18 +6,23 @@ using Newtonsoft.Json.Serialization;
 
 namespace BlazeJump.Common.Models
 {
-	[JsonConverter(typeof(NEventConverter))]
 	[JsonObject(NamingStrategyType = typeof(SnakeCaseNamingStrategy))]
 	public class NEvent
     {
-        public string Id { get; set; }
-		[JsonProperty("pubkey", NullValueHandling = NullValueHandling.Ignore)]
-		public string? UserId { get; set; }
+		[JsonProperty(Order = 1)]
+		public string Id { get; set; }
+		[JsonProperty(Order = 2)]
+		public string? Pubkey { get; set; }
+		[JsonProperty(Order = 3)]
 		public long Created_At { get; set; }
+		[JsonProperty(Order = 4)]
 		public KindEnum? Kind { get; set; }
-        public List<EventTag>? Tags { get; set; } = new List<EventTag>();
-        public string? Content { get; set; }
-        public string? Sig { get; set; }
+		[JsonProperty(Order = 5)]
+		public List<EventTag>? Tags { get; set; } = new List<EventTag>();
+		[JsonProperty(Order = 6)]
+		public string? Content { get; set; }
+		[JsonProperty(Order = 7)]
+		public string? Sig { get; set; }
 		[JsonIgnore]
         public User? User { get; set; }
 		[JsonIgnore]
@@ -27,17 +33,6 @@ namespace BlazeJump.Common.Models
         public string ParentId => Tags?.FirstOrDefault(t => t.Key == TagEnum.e && t.Value3 == "reply")?.Value;
         [JsonIgnore]
         public bool Verified { get; set; } = false;
-        public NEvent GetSignableNEvent()
-        {
-			return new NEvent
-            {
-                UserId = this.UserId,
-                Created_At = this.Created_At,
-                Kind = this.Kind,
-                Tags = this.Tags,
-                Content = this.Content,
-            };
-        }
-    }
+	}
 
 }

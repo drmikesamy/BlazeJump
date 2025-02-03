@@ -19,6 +19,15 @@
 	</PropertyGroup>
 
 	<ItemGroup>
+	  <Compile Remove="Platforms\**" />
+	  <Content Remove="Platforms\**" />
+	  <EmbeddedResource Remove="Platforms\**" />
+	  <MauiCss Remove="Platforms\**" />
+	  <MauiXaml Remove="Platforms\**" />
+	  <None Remove="Platforms\**" />
+	</ItemGroup>
+
+	<ItemGroup>
 	  <Compile Remove="Models\MessageReceivedEventArgs.cs" />
 	</ItemGroup>
 

@@ -11,6 +11,7 @@ using BlazeJump.Common.Builders;
 using BlazeJump.Common.Helpers;
 using BlazeJump.Common.Services.Notification;
 using BlazeJump.Helpers;
+using AutoMapper;
 
 namespace BlazeJump.Common.Services.Message
 {
@@ -20,17 +21,19 @@ namespace BlazeJump.Common.Services.Message
         private ICryptoService _cryptoService;
         private IUserProfileService _userProfileService;
         private INotificationService _notificationService;
+        private IMapper _mapper;
         public Dictionary<string, NMessage> MessageStore { get; set; } = new();
         public RelationRegister RelationRegister { get; set; } = new();
 
         public MessageService(IRelayManager relayManager, ICryptoService cryptoService,
-            IUserProfileService userProfileService, INotificationService notificationService)
+            IUserProfileService userProfileService, INotificationService notificationService, IMapper mapper)
         {
             _relayManager = relayManager;
             _cryptoService = cryptoService;
             _userProfileService = userProfileService;
             _relayManager.ProcessMessageQueue += ProcessReceivedMessages;
             _notificationService = notificationService;
+            _mapper = mapper;
         }
 
         public async Task LookupUser(string searchString)
@@ -112,7 +115,7 @@ namespace BlazeJump.Common.Services.Message
                 switch (message.Event.Kind)
                 {
                     case KindEnum.Metadata:
-                        MessageStore.TryAdd(message.Event.UserId, message);
+                        MessageStore.TryAdd(message.Event.Pubkey, message);
                         break;
                     case KindEnum.Text:
                         MessageStore.TryAdd(message.Event.Id, message);
@@ -126,13 +129,13 @@ namespace BlazeJump.Common.Services.Message
 
         private void ProcessRelations(NMessage message)
         {
-            RelationRegister.AddRelation(message.Event.UserId, RelationTypeEnum.EventsByUser, message.Event.Id);
-            RelationRegister.AddRelation(message.Event.Id, RelationTypeEnum.UserByEvent, message.Event.UserId);
+            RelationRegister.AddRelation(message.Event.Pubkey, RelationTypeEnum.EventsByUser, message.Event.Id);
+            RelationRegister.AddRelation(message.Event.Id, RelationTypeEnum.UserByEvent, message.Event.Pubkey);
 
             if (RelationRegister.TryGetRelation(message.SubscriptionId, RelationTypeEnum.SubscriptionGuidToIds,
                     out var guid))
             {
-                RelationRegister.AddRelation(message.SubscriptionId, RelationTypeEnum.SubscriptionGuidToIds, message.Event.UserId);
+                RelationRegister.AddRelation(message.SubscriptionId, RelationTypeEnum.SubscriptionGuidToIds, message.Event.Pubkey);
             }
             
             foreach (var tag in message.Event.Tags)
@@ -143,7 +146,15 @@ namespace BlazeJump.Common.Services.Message
                     {
                         case TagEnum.e:
                             RelationRegister.AddRelation(tag.Value, RelationTypeEnum.EventChildren, message.Event.Id);
-                            break;
+                            if (tag.Value3 == "Root")
+                            {
+								RelationRegister.AddRelation(message.Event.Id, RelationTypeEnum.EventRoot, tag.Value);
+							}
+							if (tag.Value3 == "Reply")
+							{
+								RelationRegister.AddRelation(message.Event.Id, RelationTypeEnum.EventParent, tag.Value);
+							}
+							break;
                         default:
                             break;
                     }
@@ -188,43 +199,74 @@ namespace BlazeJump.Common.Services.Message
             {
                 _cryptoService.CreateEtherealKeyPair();
             }
-
-            var signableEvent = nEvent.GetSignableNEvent();
-            var serialisedNEvent = JsonConvert.SerializeObject(signableEvent);
-            var signature = _cryptoService.Sign(serialisedNEvent);
-            nEvent.Sig = signature;
-            var signedSerialisedNEvent = JsonConvert.SerializeObject(signableEvent);
-            var sha256 = Convert.ToHexString(signedSerialisedNEvent.SHA256Hash());
-            nEvent.Id = sha256;
-            return true;
+			nEvent.Pubkey = Convert.ToHexString(_cryptoService.EtherealPublicKey.ToXOnlyPubKey().ToBytes()).ToLower();
+			var signableEvent = _mapper.Map<NEvent, SignableNEvent>(nEvent);
+			var serialisedNEvent = JsonConvert.SerializeObject(signableEvent);
+			nEvent.Id = Convert.ToHexString(serialisedNEvent.SHA256Hash()).ToLower();
+			var signature = _cryptoService.Sign(serialisedNEvent);
+			nEvent.Sig = signature.ToLower();
+			return true;
         }
 
         public bool Verify(NEvent nEvent)
         {
-            var signableEvent = nEvent.GetSignableNEvent();
-            var serialisedNEvent = JsonConvert.SerializeObject(signableEvent);
-            var verified = _cryptoService.Verify(nEvent.Sig, serialisedNEvent, nEvent.UserId);
+            var signableEvent = _mapper.Map<NEvent, SignableNEvent>(nEvent);
+			var serialisedNEvent = JsonConvert.SerializeObject(signableEvent);
+            var verified = _cryptoService.Verify(nEvent.Sig, serialisedNEvent, nEvent.Pubkey);
             return verified;
         }
 
-        public async Task Send(KindEnum kind, string message)
+        public async Task Send(KindEnum kind, NEvent nEvent, string encryptPubKey = null)
         {
-            var nEvent = CreateNEvent(kind, message);
-            var subscriptionHash = Guid.NewGuid().ToString();
-            Sign(ref nEvent);
-            await _relayManager.SendNEvent(nEvent, subscriptionHash);
+            if (!String.IsNullOrEmpty(encryptPubKey))
+            {
+                var encryptedContent = await _cryptoService.AesEncrypt(nEvent.Content, encryptPubKey);
+                nEvent.Content = JsonConvert.SerializeObject(encryptedContent);
+            }
+			Sign(ref nEvent);
+			var subscriptionHash = Guid.NewGuid().ToString();
+			await _relayManager.SendNEvent(nEvent, subscriptionHash);
         }
 
-        private NEvent CreateNEvent(KindEnum kind, string message, string parentId = null)
+        public NEvent CreateNEvent(KindEnum kind, string message, string parentId = null, string rootId = null, List<string> ptags = null)
         {
-            return new NEvent
+            var newEvent = new NEvent
+			{
+				Pubkey = _userProfileService.NPubKey,
+				Kind = kind,
+				Content = message,
+				Created_At = DateTimeOffset.UtcNow.ToUnixTimeSeconds(),
+			};
+			if (parentId != null)
             {
-                Id = "0",
-                UserId = _userProfileService.NPubKey,
-                Kind = kind,
-                Content = message,
-                Created_At = DateTimeOffset.UtcNow.ToUnixTimeSeconds(),
-            };
+                newEvent.Tags.Add(new EventTag
+                {
+                    Key = TagEnum.e,
+                    Value = parentId,
+                    Value3 = "reply"
+                });
+            }
+            if (rootId != null)
+            {
+				newEvent.Tags.Add(new EventTag
+				{
+					Key = TagEnum.e,
+					Value = rootId,
+					Value3 = "root"
+				});
+			}
+            if (ptags != null)
+            {
+				foreach (var ptag in ptags)
+				{
+					newEvent.Tags.Add(new EventTag
+					{
+						Key = TagEnum.p,
+						Value = ptag
+					});
+				}
+			}
+            return newEvent;
         }
     }
 }

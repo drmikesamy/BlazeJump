@@ -7,6 +7,7 @@ using BlazeJump.Common.Services.Crypto;
 using BlazeJump.Common.Services.UserProfile;
 using BlazeJump.Common.Services.Message;
 using BlazeJump.Common.Services.Notification;
+using AutoMapper;
 
 namespace BlazeJump.Common.Tests.ServiceTests
 {
@@ -17,6 +18,7 @@ namespace BlazeJump.Common.Tests.ServiceTests
         private ICryptoService _cryptoService;
         private IUserProfileService _userProfileService;
         private INotificationService _notificationService;
+        private IMapper _mapper;
         private MessageService _sut;
 
         [SetUp]
@@ -26,7 +28,8 @@ namespace BlazeJump.Common.Tests.ServiceTests
             _cryptoService = Substitute.For<ICryptoService>();
             _userProfileService = Substitute.For<IUserProfileService>();
             _notificationService = Substitute.For<INotificationService>();
-            _sut = new MessageService(_relayManager, _cryptoService, _userProfileService, _notificationService);
+            _mapper = Substitute.For<IMapper>();
+            _sut = new MessageService(_relayManager, _cryptoService, _userProfileService, _notificationService, _mapper);
         }
 
         [Test]
@@ -42,7 +45,7 @@ namespace BlazeJump.Common.Tests.ServiceTests
                     {
                         Kind = KindEnum.Metadata, 
                         Id = "secondEventId", 
-                        UserId = "secondUserId",
+                        Pubkey = "secondUserId",
                     }
                 }, new Tuple<int, long>(1, Stopwatch.GetTimestamp()));
             
@@ -54,7 +57,7 @@ namespace BlazeJump.Common.Tests.ServiceTests
                     {
                         Kind = KindEnum.Text, 
                         Id = "firstEventId", 
-                        UserId = "firstUserId",
+                        Pubkey = "firstUserId",
                         Tags = new List<EventTag>
                         {
                             new EventTag
@@ -107,7 +110,7 @@ namespace BlazeJump.Common.Tests.ServiceTests
         public void VerifyNEvent_ShouldCallCryptoServiceWithCorrectParameters()
         {
             // Arrange
-            var nEvent = new NEvent { Sig = "signature", UserId = "pubkey" };
+            var nEvent = new NEvent { Sig = "signature", Pubkey = "pubkey" };
             _cryptoService.Verify("signature", Arg.Any<string>(), "pubkey").Returns(true);
 
             // Act
@@ -136,7 +139,8 @@ namespace BlazeJump.Common.Tests.ServiceTests
             _userProfileService.NPubKey.Returns("pubkey");
 
             // Act
-            await _sut.Send(kind, message);
+            var nEvent = _sut.CreateNEvent(KindEnum.Text, message);
+            await _sut.Send(kind, nEvent);
 
             // Assert
             Assert.That(actualNEvent!.Content, Is.EqualTo(message));

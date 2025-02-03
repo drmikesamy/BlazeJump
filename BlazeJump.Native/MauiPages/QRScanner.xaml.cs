@@ -24,12 +24,27 @@ public partial class QRScanner : ContentPage
 
 	protected void BarcodesDetected(object sender, BarcodeDetectionEventArgs e)
 	{
+		if (!barcodeView.IsDetecting)
+		{
+			return;
+		}
 		var qr = e.Results?.FirstOrDefault();
 		if (qr is not null)
 		{
 			var payload = JsonConvert.DeserializeObject<QrConnectEventArgs>(qr.Value);
-			_identityService.OnQrConnectReceived(payload);
+			MainThread.BeginInvokeOnMainThread(() =>
+			{
+				_identityService.OnQrConnectReceived(payload);
+				barcodeView.IsDetecting = false;
+			});
 		}
+	}
+
+
+
+	void RescanClicked(object sender, EventArgs e)
+	{
+		barcodeView.IsDetecting = true;
 	}
 
 	void TorchButton_Clicked(object sender, EventArgs e)

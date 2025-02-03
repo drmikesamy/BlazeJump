@@ -1,9 +1,10 @@
+using BlazeJump.Common.Enums;
 using BlazeJump.Common.Models;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System.Xml.Linq;
 
-namespace BlazeJump.Common.Enums
+namespace BlazeJump.Common.JsonConverters
 {
 	class TagConverter : JsonConverter
 	{

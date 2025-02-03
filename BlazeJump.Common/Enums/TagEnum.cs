@@ -12,6 +12,8 @@
 		subject = 7,
 		d = 8,
 		expiration = 9,
-		q = 10
+		q = 10,
+		imeta =11,
+		proxy = 12
 	}
 }

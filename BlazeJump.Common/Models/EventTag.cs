@@ -1,4 +1,5 @@
 using BlazeJump.Common.Enums;
+using BlazeJump.Common.JsonConverters;
 using Newtonsoft.Json;
 
 namespace BlazeJump.Common.Models

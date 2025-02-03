@@ -1,8 +1,9 @@
+using BlazeJump.Common.Enums;
 using BlazeJump.Common.Models;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
-namespace BlazeJump.Common.Enums
+namespace BlazeJump.Common.JsonConverters
 {
 	class MessageConverter : JsonConverter
 	{

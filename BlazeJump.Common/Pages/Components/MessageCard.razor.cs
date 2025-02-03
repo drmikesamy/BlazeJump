@@ -11,10 +11,10 @@ namespace BlazeJump.Common.Pages.Components
 
 		[Parameter] public string Styling { get; set; }
 		public NEvent NEvent => Message.Event;
-		public User User => MessageService.MessageStore.TryGetValue(NEvent.UserId, out var user) ? user.Event.User : new User();
+		public User User => MessageService.MessageStore.TryGetValue(NEvent.Pubkey, out var user) ? user.Event.User : new User();
 		public void ViewUser()
 		{
-			NavManager.NavigateTo($"{NEvent.UserId}", true);
+			NavManager.NavigateTo($"{NEvent.Pubkey}", true);
 		}
 		public void ViewMessage()
 		{
@@ -23,7 +23,7 @@ namespace BlazeJump.Common.Pages.Components
 		public void VerifyMessage(NEvent message)
 		{
 			message.Verified = MessageService.Verify(NEvent);
-			StateHasChanged();
+			InvokeAsync(StateHasChanged);
 		}
 	}
 }

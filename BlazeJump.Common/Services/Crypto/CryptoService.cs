@@ -34,7 +34,7 @@ namespace BlazeJump.Common.Services.Crypto
 			var publicKey = privateKey.CreatePubKey();
 			return new Secp256k1KeyPair(privateKey, publicKey);
 		}
-		public virtual async Task<Tuple<string, string>> AesEncrypt(string plainText, string theirPublicKey, string ivOverride = null, bool ethereal = true)
+		public virtual async Task<CipherIv> AesEncrypt(string plainText, string theirPublicKey, string ivOverride = null, bool ethereal = true)
 		{
 			byte[] sharedPoint = await GetSharedSecret(theirPublicKey, ethereal);
 			byte[] iv = new byte[16];
@@ -50,7 +50,7 @@ namespace BlazeJump.Common.Services.Crypto
 			var ivString = Convert.ToBase64String(iv);
 			var paddedTextBytes = Encoding.UTF8.GetBytes(plainText).Pad();
 			var encrypted = await _browserCrypto.InvokeBrowserCrypto("aesEncrypt", paddedTextBytes, sharedPoint, iv);
-			return new Tuple<string, string>(encrypted.ToString(), ivString);
+			return new CipherIv(encrypted.ToString(), ivString);
 		}
 		public virtual async Task<string> AesDecrypt(string base64CipherText, string theirPublicKey, string ivString, bool ethereal = true)
 		{
@@ -85,5 +85,14 @@ namespace BlazeJump.Common.Services.Crypto
 			SecpSchnorrSignature.TryCreate(signatureBytes, out schnorrSignature);
 			return pubKey.SigVerifyBIP340(schnorrSignature, messageHashBytes);
 		}
+	}
+	public class CipherIv
+	{
+		public CipherIv(string cipherText, string iv) {
+			CipherText = cipherText;
+			Iv = iv;
+		}
+		public string CipherText { get; set; }
+		public string Iv { get; set; }
 	}
 }

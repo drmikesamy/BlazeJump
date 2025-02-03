@@ -54,6 +54,6 @@
 	protected override async void OnInitialized()
 	{
 		await UserProfileService.Init();
-		StateHasChanged();
+		await InvokeAsync(StateHasChanged);
 	}
 }

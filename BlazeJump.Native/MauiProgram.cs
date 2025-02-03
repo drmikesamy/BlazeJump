@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using BlazeJump.Common.Services.Connections;
+using BlazeJump.Native.Services.Crypto;
 using BlazeJump.Common.Services.Crypto;
 using BlazeJump.Common.Services.Message;
 using BlazeJump.Common.Services.Notification;
@@ -8,6 +9,8 @@ using Microsoft.Extensions.Logging;
 using System.Reflection;
 using ZXing.Net.Maui.Controls;
 using BlazeJump.Common.Services.Identity;
+using BlazeJump.Common.Services.Connections.Providers;
+using BlazeJump.Common;
 
 namespace BlazeJump.Native
 {
@@ -28,24 +31,12 @@ namespace BlazeJump.Native
 
 #if DEBUG
 			builder.Services.AddBlazorWebViewDeveloperTools();
-		builder.Logging.AddDebug();
+			builder.Logging.AddDebug();
 #endif
-
-			builder.Services.AddScoped<IUserProfileService, UserProfileService>();
-			builder.Services.AddScoped<IMessageService, MessageService>();
+			CommonServices.ConfigureServices(builder.Services);
 #if ANDROID
 		builder.Services.AddScoped<ICryptoService, NativeCryptoService>();
 #endif
-			builder.Services.AddScoped<IRelayManager, RelayManager>();
-			builder.Services.AddScoped<INotificationService, NotificationService>();
-			builder.Services.AddScoped<IIdentityService, IdentityService>();
-			var mapperConfig = new MapperConfiguration(cfg =>
-			{
-				cfg.AddMaps(Assembly.GetExecutingAssembly());
-			});
-
-			IMapper mapper = mapperConfig.CreateMapper();
-			builder.Services.AddSingleton(mapper);
 
 			return builder.Build();
 		}

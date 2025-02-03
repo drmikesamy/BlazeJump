@@ -8,8 +8,10 @@ namespace BlazeJump.Common.Mappers
 		public NEventProfile()
 		{
 			CreateMap<NEvent, NEvent>();
-			CreateMap<SignableNEvent, NEvent>();
-			CreateMap<NEvent, SignableNEvent>();
+			CreateMap<EventTag, EventTag>();
+			CreateMap<NEvent, SignableNEvent>()
+				.ForMember(x => x.Id, opt => opt.Ignore())
+				.ReverseMap();
 		}
 	}
 }

@@ -12,6 +12,7 @@ namespace BlazeJump.Common.Services.Message
 		Dictionary<string, NMessage> MessageStore { get; set; }
 		Task Fetch(List<Filter> filters, string? subscriptionId = null, MessageTypeEnum? messageType = null);
 		bool Verify(NEvent nEvent);
-		Task Send(KindEnum kind, string message);
+		Task Send(KindEnum kind, NEvent nEvent, string encryptPubKey = null);
+		NEvent CreateNEvent(KindEnum kind, string message, string parentId = null, string rootId = null, List<string> ptags = null);
 	}
 }

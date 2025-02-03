@@ -5,11 +5,11 @@ using System.Text.RegularExpressions;
 
 namespace BlazeJump.Common.JsonConverters
 {
-	class NEventConverter : JsonConverter
+	class SignableNEventConverter : JsonConverter
 	{
 		public override bool CanConvert(Type objectType)
 		{
-			return (objectType == typeof(NEvent));
+			return (objectType == typeof(SignableNEvent));
 		}
 
 		public override bool CanRead
@@ -25,16 +25,9 @@ namespace BlazeJump.Common.JsonConverters
 		public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
 		{
 			JArray ja = new JArray();
-			NEvent nEvent = (NEvent)value;
+			SignableNEvent nEvent = (SignableNEvent)value;
 
-			if (!String.IsNullOrEmpty(nEvent.Id))
-			{
-				ja.Add(nEvent.Id);
-			}
-			else
-			{
-				ja.Add(0);
-			}
+			ja.Add(0);
 			if (!String.IsNullOrEmpty(nEvent.Pubkey))
 			{
 				ja.Add(nEvent.Pubkey);
@@ -71,10 +64,6 @@ namespace BlazeJump.Common.JsonConverters
 			if (!String.IsNullOrEmpty(nEvent.Content))
 			{
 				ja.Add(nEvent.Content);
-			}
-			if (!String.IsNullOrEmpty(nEvent.Sig))
-			{
-				ja.Add(nEvent.Sig);
 			}
 
 			ja.WriteTo(writer);

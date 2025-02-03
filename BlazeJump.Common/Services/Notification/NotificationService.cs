@@ -21,7 +21,10 @@
 		}
 		public void UpdateTheState()
 		{
-			UpdateState?.Invoke(this, EventArgs.Empty);
+			MainThread.BeginInvokeOnMainThread(() =>
+			{
+				UpdateState?.Invoke(this, EventArgs.Empty);
+			});
 		}
 	}
 }

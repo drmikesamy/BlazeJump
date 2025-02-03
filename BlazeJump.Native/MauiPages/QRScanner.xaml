@@ -22,6 +22,12 @@
 		BackgroundColor="#aa000000"
 		Padding="20"
 		ColumnDefinitions="Auto,*,Auto">
+            <Button
+                x:Name="ScanButton"
+                Text="Rescan"
+                SemanticProperties.Hint="Camera on"
+                Clicked="RescanClicked"
+                HorizontalOptions="Center" />
         </Grid>
     </Grid>
 </ContentPage>

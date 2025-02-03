@@ -1,9 +1,10 @@
-﻿using NBitcoin.Secp256k1;
+﻿using BlazeJump.Common.Services.Crypto;
+using NBitcoin.Secp256k1;
 using System.Security.Cryptography;
 
-namespace BlazeJump.Common.Services.Crypto
+namespace BlazeJump.Native.Services.Crypto
 {
-	public class NativeCryptoService : CryptoService, ICryptoService
+	public class BaseCryptoService : CryptoService, ICryptoService
 	{
 		public async Task<string> GetUserPublicKey()
 		{
@@ -21,7 +22,7 @@ namespace BlazeJump.Common.Services.Crypto
 			await SecureStorage.Default.SetAsync("PublicKey", Convert.ToHexString(newKeyPair.PublicKey.ToBytes()));
 			await SecureStorage.Default.SetAsync("PrivateKey", Convert.ToHexString(newKeyPair.PrivateKey.sec.ToBytes()));
 		}
-		public override async Task<Tuple<string, string>> AesEncrypt(string message, string theirPublicKey, string ivOverride = null, bool ethereal = true)
+		public override async Task<CipherIv> AesEncrypt(string message, string theirPublicKey, string ivOverride = null, bool ethereal = true)
 		{
 			byte[] encryptedData;
 			var sharedPoint = await GetSharedSecret(theirPublicKey, ethereal);
@@ -55,7 +56,7 @@ namespace BlazeJump.Common.Services.Crypto
 						encryptedData = msEncrypt.ToArray();
 					}
 				}
-				return new Tuple<string, string>(Convert.ToBase64String(encryptedData), Convert.ToBase64String(iv));
+				return new CipherIv(Convert.ToBase64String(encryptedData), Convert.ToBase64String(iv));
 			}
 		}
 

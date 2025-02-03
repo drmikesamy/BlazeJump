@@ -11,7 +11,7 @@
 <div class="background-container">
     <div class="content-container">
         @if (HexRootId != null
-             && MessageService.MessageStore.TryGetValue(HexRootId, out var rootMessage))
+            && MessageService.MessageStore.TryGetValue(HexRootId, out var rootMessage))
         {
             @if (rootMessage?.Event?.Kind == KindEnum.Metadata)
             {
@@ -20,12 +20,15 @@
             else if (rootMessage?.Event?.Kind == KindEnum.Text)
             {
                 <MessageCard Message=rootMessage Styling="featured"></MessageCard>
-                <Card>
-                    <input id="messageToSend"
-                           type="text"
-                           @bind="_messageToSend"/>
-                    <button @onclick="() => MessageService.Send(KindEnum.Text, _messageToSend)">Send</button>
-                </Card>
+                if (_nEventToSend?.Content != null)
+                {
+                    <Card>
+                        <input id="messageToSend"
+                               type="text"
+                               @bind="_nEventToSend.Content" />
+                        <button @onclick="() => MessageService.Send(KindEnum.Text, _nEventToSend)">Send</button>
+                    </Card>
+                }
             }
 
             @if (MessageService.RelationRegister.TryGetRelation(HexRootId, RelationTypeEnum.EventChildren, out var topLevelEventIds)

@@ -20,7 +20,7 @@ else
 		if (string.IsNullOrEmpty(UserProfileService.User.Id))
 		{
 			await UserProfileService.Init();
-			StateHasChanged();
+			await InvokeAsync(StateHasChanged);
 		}
 	}
 }

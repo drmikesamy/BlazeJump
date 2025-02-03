@@ -54,8 +54,8 @@ namespace BlazeJump.Tests.Services.Crypto
 
 			// Assert
 			Assert.That(result, Is.Not.Null);
-			Assert.That(result.Item1, Is.EqualTo("encryptedText"));
-			Assert.That(result.Item2, Is.Not.Null);
+			Assert.That(result.CipherText, Is.EqualTo("encryptedText"));
+			Assert.That(result.Iv, Is.Not.Null);
 		}
 
 		[Test]

@@ -85,10 +85,17 @@
 	public async Task GenerateTemporaryKeyPair()
 	{
 		CryptoService.CreateEtherealKeyPair();
+
+		Random rand = new Random();
+		byte[] key = new byte[32];
+		rand.NextBytes(key);
+		var base64Secret = Convert.ToBase64String(key);
+
 		var payload = new QrConnectEventArgs
 			{
 				Relay = HttpUtility.UrlEncode(RelayManager.RelayConnections.First().Key),
-				Pubkey = Convert.ToHexString(CryptoService.EtherealPublicKey.ToXOnlyPubKey().ToBytes())
+				Pubkey = Convert.ToHexString(CryptoService.EtherealPublicKey.ToXOnlyPubKey().ToBytes()),
+				Secret = base64Secret
 			};
 		var payloadString = JsonConvert.SerializeObject(payload);
 		ImageData = BlazeJump.Common.Helpers.QRCode.GenerateQRCode(payloadString);

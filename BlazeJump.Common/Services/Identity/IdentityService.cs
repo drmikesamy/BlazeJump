@@ -9,7 +9,6 @@ namespace BlazeJump.Common.Services.Identity
 {
 	public class IdentityService : IIdentityService
 	{
-		private bool _isBusy { get; set; } = false;
 		public event EventHandler<QrConnectEventArgs> QrConnectReceived;
 		public PlatformEnum Platform { get; set; } = PlatformEnum.Web;
 		private IRelayManager _relayManager {  get; set; }
@@ -27,20 +26,21 @@ namespace BlazeJump.Common.Services.Identity
 		}
 		public void OnQrConnectReceived(QrConnectEventArgs e)
 		{
-			if(_isBusy) return;
-			_isBusy = true;
-			_ = SendNostrConnectReply(e.Pubkey);
+			_ = SendNostrConnectReply(e.Pubkey, e.Secret);
 		}
-		private async Task SendNostrConnectReply(string theirPubKey)
+		private async Task SendNostrConnectReply(string theirPubKey, string secret)
 		{
 			var subscriptionHash = Guid.NewGuid().ToString();
+
 			var message = new NostrConnectResponse
 			{
 				Id = subscriptionHash,
-				Result = "Connected"
+				Result = secret
 			};
-			await _messageService.Send(KindEnum.NostrConnect, JsonConvert.SerializeObject(message));
-			_isBusy = false;
+
+			var nEvent = _messageService.CreateNEvent(KindEnum.NostrConnect, JsonConvert.SerializeObject(message), null, null, new List<string> { theirPubKey });
+
+			await _messageService.Send(KindEnum.NostrConnect, nEvent, theirPubKey);
 		}
 		public async Task FetchLoginScanResponse(QrConnectEventArgs payload)
 		{
@@ -60,5 +60,6 @@ namespace BlazeJump.Common.Services.Identity
 	{
 		public string Relay { get; set; }
 		public string Pubkey { get; set; }
+		public string Secret { get; set; }
 	}
 }
