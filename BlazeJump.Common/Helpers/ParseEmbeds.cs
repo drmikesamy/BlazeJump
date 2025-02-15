@@ -22,7 +22,6 @@ namespace BlazeJump.Helpers
 		public static List<MarkupString> ParsePreviewContent(string content)
 		{
 			var linkFinder = new Regex(@"((http|ftp|https):\/\/[\w\-_]+(\.[\w\-_]+)+([\w\-\.,@?^=%&amp;:/~\+#]*[\w\-\@?^=%&amp;/~\+#])?)", RegexOptions.Compiled | RegexOptions.IgnoreCase);
-			var bech32Finder = new Regex(@"/[\x21-\x7E]{1,83}1[023456789acdefghjklmnpqrstuvwxyz]{6,}/", RegexOptions.Compiled | RegexOptions.IgnoreCase);
 			var htmlItems = new List<MarkupString>();
 			foreach (Match m in linkFinder.Matches(content))
 			{
@@ -63,6 +62,26 @@ namespace BlazeJump.Helpers
 			}
 
 			return (MarkupString)"""<div class="error"><p>Invalid Video URL</p></div>""";
+		}
+		public static Dictionary<string, List<string>> ParseEmbeddedStrings(string input)
+		{
+			var result = new Dictionary<string, List<string>>();
+			var regex = new Regex(@"nostr:(nevent[\w]+|nprofile[\w]+)");
+
+			foreach (Match match in regex.Matches(input))
+			{
+				string fullString = match.Value.Split(':')[1];
+				string key = fullString.Substring(0, 7);
+
+				if (!result.ContainsKey(key))
+				{
+					result[key] = new List<string>();
+				}
+
+				result[key].Add(fullString);
+			}
+
+			return result;
 		}
 
 		public static MarkupString StringAsMarkup(string text)

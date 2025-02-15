@@ -21,10 +21,15 @@
 		}
 		public void UpdateTheState()
 		{
+#if ANDROID
 			MainThread.BeginInvokeOnMainThread(() =>
 			{
 				UpdateState?.Invoke(this, EventArgs.Empty);
 			});
+#else
+			UpdateState?.Invoke(this, EventArgs.Empty);
+#endif
+
 		}
 	}
 }

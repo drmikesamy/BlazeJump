@@ -14,10 +14,7 @@ namespace BlazeJump.Common.Services.Crypto
 
 		private readonly IBrowserCrypto _browserCrypto;
 
-		public CryptoService()
-		{
-		}
-		public CryptoService(IBrowserCrypto browserCrypto)
+		public CryptoService(IBrowserCrypto browserCrypto = null)
 		{
 			_browserCrypto = browserCrypto;
 		}

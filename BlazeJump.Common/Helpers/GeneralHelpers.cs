@@ -1,4 +1,6 @@
-﻿using Nano.Bech32;
+﻿
+using BlazeJump.Common.Enums;
+using Nano.Bech32;
 
 namespace BlazeJump.Common.Helpers
 {
@@ -14,34 +16,43 @@ namespace BlazeJump.Common.Helpers
 		{
 			return ((DateTimeOffset)dateTime).ToUnixTimeSeconds();
 		}
-		public static string HexToNpub(string hexString)
+		public static string HexToBech32(string hexString, Bech32PrefixEnum bechLabel)
 		{
 			var bytes = HexStringToByteArray(hexString);
-			return Bech32Encoder.Encode("npub", bytes);
+			return Bech32Encoder.Encode(bechLabel.ToString(), bytes);
 		}
 
-		public static string NpubToHex(string npubString)
+		public static string Bech32ToHex(string bech32string, Bech32PrefixEnum bechLabel)
 		{
-			if (npubString == null || !npubString.Contains("npub"))
+			if (bech32string == null || !bech32string.Contains(bechLabel.ToString()))
 			{
-				return npubString;
+				return bech32string;
 			}
-			Bech32Encoder.Decode(npubString, out var hrp, out var bytes);
-			if (hrp != "npub" || bytes == null) throw new Exception("Invalid npub string");
+			Bech32Encoder.Decode(bech32string, out var hrp, out var bytes);
+			if (hrp != bechLabel.ToString() || bytes == null) throw new Exception("Invalid npub string");
 			return ByteArrayToHexString(bytes);
 		}
 
-		public static string HexToNsec(string hexString)
+		public static Dictionary<TLVTypeEnum, string> Bech32ToTLVComponents(string bech32string, Bech32PrefixEnum bechLabel)
 		{
-			var bytes = HexStringToByteArray(hexString);
-			return Bech32Encoder.Encode("nsec", bytes);
-		}
-
-		public static string NsecToHex(string nsecString)
-		{
-			Bech32Encoder.Decode(nsecString, out var hrp, out var bytes);
-			if (hrp != "nsec" || bytes == null) throw new Exception("Invalid nsec string");
-			return ByteArrayToHexString(bytes);
+			if (bech32string == null || !bech32string.Contains(bechLabel.ToString()))
+			{
+				return new Dictionary<TLVTypeEnum, string>();
+			}
+			Bech32Encoder.Decode(bech32string, out var hrp, out var bytes);
+			if (hrp != bechLabel.ToString() || bytes == null) throw new Exception("Invalid npub string");
+			var cursor = 0;
+			var tlvDictionary = new Dictionary<TLVTypeEnum, string>();
+			while (cursor < bytes.Length)
+			{
+				TLVTypeEnum type = (TLVTypeEnum)bytes[cursor++];
+				int length = bytes[cursor++];
+				byte[] value = new byte[length];
+				Array.Copy(bytes, cursor, value, 0, length);
+				cursor += length;
+				tlvDictionary.Add(type, ByteArrayToHexString(value));
+			}
+			return tlvDictionary;
 		}
 
 		private static byte[] HexStringToByteArray(string hex)

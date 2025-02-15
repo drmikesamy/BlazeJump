@@ -4,6 +4,7 @@ using BlazeJump.Common.Services.Connections.Events;
 using BlazeJump.Common.Enums;
 using System.Diagnostics;
 using BlazeJump.Common.Services.Connections.Providers;
+using System.Threading;
 
 namespace BlazeJump.Common.Services.Connections
 {
@@ -54,41 +55,52 @@ namespace BlazeJump.Common.Services.Connections
 		}
 		public async Task QueryRelays(string subscriptionId, MessageTypeEnum requestMessageType, List<Filter> filters, int timeout = 15000)
 		{
-			var connectionTasks = new List<Task>();
-			foreach (var uri in Relays)
+			using var resource = new SemaphoreSlim(5, 5);
+
+			var connectionTasks = Relays.Select(async uri =>
 			{
-				Task connectionTask = Task.Run(async () =>
+				await resource.WaitAsync(timeout);
+				try
 				{
-					try
-					{
-						await OpenConnection(uri);
-						await RelayConnections[uri].SubscribeAsync(requestMessageType, subscriptionId, filters);
-					}
-					catch
-					{
-						Console.WriteLine($"Failed to connect to relay {uri}");
-					}
-				});
-				connectionTasks.Add(connectionTask);
-			}
+					await OpenConnection(uri);
+					await RelayConnections[uri].SubscribeAsync(requestMessageType, subscriptionId, filters);
+				}
+				catch
+				{
+					Console.WriteLine($"Failed to connect to relay {uri}");
+				}
+				finally
+				{
+					resource.Release();
+				}
+			});
 			await Task.WhenAll(connectionTasks);
 		}
 
 		public async Task SendNEvent(NEvent nEvent, string subscriptionHash)
 		{
-			var connectionTasks = new List<Task>();
+			using var resource = new SemaphoreSlim(5, 5);
+
 			object[] obj = { "EVENT", nEvent };
 			string serialisedNEvent = JsonConvert.SerializeObject(obj);
 
-			foreach (var uri in Relays)
+			var connectionTasks = Relays.Select(async uri =>
 			{
-				Task connectionTask = Task.Run(async () =>
+				await resource.WaitAsync();
+				try
 				{
 					await OpenConnection(uri);
 					await RelayConnections[uri].SendNEvent(serialisedNEvent, subscriptionHash);
-				});
-				connectionTasks.Add(connectionTask);
-			}
+				}
+				catch
+				{
+					Console.WriteLine($"Failed to connect to relay {uri}");
+				}
+				finally
+				{
+					resource.Release();
+				}
+			});
 			await Task.WhenAll(connectionTasks);
 		}
 	}

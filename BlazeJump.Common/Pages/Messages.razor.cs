@@ -8,7 +8,7 @@ namespace BlazeJump.Common.Pages
 	public partial class Messages
 	{
 		[Parameter] public string? RootId { get; set; }
-		private string? HexRootId => GeneralHelpers.NpubToHex(RootId);
+		private string? HexRootId => GeneralHelpers.Bech32ToHex(RootId, Bech32PrefixEnum.npub);
 		private string _searchString { get; set; } = string.Empty;
 		private NEvent _nEventToSend { get; set; }
 		protected override async Task OnParametersSetAsync()

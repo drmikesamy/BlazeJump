@@ -21,10 +21,21 @@
                     @(TimeAgo.GetTimeAgo(NEvent.CreatedAtDateTime))
                 </p>
                 @if (NEvent.ParentId != null
-                     && MessageService.MessageStore.TryGetValue(NEvent.ParentId, out var quoteMessage))
+                   && MessageService.MessageStore.TryGetValue(NEvent.ParentId, out var quoteMessage))
                 {
                     <MessageCard Message=quoteMessage Styling="quote"></MessageCard>
                 }
+@*                 @if (RelationReg.TryGetRelation(NEvent!.Id, RelationTypeEnum.ReferencedEvent, out var referencedEventIds))
+                {
+                    @foreach(var referencedEventId in referencedEventIds)
+                    {
+                        @if (MessageService.MessageStore.TryGetValue(referencedEventId, out var referencedEvent))
+                        {
+                            <MessageCard Message=referencedEvent Styling="quote"></MessageCard>
+                        }
+                    }
+                   
+                } *@
                 @ParseEmbeds.ParsePreviewContent(NEvent?.Content).FirstOrDefault()
                 <p class="card-content">@(NEvent?.Content.ParseInlineEmbeds() ?? (MarkupString)"(No content)")</p>
                 <p class="stats-line">

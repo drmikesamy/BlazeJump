@@ -6,14 +6,14 @@ namespace BlazeJump.Native.Tests.ServiceTests.Crypto
 	[TestFixture]
 	public class NativeCryptoServiceTests
 	{
-		private BaseCryptoService _cryptoService;
-		private BaseCryptoService _cryptoService2;
+		private BaseNativeCryptoService _cryptoService;
+		private BaseNativeCryptoService _cryptoService2;
 
 		[SetUp]
 		public void SetUp()
 		{
-			_cryptoService = new BaseCryptoService();
-			_cryptoService2 = new BaseCryptoService();
+			_cryptoService = new BaseNativeCryptoService();
+			_cryptoService2 = new BaseNativeCryptoService();
 		}
 
 		[Test]

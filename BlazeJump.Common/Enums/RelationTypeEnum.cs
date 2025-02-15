@@ -10,6 +10,7 @@
 		EventsByUser = 16,
 		UserByEvent = 17,
 		EventParent = 18,
-		EventRoot = 19
+		EventRoot = 19,
+		ReferencedEvent = 20,
 	}
 }

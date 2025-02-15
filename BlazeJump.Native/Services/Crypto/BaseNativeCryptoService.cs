@@ -4,7 +4,7 @@ using System.Security.Cryptography;
 
 namespace BlazeJump.Native.Services.Crypto
 {
-	public class BaseCryptoService : CryptoService, ICryptoService
+	public class BaseNativeCryptoService : CryptoService, ICryptoService
 	{
 		public async Task<string> GetUserPublicKey()
 		{

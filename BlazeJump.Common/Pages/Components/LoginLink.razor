@@ -6,7 +6,7 @@
 
 @if (!string.IsNullOrEmpty(UserProfileService.NPubKey))
 {
-	<span>Welcome @(UserProfileService.User), <NavLink @onclick="UserProfileService.Logout">Log out</NavLink></span>
+	<span>Welcome @(UserProfileService.User.Username), <NavLink @onclick="UserProfileService.Logout">Log out</NavLink></span>
 }
 else
 {
