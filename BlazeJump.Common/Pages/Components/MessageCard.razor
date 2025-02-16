@@ -29,7 +29,7 @@
 				{
 					<MessageCard Message=refMessage Styling="quote"></MessageCard>
 				}
-				@ParseEmbeds.ParsePreviewContent(NEvent?.Content).FirstOrDefault()
+				@* @ParseEmbeds.ParsePreviewContent(NEvent?.Content).FirstOrDefault() *@
 				<p class="card-content">@(NEvent?.Content.ParseInlineEmbeds() ?? (MarkupString)"(No content)")</p>
 				<p class="stats-line">
 					<a @onclick=ViewMessage style="cursor: pointer">@(MessageService.RelationRegister.TryGetRelation(NEvent!.Id, RelationTypeEnum.EventChildren, out var replies) ? replies?.Count() : 0) comments</a><span> | </span>

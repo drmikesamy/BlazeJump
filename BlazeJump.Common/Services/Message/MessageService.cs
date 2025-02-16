@@ -12,6 +12,7 @@ using BlazeJump.Common.Helpers;
 using BlazeJump.Common.Services.Notification;
 using BlazeJump.Helpers;
 using AutoMapper;
+using System.Collections.Concurrent;
 
 namespace BlazeJump.Common.Services.Message
 {
@@ -22,8 +23,9 @@ namespace BlazeJump.Common.Services.Message
 		private IUserProfileService _userProfileService;
 		private INotificationService _notificationService;
 		private IMapper _mapper;
-		public Dictionary<string, NMessage> MessageStore { get; set; } = new();
+		public ConcurrentDictionary<string, NMessage> MessageStore { get; set; } = new();
 		public RelationRegister RelationRegister { get; set; } = new();
+		public Queue<string> EventsAwaitingMetaData { get; set; } = new();
 
 		public MessageService(IRelayManager relayManager, ICryptoService cryptoService,
 			IUserProfileService userProfileService, INotificationService notificationService, IMapper mapper)
@@ -31,9 +33,9 @@ namespace BlazeJump.Common.Services.Message
 			_relayManager = relayManager;
 			_cryptoService = cryptoService;
 			_userProfileService = userProfileService;
-			_relayManager.ProcessMessageQueue += ProcessReceivedMessages;
 			_notificationService = notificationService;
 			_mapper = mapper;
+			_relayManager.ProcessMessageQueue += ProcessReceivedMessages;
 		}
 
 		public async Task LookupUser(string searchString)
@@ -85,17 +87,17 @@ namespace BlazeJump.Common.Services.Message
 		public async Task Fetch(List<Filter> filters, string? subscriptionId = null,
 			MessageTypeEnum? messageType = null)
 		{
-			await _relayManager.QueryRelays(subscriptionId ?? Guid.NewGuid().ToString(),
-				messageType ?? MessageTypeEnum.Req, filters);
+			if (filters.Any())
+			{
+				await _relayManager.QueryRelays(subscriptionId ?? Guid.NewGuid().ToString(), messageType ?? MessageTypeEnum.Req, filters);
+			}
 		}
 
-		private void ProcessReceivedMessages(object o, EventArgs eventArgs)
+		private void ProcessReceivedMessages(object sender, EventArgs e)
 		{
 			Console.WriteLine($"Process queue called...");
-			while (_relayManager.ReceivedMessages.Count > 0)
+			while (_relayManager.ReceivedMessages.TryDequeue(out var message))
 			{
-				var message = _relayManager.ReceivedMessages.Dequeue();
-
 				if (message.MessageType == MessageTypeEnum.Eose)
 				{
 					Console.WriteLine($"EOSE message received. Refreshing view.");
@@ -115,118 +117,143 @@ namespace BlazeJump.Common.Services.Message
 				switch (message.Event.Kind)
 				{
 					case KindEnum.Metadata:
-						MessageStore.TryAdd(message.Event.Pubkey, message);
+						lock (MessageStore)
+						{
+							MessageStore.TryAdd(message.Event.Pubkey, message);
+						}
 						break;
 					case KindEnum.Text:
-						MessageStore.TryAdd(message.Event.Id, message);
+						lock (MessageStore)
+						{
+							MessageStore.TryAdd(message.Event.Id, message);
+						}
 						break;
 				}
 
 				Console.WriteLine($"Processing relations for {message.MessageType} message with id {message.Event.Id}");
-				ProcessRelations(message);
+				lock (RelationRegister)
+				{
+					ProcessRelations(message);
+				}
 			}
 		}
+
 
 		private void ProcessRelations(NMessage message)
 		{
-			RelationRegister.AddRelation(message.Event.Pubkey, RelationTypeEnum.EventsByUser, message.Event.Id);
-			RelationRegister.AddRelation(message.Event.Id, RelationTypeEnum.UserByEvent, message.Event.Pubkey);
-
-			if (RelationRegister.TryGetRelation(message.SubscriptionId, RelationTypeEnum.SubscriptionGuidToIds,
-					out var guid))
+			lock (RelationRegister)
 			{
-				RelationRegister.AddRelation(message.SubscriptionId, RelationTypeEnum.SubscriptionGuidToIds, message.Event.Pubkey);
-			}
+				RelationRegister.AddRelation(message.Event.Pubkey, RelationTypeEnum.EventsByUser, message.Event.Id);
+				RelationRegister.AddRelation(message.Event.Id, RelationTypeEnum.UserByEvent, message.Event.Pubkey);
 
-			foreach (var item in ParseEmbeds.ParseEmbeddedStrings(message.Event.Content))
-			{
-				if (item.Key.Contains("nevent"))
+				if (RelationRegister.TryGetRelation(message.SubscriptionId, RelationTypeEnum.SubscriptionGuidToIds, out var guid))
 				{
-					foreach (var bech32 in item.Value)
+					RelationRegister.AddRelation(message.SubscriptionId, RelationTypeEnum.SubscriptionGuidToIds, message.Event.Pubkey);
+				}
+
+				foreach (var item in ParseEmbeds.ParseEmbeddedStrings(message.Event.Content))
+				{
+					if (item.Key.Contains("nevent"))
 					{
-						var nEventHex = GeneralHelpers.Bech32ToTLVComponents(bech32, Bech32PrefixEnum.nevent);
-						var idFound = nEventHex.TryGetValue(TLVTypeEnum.Special, out string id);
-						var userIdFound = nEventHex.TryGetValue(TLVTypeEnum.Author, out string userId);
-						if (idFound)
+						foreach (var bech32 in item.Value)
 						{
-							RelationRegister.AddRelation(message.Event.Id, RelationTypeEnum.ReferencedEvent, id);
+							var nEventHex = GeneralHelpers.Bech32ToTLVComponents(bech32, Bech32PrefixEnum.nevent);
+							var idFound = nEventHex.TryGetValue(TLVTypeEnum.Special, out string id);
+							var userIdFound = nEventHex.TryGetValue(TLVTypeEnum.Author, out string userId);
+							if (idFound)
+							{
+								RelationRegister.AddRelation(message.Event.Id, RelationTypeEnum.ReferencedEvent, id);
+							}
+							if (userIdFound)
+							{
+								RelationRegister.AddRelation(message.Event.Id, RelationTypeEnum.UserByEvent, userId);
+							}
 						}
-						if (userIdFound)
+					}
+				}
+
+				foreach (var tag in message.Event.Tags)
+				{
+					if (tag.Value != null)
+					{
+						switch (tag.Key)
 						{
-							RelationRegister.AddRelation(message.Event.Id, RelationTypeEnum.UserByEvent, userId);
+							case TagEnum.e:
+								RelationRegister.AddRelation(tag.Value, RelationTypeEnum.EventChildren, message.Event.Id);
+								if (tag.Value3 == "Root")
+								{
+									RelationRegister.AddRelation(message.Event.Id, RelationTypeEnum.EventRoot, tag.Value);
+								}
+								if (tag.Value3 == "Reply")
+								{
+									RelationRegister.AddRelation(message.Event.Id, RelationTypeEnum.EventParent, tag.Value);
+								}
+								break;
+							default:
+								break;
 						}
 					}
 				}
 			}
-
-			foreach (var tag in message.Event.Tags)
-			{
-				if (tag.Value != null)
-				{
-					switch (tag.Key)
-					{
-						case TagEnum.e:
-							RelationRegister.AddRelation(tag.Value, RelationTypeEnum.EventChildren, message.Event.Id);
-							if (tag.Value3 == "Root")
-							{
-								RelationRegister.AddRelation(message.Event.Id, RelationTypeEnum.EventRoot, tag.Value);
-							}
-							if (tag.Value3 == "Reply")
-							{
-								RelationRegister.AddRelation(message.Event.Id, RelationTypeEnum.EventParent, tag.Value);
-							}
-							break;
-						default:
-							break;
-					}
-				}
-			}
-
 		}
-
 		private void EndOfFetch(string subscriptionId)
 		{
-			if (RelationRegister.TryGetRelation(subscriptionId, RelationTypeEnum.RootLevelSubscription, out var rootId)
-				&& (RelationRegister.TryGetRelations(rootId, RelationTypeEnum.EventChildren, out var topLevelEventIds)
-				|| RelationRegister.TryGetRelations(rootId, RelationTypeEnum.EventsByUser, out topLevelEventIds)))
+			FilterBuilder filterBuilder = new();
+			lock (RelationRegister)
 			{
-				FilterBuilder filterBuilder = new();
-
-				filterBuilder
-					.AddFilter()
-					.AddKind(KindEnum.Text)
-					.AddTaggedEventIds(topLevelEventIds.Distinct().ToList());
-
-				if (RelationRegister.TryGetRelations(topLevelEventIds, RelationTypeEnum.ReferencedEvent, out var referencedEventIds))
+				if (RelationRegister.TryGetRelation(subscriptionId, RelationTypeEnum.RootLevelSubscription, out var rootId)
+					&& (RelationRegister.TryGetRelations(rootId, RelationTypeEnum.EventChildren, out var topLevelEventIds)
+					|| RelationRegister.TryGetRelations(rootId, RelationTypeEnum.EventsByUser, out topLevelEventIds)))
 				{
 					filterBuilder
 						.AddFilter()
 						.AddKind(KindEnum.Text)
-						.AddEventIds(referencedEventIds.Distinct().ToList());
-					if (RelationRegister.TryGetRelations(referencedEventIds, RelationTypeEnum.UserByEvent, out var referencedUserIds))
+						.AddTaggedEventIds(topLevelEventIds.Distinct().ToList());
+
+					if (RelationRegister.TryGetRelations(topLevelEventIds, RelationTypeEnum.ReferencedEvent, out var referencedEventIds))
+					{
+						filterBuilder
+							.AddFilter()
+							.AddKind(KindEnum.Text)
+							.AddEventIds(referencedEventIds.Distinct().ToList());
+						foreach (var relatedEventId in referencedEventIds)
+						{
+							EventsAwaitingMetaData.Enqueue(relatedEventId);
+						}
+					}
+
+					topLevelEventIds.Add(rootId.First());
+
+					if (RelationRegister.TryGetRelations(topLevelEventIds, RelationTypeEnum.UserByEvent, out var userIds))
 					{
 						filterBuilder
 							.AddFilter()
 							.AddKind(KindEnum.Metadata)
-							.AddEventIds(referencedUserIds.Distinct().ToList());
+							.AddAuthors(userIds.Where(id => !MessageStore.ContainsKey(id)).Distinct().ToList());
 					}
 				}
-
-				topLevelEventIds.Add(rootId.First());
-
-				if (RelationRegister.TryGetRelations(topLevelEventIds, RelationTypeEnum.UserByEvent, out var userIds))
-				{
-					filterBuilder
-						.AddFilter()
-						.AddKind(KindEnum.Metadata)
-						.AddAuthors(userIds.Where(id => !MessageStore.ContainsKey(id)).Distinct().ToList());
-				}
-
-				var filters = filterBuilder.Build();
-
-				var fetchId = Guid.NewGuid().ToString();
-				_ = Fetch(filters, fetchId);
 			}
+
+			if (EventsAwaitingMetaData.Any())
+			{
+				var pendingUserIds = new List<string>();
+				while (EventsAwaitingMetaData.Count > 0)
+				{
+					var pendingEventId = EventsAwaitingMetaData.Dequeue();
+					if (MessageStore.TryGetValue(pendingEventId, out var eventAwaitingMetadata))
+					{
+						pendingUserIds.Add(eventAwaitingMetadata.Event.Pubkey);
+					}
+				}
+				filterBuilder
+					.AddFilter()
+					.AddKind(KindEnum.Metadata)
+					.AddAuthors(pendingUserIds);
+			}
+
+			var filters = filterBuilder.Build();
+			var fetchId = Guid.NewGuid().ToString();
+			_ = Fetch(filters, fetchId);
 		}
 
 		private bool Sign(ref NEvent nEvent)

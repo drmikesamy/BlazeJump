@@ -5,6 +5,7 @@ using BlazeJump.Common.Enums;
 using System.Diagnostics;
 using BlazeJump.Common.Services.Connections.Providers;
 using System.Threading;
+using System.Collections.Concurrent;
 
 namespace BlazeJump.Common.Services.Connections
 {
@@ -12,7 +13,7 @@ namespace BlazeJump.Common.Services.Connections
 	{
 		public Dictionary<string, IRelayConnection> RelayConnections { get; set; }
 		public List<string> Relays => RelayConnections.Keys.ToList();
-		public PriorityQueue<NMessage, Tuple<int, long>> ReceivedMessages { get; set; } = new PriorityQueue<NMessage, Tuple<int, long>>();
+		public ConcurrentQueue<NMessage> ReceivedMessages { get; set; } = new ConcurrentQueue<NMessage>();
 		public event EventHandler ProcessMessageQueue;
 		private readonly IRelayConnectionProvider _connectionProvider;
 
@@ -28,7 +29,7 @@ namespace BlazeJump.Common.Services.Connections
 		private void AddToQueue(object sender, MessageReceivedEventArgs e)
 		{
 			Console.WriteLine($"Adding Event {e.Message?.Event?.Id} to queue");
-			ReceivedMessages.Enqueue(e.Message, new Tuple<int, long>(0, Stopwatch.GetTimestamp()));
+			ReceivedMessages.Enqueue(e.Message);
 			ProcessMessageQueue?.Invoke(this, EventArgs.Empty);
 		}
 

@@ -1,13 +1,14 @@
 ﻿using BlazeJump.Common.Models;
 using BlazeJump.Common.Services.Connections.Events;
 using BlazeJump.Common.Enums;
+using System.Collections.Concurrent;
 
 namespace BlazeJump.Common.Services.Connections
 {
     public interface IRelayManager
     {
 		event EventHandler ProcessMessageQueue;
-		PriorityQueue<NMessage, Tuple<int, long>> ReceivedMessages { get; set; }
+		ConcurrentQueue<NMessage> ReceivedMessages { get; set; }
 		List<string> Relays { get; }
 		Dictionary<string, IRelayConnection> RelayConnections { get; set; }
 		Task OpenConnection(string uri);
