@@ -45,12 +45,20 @@ namespace BlazeJump.Common.Helpers
 			var tlvDictionary = new Dictionary<TLVTypeEnum, string>();
 			while (cursor < bytes.Length)
 			{
-				TLVTypeEnum type = (TLVTypeEnum)bytes[cursor++];
-				int length = bytes[cursor++];
-				byte[] value = new byte[length];
-				Array.Copy(bytes, cursor, value, 0, length);
-				cursor += length;
-				tlvDictionary.Add(type, ByteArrayToHexString(value));
+				try
+				{
+					TLVTypeEnum type = (TLVTypeEnum)bytes[cursor++];
+					int length = bytes[cursor++];
+					byte[] value = new byte[length];
+					Array.Copy(bytes, cursor, value, 0, length);
+					cursor += length;
+					tlvDictionary.TryAdd(type, ByteArrayToHexString(value));
+				}
+				catch (Exception ex)
+				{
+
+				}
+
 			}
 			return tlvDictionary;
 		}

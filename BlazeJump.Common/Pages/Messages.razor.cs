@@ -17,12 +17,18 @@ namespace BlazeJump.Common.Pages
 			if (HexRootId != null)
 			{
 				await MessageService.FetchPage(HexRootId);
+				NewNEventToSend();
 			}
 			NotificationService.Loading = false;
 			NotificationService.UpdateState += UpdateState;
 		}
 
 		private void UpdateState(object sender, EventArgs e)
+		{
+			StateHasChanged();
+		}
+
+		private void NewNEventToSend()
 		{
 			if (HexRootId != null
 				&& _nEventToSend?.Content == null
@@ -31,7 +37,7 @@ namespace BlazeJump.Common.Pages
 			{
 				_nEventToSend = MessageService.CreateNEvent(KindEnum.Text, String.Empty, HexRootId, eventRoot.SingleOrDefault());
 			}
-			InvokeAsync(StateHasChanged);
+			StateHasChanged();
 		}
 
 		private void UpdateSearch()

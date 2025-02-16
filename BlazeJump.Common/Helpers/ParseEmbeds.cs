@@ -17,6 +17,13 @@ namespace BlazeJump.Helpers
 			{
 				content = content.Replace(m.Value, $"<a href=\"{m.Value}\" target=\"_blank\">{m.Value}</a>");
 			}
+			foreach (var bech32ByType in ParseEmbeddedStrings(content))
+			{
+				foreach(var bech32 in bech32ByType.Value)
+				{
+					content = content.Replace($"nostr:{bech32}", "");
+				}
+			}
 			return (MarkupString)content;
 		}
 		public static List<MarkupString> ParsePreviewContent(string content)

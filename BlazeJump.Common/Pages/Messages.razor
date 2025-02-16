@@ -11,7 +11,7 @@
 <div class="background-container">
     <div class="content-container">
         @if (HexRootId != null
-            && MessageService.MessageStore.TryGetValue(HexRootId, out var rootMessage))
+           && MessageService.MessageStore.TryGetValue(HexRootId, out var rootMessage))
         {
             @if (rootMessage?.Event?.Kind == KindEnum.Metadata)
             {
@@ -24,20 +24,20 @@
                 {
                     <Card>
                         <input id="messageToSend"
-                               type="text"
-                               @bind="_nEventToSend.Content" />
+                        type="text"
+                        @bind="_nEventToSend.Content" />
                         <button @onclick="() => MessageService.Send(KindEnum.Text, _nEventToSend)">Send</button>
                     </Card>
                 }
             }
 
             @if (MessageService.RelationRegister.TryGetRelation(HexRootId, RelationTypeEnum.EventChildren, out var topLevelEventIds)
-                 || MessageService.RelationRegister.TryGetRelation(HexRootId, RelationTypeEnum.EventsByUser, out topLevelEventIds))
+                || MessageService.RelationRegister.TryGetRelation(HexRootId, RelationTypeEnum.EventsByUser, out topLevelEventIds))
             {
                 @foreach (var eventId in topLevelEventIds)
                 {
                     @if (MessageService.MessageStore.TryGetValue(eventId, out var message)
-                         && message!.Event!.Kind == KindEnum.Text)
+                        && message!.Event!.Kind == KindEnum.Text)
                     {
                         <MessageCard Message=message></MessageCard>
                         @if (eventId == topLevelEventIds.Last())
@@ -57,14 +57,14 @@
                     Start typing a username or hex to add a user:
                 </label>
                 <input
-                    id="userLookup"
-                    type="text"
-                    @bind="_searchString"
-                    @bind:event="oninput"
-                    @bind:after="UpdateSearch"/>
+                id="userLookup"
+                type="text"
+                @bind="_searchString"
+                @bind:event="oninput"
+                @bind:after="UpdateSearch"/>
             </Card>
             @if (MessageService.RelationRegister.TryGetRelation(_searchString, RelationTypeEnum.SearchToSubscriptionId, out var guid)
-                 && MessageService.RelationRegister.TryGetRelation(guid.First(), RelationTypeEnum.SubscriptionGuidToIds, out var userIds))
+                && MessageService.RelationRegister.TryGetRelation(guid.First(), RelationTypeEnum.SubscriptionGuidToIds, out var userIds))
             {
                 @foreach (var userId in userIds)
                 {
@@ -78,6 +78,17 @@
     </div>
 </div>
 
+
+@* @if (HexRootId != null && MessageService.RelationRegister.TryGetRelation(HexRootId, RelationTypeEnum.EventsByUser, out var topid)
+   && MessageService.RelationRegister.TryGetRelations(topid, RelationTypeEnum.ReferencedEvent, out var anyref))
+{
+    @foreach(var refe in anyref)
+    {
+        @if(MessageService.MessageStore.TryGetValue(refe, out var eventd)){
+            <p>@eventd.Event.Content</p>
+        }
+    }
+} *@
 
 @* <table border="1"> *@
 @*     <thead> *@

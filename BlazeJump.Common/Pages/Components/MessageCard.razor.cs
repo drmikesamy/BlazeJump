@@ -8,7 +8,6 @@ namespace BlazeJump.Common.Pages.Components
 	{
 		[Parameter]
 		public NMessage Message { get; set; }
-
 		[Parameter] public string Styling { get; set; }
 		public NEvent NEvent => Message.Event;
 		public User User => MessageService.MessageStore.TryGetValue(NEvent.Pubkey, out var user) ? user.Event.User : new User();
@@ -24,6 +23,16 @@ namespace BlazeJump.Common.Pages.Components
 		{
 			message.Verified = MessageService.Verify(NEvent);
 			InvokeAsync(StateHasChanged);
+		}
+		public IEnumerable<NMessage> ReferencedMessages()
+		{
+			if(MessageService.RelationRegister.TryGetRelation(NEvent.Id, RelationTypeEnum.ReferencedEvent, out var referencedIds))
+			{
+				foreach (var id in referencedIds) {
+					MessageService.MessageStore.TryGetValue(id, out var message);
+					yield return message;
+				}		
+			}
 		}
 	}
 }

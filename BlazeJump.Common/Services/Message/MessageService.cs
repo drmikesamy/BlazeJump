@@ -138,17 +138,26 @@ namespace BlazeJump.Common.Services.Message
 				RelationRegister.AddRelation(message.SubscriptionId, RelationTypeEnum.SubscriptionGuidToIds, message.Event.Pubkey);
 			}
 
-			//foreach (var item in ParseEmbeds.ParseEmbeddedStrings(message.Event.Content))
-			//{
-			//	if (item.Key.Contains("nevent"))
-			//	{
-			//		foreach (var bech32 in item.Value)
-			//		{
-			//			var nEventHex = GeneralHelpers.Bech32ToTLVComponents(bech32, Bech32PrefixEnum.nevent);
-			//			RelationRegister.AddRelation(message.Event.Id, RelationTypeEnum.ReferencedEvent, nEventHex[TLVTypeEnum.Special]);
-			//		}
-			//	}
-			//}
+			foreach (var item in ParseEmbeds.ParseEmbeddedStrings(message.Event.Content))
+			{
+				if (item.Key.Contains("nevent"))
+				{
+					foreach (var bech32 in item.Value)
+					{
+						var nEventHex = GeneralHelpers.Bech32ToTLVComponents(bech32, Bech32PrefixEnum.nevent);
+						var idFound = nEventHex.TryGetValue(TLVTypeEnum.Special, out string id);
+						var userIdFound = nEventHex.TryGetValue(TLVTypeEnum.Author, out string userId);
+						if (idFound)
+						{
+							RelationRegister.AddRelation(message.Event.Id, RelationTypeEnum.ReferencedEvent, id);
+						}
+						if (userIdFound)
+						{
+							RelationRegister.AddRelation(message.Event.Id, RelationTypeEnum.UserByEvent, userId);
+						}
+					}
+				}
+			}
 
 			foreach (var tag in message.Event.Tags)
 			{
@@ -193,7 +202,14 @@ namespace BlazeJump.Common.Services.Message
 					filterBuilder
 						.AddFilter()
 						.AddKind(KindEnum.Text)
-						.AddTaggedEventIds(referencedEventIds.Distinct().ToList());
+						.AddEventIds(referencedEventIds.Distinct().ToList());
+					if (RelationRegister.TryGetRelations(referencedEventIds, RelationTypeEnum.UserByEvent, out var referencedUserIds))
+					{
+						filterBuilder
+							.AddFilter()
+							.AddKind(KindEnum.Metadata)
+							.AddEventIds(referencedUserIds.Distinct().ToList());
+					}
 				}
 
 				topLevelEventIds.Add(rootId.First());
