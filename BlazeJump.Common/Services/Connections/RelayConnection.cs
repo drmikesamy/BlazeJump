@@ -5,6 +5,7 @@ using Newtonsoft.Json;
 using System.Net.WebSockets;
 using System.Text;
 using BlazeJump.Common.Services.Connections.Factories;
+using System.Collections.Concurrent;
 
 namespace BlazeJump.Common.Services.Connections
 {
@@ -14,8 +15,9 @@ namespace BlazeJump.Common.Services.Connections
         private readonly string _uri;
         private IClientWebSocketWrapper _webSocket { get; set; }
         private IClientWebSocketFactory _webSocketFactory { get; set; }
-        public Dictionary<string, bool> ActiveSubscriptions { get; set; } = new Dictionary<string, bool>();
-        public event EventHandler<MessageReceivedEventArgs> NewMessageReceived;
+        public ConcurrentDictionary<string, bool> ActiveSubscriptions { get; set; } = new ConcurrentDictionary<string, bool>();
+
+		public event EventHandler<MessageReceivedEventArgs> NewMessageReceived;
         public bool IsOpen => _webSocket is { State: WebSocketState.Open };
 
         public RelayConnection(IClientWebSocketFactory webSocketFactory, string uri)
@@ -61,7 +63,7 @@ namespace BlazeJump.Common.Services.Connections
                     Console.WriteLine($"Subscribing to {_uri} using {subscriptionId}");
                     await SendRequest(requestMessageType, subscriptionId, filters);
                     ActiveSubscriptions.TryAdd(subscriptionId, true);
-                }
+				}
             }
         }
 
@@ -125,7 +127,7 @@ namespace BlazeJump.Common.Services.Connections
                 }
 
                 var message = JsonConvert.DeserializeObject<NMessage>(rawMessage);
-                Console.WriteLine($"Message received from {_uri}: {message.SubscriptionId}");
+                Console.WriteLine($"Message received from {_uri}: {message.SubscriptionId} on thread {Thread.CurrentThread.ManagedThreadId}");
                 yield return message;
                 if (canceled)
                 {
@@ -160,8 +162,8 @@ namespace BlazeJump.Common.Services.Connections
                 var dataToSend = new ArraySegment<byte>(Encoding.UTF8.GetBytes(closeMessage));
 
                 await _webSocket.SendAsync(dataToSend, WebSocketMessageType.Text, true, _cancellationTokenSource.Token);
-                ActiveSubscriptions.Remove(subscriptionId);
-            }
+				ActiveSubscriptions.TryRemove(subscriptionId, out _);
+			}
         }
 
         public async Task Close()

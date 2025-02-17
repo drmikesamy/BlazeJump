@@ -11,26 +11,27 @@ namespace BlazeJump.Common.Services.Connections
 {
 	public class RelayManager : IRelayManager
 	{
-		public Dictionary<string, IRelayConnection> RelayConnections { get; set; }
+		public ConcurrentDictionary<string, IRelayConnection> RelayConnections { get; set; } = new ConcurrentDictionary<string, IRelayConnection>();
 		public List<string> Relays => RelayConnections.Keys.ToList();
 		public ConcurrentQueue<NMessage> ReceivedMessages { get; set; } = new ConcurrentQueue<NMessage>();
 		public event EventHandler ProcessMessageQueue;
 		private readonly IRelayConnectionProvider _connectionProvider;
+		private readonly object _processMessageQueueLock = new object();
 
 		public RelayManager(IRelayConnectionProvider connectionProvider)
 		{
 			_connectionProvider = connectionProvider;
-			RelayConnections = new Dictionary<string, IRelayConnection> {
-				//{ "wss://nostr.wine", _connectionProvider.CreateRelayConnection("wss://nostr.wine") },
-				{ "wss://relay.nostr.band", _connectionProvider.CreateRelayConnection("wss://relay.nostr.band") }
-			};
+			RelayConnections.TryAdd("wss://relay.nostr.band", _connectionProvider.CreateRelayConnection("wss://relay.nostr.band"));
 		}
 
 		private void AddToQueue(object sender, MessageReceivedEventArgs e)
 		{
 			Console.WriteLine($"Adding Event {e.Message?.Event?.Id} to queue");
 			ReceivedMessages.Enqueue(e.Message);
-			ProcessMessageQueue?.Invoke(this, EventArgs.Empty);
+			lock (_processMessageQueueLock)
+			{
+				ProcessMessageQueue?.Invoke(this, EventArgs.Empty);
+			}
 		}
 
 		public async Task OpenConnection(string uri)
@@ -48,12 +49,12 @@ namespace BlazeJump.Common.Services.Connections
 
 		public async Task CloseConnection(string uri)
 		{
-			RelayConnections.TryGetValue(uri, out var connection);
-			if (connection != null)
+			if (RelayConnections.TryRemove(uri, out var connection) && connection != null)
 			{
 				await connection.Close();
 			}
 		}
+
 		public async Task QueryRelays(string subscriptionId, MessageTypeEnum requestMessageType, List<Filter> filters, int timeout = 15000)
 		{
 			using var resource = new SemaphoreSlim(5, 5);
