@@ -21,7 +21,7 @@ namespace BlazeJump.Common.Services.Connections
 		public RelayManager(IRelayConnectionProvider connectionProvider)
 		{
 			_connectionProvider = connectionProvider;
-			RelayConnections.TryAdd("wss://relay.nostr.band", _connectionProvider.CreateRelayConnection("wss://relay.nostr.band"));
+			RelayConnections.TryAdd("ws://localhost:7777", _connectionProvider.CreateRelayConnection("ws://localhost:7777"));
 		}
 
 		private void AddToQueue(object sender, MessageReceivedEventArgs e)

@@ -1,0 +1,23 @@
+services:
+  strfry:
+    image: dockurr/strfry
+    container_name: strfry
+    ports:
+      - 7777:7777
+    volumes:
+      - ./strfry-db:/app/strfry-db
+      - ./strfry.conf/strfry.conf:/etc/strfry.conf:ro
+      - ./write-policy.py:/app/write-policy.py:ro
+    restart: always
+    stop_grace_period: 2m
+
+  blazejump-web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: blazejump-web
+    ports:
+      - 8080:80
+    restart: always
+    depends_on:
+      - strfry

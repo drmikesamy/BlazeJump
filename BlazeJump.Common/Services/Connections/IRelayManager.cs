@@ -5,8 +5,8 @@ using System.Collections.Concurrent;
 
 namespace BlazeJump.Common.Services.Connections
 {
-    public interface IRelayManager
-    {
+	public interface IRelayManager
+	{
 		event EventHandler ProcessMessageQueue;
 		ConcurrentQueue<NMessage> ReceivedMessages { get; set; }
 		List<string> Relays { get; }

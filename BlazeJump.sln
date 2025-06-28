@@ -7,12 +7,6 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BlazeJump.Common", "BlazeJu
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BlazeJump.Web", "BlazeJump.Web\BlazeJump.Web.csproj", "{30DEA447-1A0F-4E13-B840-83B7D56944E2}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BlazeJump.Native", "BlazeJump.Native\BlazeJump.Native.csproj", "{E1A9F7A6-82B6-492B-9063-81112E9B6592}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BlazeJump.Common.Tests", "BlazeJump.Common.Tests\BlazeJump.Common.Tests.csproj", "{CA59B0F2-AAFC-43A9-A8A4-B5B3795D64C0}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BlazeJump.Native.Tests", "BlazeJump.Native.Tests\BlazeJump.Native.Tests.csproj", "{9BA45A19-D87D-4DF5-BF1C-D6BBACB87079}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
