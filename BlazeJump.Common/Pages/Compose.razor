@@ -1,0 +1,239 @@
+@page "/compose"
+@using BlazeJump.Common.Enums;
+@using BlazeJump.Common.Models;
+@using BlazeJump.Common.Pages.Components
+@using BlazeJump.Common.Services.Message;
+@using BlazeJump.Common.Services.Notification;
+@using BlazeJump.Common.Services.UserProfile;
+@inject IMessageService MessageService
+@inject INotificationService NotificationService
+@inject IUserProfileService UserProfileService
+@inject NavigationManager NavigationManager
+
+<div class="background-container">
+    <div class="content-container">
+        <Card>
+            <div class="compose-container">
+                <h1>✍️ Compose Note</h1>
+                
+                @if (!UserProfileService.IsLoggedIn)
+                {
+                    <div class="login-prompt">
+                        <p>You need to be logged in to post messages.</p>
+                        <div class="action-buttons">
+                            <button type="button" @onclick="GoToLogin" class="primary-btn">Login</button>
+                            <button type="button" @onclick="GoToCreateAccount" class="secondary-btn">Create Account</button>
+                        </div>
+                    </div>
+                }
+                else
+                {
+                    <div class="compose-form">
+                        <div class="user-info">
+                            <div class="profile-picture" style="background-image: url('@(UserProfileService.User?.ProfilePic ?? "/images/profilepics/1.png")')"></div>
+                            <div class="user-details">
+                                <span class="username">@(UserProfileService.User?.Username ?? "Anonymous")</span>
+                                <span class="pubkey">@UserProfileService.NPubKey</span>
+                            </div>
+                        </div>
+                        
+                        <div class="message-input-container">
+                            <textarea 
+                                @bind="_messageContent" 
+                                @bind:event="oninput"
+                                @onkeydown="HandleKeyDown"
+                                placeholder="What's happening?" 
+                                class="message-input"
+                                rows="6"
+                                maxlength="280"></textarea>
+                            
+                            <div class="input-controls">
+                                <div class="character-count @(_messageContent.Length > 250 ? "warning" : "") @(_messageContent.Length > 280 ? "error" : "")">
+                                    @_messageContent.Length / 280
+                                </div>
+                                
+                                <div class="compose-options">
+                                    <label class="option-toggle">
+                                        <input type="checkbox" @bind="_isReply" disabled="@string.IsNullOrEmpty(_replyToId)" />
+                                        Reply
+                                    </label>
+                                    
+                                    @if (_isReply && !string.IsNullOrEmpty(_replyToId))
+                                    {
+                                        <div class="reply-info">
+                                            <small>Replying to: @_replyToId.Substring(0, 10)...</small>
+                                            <button type="button" @onclick="ClearReply" class="clear-reply">×</button>
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                        
+                        @if (_isPosting)
+                        {
+                            <div class="posting-status">
+                                <div class="spinner"></div>
+                                <span>Publishing your note...</span>
+                            </div>
+                        }
+                        
+                        <div class="action-buttons">
+                            <button type="button" @onclick="ClearMessage" class="secondary-btn" disabled="@_isPosting">
+                                Clear
+                            </button>
+                            <button type="button" @onclick="PostMessage" class="primary-btn" disabled="@(string.IsNullOrWhiteSpace(_messageContent) || _messageContent.Length > 280 || _isPosting)">
+                                @(_isPosting ? "Posting..." : "Post Note")
+                            </button>
+                        </div>
+                        
+                        @if (_lastPostedEvent != null)
+                        {
+                            <div class="success-message">
+                                <div class="success-icon">✅</div>
+                                <div class="success-content">
+                                    <p>Note posted successfully!</p>
+                                    <small>Event ID: @_lastPostedEvent.Id</small>
+                                </div>
+                            </div>
+                        }
+                        
+                        @if (!string.IsNullOrEmpty(_errorMessage))
+                        {
+                            <div class="error-message">
+                                <div class="error-icon">❌</div>
+                                <div class="error-content">
+                                    <p>Failed to post note</p>
+                                    <small>@_errorMessage</small>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                    
+                    <div class="compose-tips">
+                        <h3>💡 Compose Tips</h3>
+                        <ul>
+                            <li><strong>@@username</strong> - Mention other users</li>
+                            <li><strong>#hashtag</strong> - Add hashtags to your notes</li>
+                            <li><strong>Links</strong> - URLs will be automatically detected</li>
+                            <li><strong>Ctrl+Enter</strong> - Quick post shortcut</li>
+                        </ul>
+                    </div>
+                }
+            </div>
+        </Card>
+    </div>
+</div>
+
+@code {
+    [Parameter] public string? ReplyTo { get; set; }
+    
+    private string _messageContent = string.Empty;
+    private bool _isPosting = false;
+    private bool _postSuccess = false;
+    private bool _isReply = false;
+    private string? _replyToId;
+    private string? _rootId;
+    private NEvent? _lastPostedEvent;
+    private string? _errorMessage;
+
+    protected override void OnInitialized()
+    {
+        if (!string.IsNullOrEmpty(ReplyTo))
+        {
+            _replyToId = ReplyTo;
+            _isReply = true;
+            
+            // Try to find the root of the conversation
+            if (MessageService.RelationRegister.TryGetRelation(ReplyTo, RelationTypeEnum.EventRoot, out var rootEvents))
+            {
+                _rootId = rootEvents.FirstOrDefault();
+            }
+            else
+            {
+                _rootId = ReplyTo; // This is the root
+            }
+        }
+    }
+
+    private async Task PostMessage()
+    {
+        if (string.IsNullOrWhiteSpace(_messageContent) || _isPosting)
+            return;
+
+        _isPosting = true;
+        _errorMessage = null;
+        _lastPostedEvent = null;
+        StateHasChanged();
+
+        try
+        {
+            // Create the note event
+            var noteEvent = MessageService.CreateNEvent(
+                KindEnum.Text, 
+                _messageContent.Trim(), 
+                _isReply ? _replyToId : null, 
+                _isReply ? _rootId : null
+            );
+
+            // Send to relays
+            await MessageService.Send(KindEnum.Text, noteEvent);
+            
+            _lastPostedEvent = noteEvent;
+            _messageContent = string.Empty;
+            
+            // Clear reply context after posting
+            if (_isReply)
+            {
+                ClearReply();
+            }
+            
+            _postSuccess = true;
+            
+            // Optionally navigate back to feed after a delay
+            await Task.Delay(2000);
+            NavigationManager.NavigateTo("/");
+        }
+        catch (Exception ex)
+        {
+            _errorMessage = ex.Message;
+            // Error posting note - UI will show error message
+        }
+        finally
+        {
+            _isPosting = false;
+            StateHasChanged();
+        }
+    }
+
+    private void ClearMessage()
+    {
+        _messageContent = string.Empty;
+        _lastPostedEvent = null;
+        _errorMessage = null;
+    }
+
+    private void ClearReply()
+    {
+        _isReply = false;
+        _replyToId = null;
+        _rootId = null;
+    }
+
+    private async Task HandleKeyDown(KeyboardEventArgs e)
+    {
+        if (e.CtrlKey && e.Key == "Enter")
+        {
+            await PostMessage();
+        }
+    }
+
+    private void GoToLogin()
+    {
+        NavigationManager.NavigateTo("/login");
+    }
+
+    private void GoToCreateAccount()
+    {
+        NavigationManager.NavigateTo("/create-account");
+    }
+}

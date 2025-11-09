@@ -1,0 +1,262 @@
+@page "/onboarding"
+@using BlazeJump.Common.Pages.Components
+@inject NavigationManager NavigationManager
+
+<div class="background-container">
+    <div class="content-container">
+        <Card>
+            <div class="onboarding-container">
+                <div class="welcome-header">
+                    <h1>🚀 Welcome to BlazeJump</h1>
+                    <p class="subtitle">Your gateway to the decentralized Nostr network</p>
+                </div>
+                
+                <div class="onboarding-content">
+                    <div class="feature-grid">
+                        <div class="feature-card">
+                            <div class="feature-icon">🔑</div>
+                            <h3>Own Your Identity</h3>
+                            <p>Your keys, your identity. No central authority controls your account.</p>
+                        </div>
+                        
+                        <div class="feature-card">
+                            <div class="feature-icon">🌐</div>
+                            <h3>Decentralized Network</h3>
+                            <p>Connect through multiple relays for censorship resistance and reliability.</p>
+                        </div>
+                        
+                        <div class="feature-card">
+                            <div class="feature-icon">💬</div>
+                            <h3>Real-time Messaging</h3>
+                            <p>Share thoughts, reply to others, and build meaningful connections.</p>
+                        </div>
+                        
+                        <div class="feature-card">
+                            <div class="feature-icon">🔒</div>
+                            <h3>Cryptographic Security</h3>
+                            <p>All messages are cryptographically signed for authenticity.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="getting-started">
+                        <h2>Getting Started</h2>
+                        <div class="start-options">
+                            <div class="option-card new-user">
+                                <h3>New to Nostr?</h3>
+                                <p>Create your first Nostr account and join the decentralized social network.</p>
+                                <button type="button" @onclick="GoToCreateAccount" class="primary-btn">Create Account</button>
+                            </div>
+                            
+                            <div class="option-card existing-user">
+                                <h3>Already have keys?</h3>
+                                <p>Import your existing Nostr keys or connect via mobile app.</p>
+                                <div class="existing-options">
+                                    <button type="button" @onclick="GoToLogin" class="secondary-btn">Connect Mobile App</button>
+                                    <button type="button" @onclick="GoToImportKeys" class="secondary-btn">Import Keys</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="nostr-info">
+                        <h2>What is Nostr?</h2>
+                        <div class="info-content">
+                            <p>
+                                <strong>Nostr</strong> (Notes and Other Stuff Transmitted by Relays) is a simple, 
+                                open protocol for creating a censorship-resistant global social network.
+                            </p>
+                            
+                            <div class="key-principles">
+                                <h3>Key Principles:</h3>
+                                <ul>
+                                    <li><strong>No central server:</strong> The network is distributed across many relays</li>
+                                    <li><strong>User owns identity:</strong> Your cryptographic keys are your identity</li>
+                                    <li><strong>Censorship resistant:</strong> No single point of failure or control</li>
+                                    <li><strong>Simple & extensible:</strong> Built on simple, extensible protocols</li>
+                                </ul>
+                            </div>
+                            
+                            <div class="learn-more">
+                                <h3>Learn More:</h3>
+                                <div class="resource-links">
+                                    <a href="https://nostr.com" target="_blank" class="resource-link">
+                                        📖 Official Nostr Guide
+                                    </a>
+                                    <a href="https://github.com/nostr-protocol/nostr" target="_blank" class="resource-link">
+                                        🔧 Protocol Specification
+                                    </a>
+                                    <a href="https://nostr.directory" target="_blank" class="resource-link">
+                                        🌍 Nostr Directory
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="onboarding-footer">
+                    <p>Ready to join the future of social networking?</p>
+                    <button type="button" @onclick="GoToCreateAccount" class="primary-btn large-btn">Get Started Now</button>
+                </div>
+            </div>
+        </Card>
+    </div>
+</div>
+
+<style>
+.onboarding-container {
+    max-width: 900px;
+    margin: 0 auto;
+}
+
+.welcome-header {
+    text-align: center;
+    margin-bottom: 3rem;
+}
+
+.welcome-header h1 {
+    font-size: 2.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.subtitle {
+    font-size: 1.2rem;
+    color: #888;
+}
+
+.feature-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 2rem;
+    margin-bottom: 3rem;
+}
+
+.feature-card {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 12px;
+    padding: 1.5rem;
+    text-align: center;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.feature-icon {
+    font-size: 2.5rem;
+    margin-bottom: 1rem;
+}
+
+.feature-card h3 {
+    margin-bottom: 0.5rem;
+    color: #fff;
+}
+
+.getting-started {
+    margin-bottom: 3rem;
+}
+
+.start-options {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 2rem;
+    margin-top: 1.5rem;
+}
+
+.option-card {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 12px;
+    padding: 2rem;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.option-card h3 {
+    color: #fff;
+    margin-bottom: 1rem;
+}
+
+.existing-options {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    margin-top: 1rem;
+}
+
+.nostr-info {
+    background: rgba(255, 255, 255, 0.02);
+    border-radius: 12px;
+    padding: 2rem;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.info-content p {
+    margin-bottom: 1.5rem;
+    line-height: 1.6;
+}
+
+.key-principles {
+    margin-bottom: 2rem;
+}
+
+.key-principles ul {
+    list-style: none;
+    padding-left: 0;
+}
+
+.key-principles li {
+    margin-bottom: 0.75rem;
+    padding-left: 1rem;
+    position: relative;
+}
+
+.key-principles li::before {
+    content: "▸";
+    position: absolute;
+    left: 0;
+    color: #C60F7B;
+}
+
+.resource-links {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.resource-link {
+    color: #6cdbd2;
+    text-decoration: none;
+    padding: 0.5rem;
+    border-radius: 6px;
+    transition: background-color 0.2s;
+}
+
+.resource-link:hover {
+    background-color: rgba(108, 219, 210, 0.1);
+}
+
+.onboarding-footer {
+    text-align: center;
+    margin-top: 3rem;
+    padding-top: 2rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.large-btn {
+    font-size: 1.2rem;
+    padding: 1rem 2rem;
+}
+</style>
+
+@code {
+    private void GoToCreateAccount()
+    {
+        NavigationManager.NavigateTo("/create-account");
+    }
+
+    private void GoToLogin()
+    {
+        NavigationManager.NavigateTo("/login");
+    }
+
+    private void GoToImportKeys()
+    {
+        NavigationManager.NavigateTo("/import-keys");
+    }
+}

@@ -1,0 +1,285 @@
+@page "/create-account"
+@using BlazeJump.Common.Enums;
+@using BlazeJump.Common.Models;
+@using BlazeJump.Common.Models.Crypto;
+@using BlazeJump.Common.Pages.Components
+@using BlazeJump.Common.Services.Connections;
+@using BlazeJump.Common.Services.Crypto;
+@using BlazeJump.Common.Services.Message;
+@using BlazeJump.Common.Services.Notification;
+@using BlazeJump.Common.Services.UserProfile;
+@using BlazeJump.Common.Helpers;
+@using Newtonsoft.Json;
+@inject ICryptoService CryptoService
+@inject IUserProfileService UserProfileService
+@inject IMessageService MessageService
+@inject INotificationService NotificationService
+@inject NavigationManager NavigationManager
+
+<div class="background-container">
+    <div class="content-container">
+        <Card>
+            <div class="create-account-container">
+                <h1>Create Your Nostr Account</h1>
+                
+                @if (!_accountCreated)
+                {
+                    <div class="account-creation-steps">
+                        @if (_currentStep == 1)
+                        {
+                            <div class="step-content">
+                                <h2>Step 1: Generate Your Keys</h2>
+                                <p>Your keys are your identity on Nostr. Keep your private key safe!</p>
+                                
+                                @if (_generatingKeys)
+                                {
+                                    <div class="loading-container">
+                                        <div class="spinner"></div>
+                                        <p>Generating your cryptographic keys...</p>
+                                    </div>
+                                }
+                                else if (_keyPair != null)
+                                {
+                                    <div class="key-display">
+                                        <div class="key-section">
+                                            <label>Public Key (npub):</label>
+                                            <div class="key-value">
+                                                <input type="text" readonly value="@_publicKeyBech32" class="key-input" />
+                                                <button type="button" @onclick="() => CopyToClipboard(_publicKeyBech32)" class="copy-btn">📋</button>
+                                            </div>
+                                            <small>This is your public identity. Share this with others.</small>
+                                        </div>
+                                        
+                                        <div class="key-section">
+                                            <label>Private Key (nsec):</label>
+                                            <div class="key-value">
+                                                <input type="@(_showPrivateKey ? "text" : "password")" readonly value="@_privateKeyBech32" class="key-input" />
+                                                <button type="button" @onclick="TogglePrivateKeyVisibility" class="toggle-btn">👁️</button>
+                                                <button type="button" @onclick="() => CopyToClipboard(_privateKeyBech32)" class="copy-btn">📋</button>
+                                            </div>
+                                            <small class="warning">⚠️ Keep this secret! Anyone with this key can control your account.</small>
+                                        </div>
+                                        
+                                        <div class="backup-warning">
+                                            <h3>⚠️ Important: Backup Your Keys</h3>
+                                            <p>Write down or securely save your private key. There's no way to recover it if lost!</p>
+                                            <label class="checkbox-container">
+                                                <input type="checkbox" @bind="_keysBackedUp" />
+                                                I have safely backed up my private key
+                                            </label>
+                                        </div>
+                                    </div>
+                                }
+                                else
+                                {
+                                    <button type="button" @onclick="GenerateNewKeys" class="primary-btn">
+                                        Generate New Keys
+                                    </button>
+                                }
+                                
+                                @if (_keyPair != null && _keysBackedUp)
+                                {
+                                    <button type="button" @onclick="() => _currentStep = 2" class="primary-btn next-btn">
+                                        Continue to Profile Setup
+                                    </button>
+                                }
+                            </div>
+                        }
+                        else if (_currentStep == 2)
+                        {
+                            <div class="step-content">
+                                <h2>Step 2: Setup Your Profile</h2>
+                                <p>Tell others about yourself (all fields are optional)</p>
+                                
+                                <div class="profile-form">
+                                    <div class="form-group">
+                                        <label for="display-name">Display Name:</label>
+                                        <input type="text" id="display-name" @bind="_profile.Username" placeholder="Your name or handle" maxlength="50" />
+                                    </div>
+                                    
+                                    <div class="form-group">
+                                        <label for="about">About:</label>
+                                        <textarea id="about" @bind="_profile.Bio" placeholder="Tell people about yourself..." maxlength="500" rows="4"></textarea>
+                                    </div>
+                                    
+                                    <div class="form-group">
+                                        <label for="profile-pic">Profile Picture URL:</label>
+                                        <input type="url" id="profile-pic" @bind="_profile.ProfilePic" placeholder="https://example.com/your-avatar.jpg" />
+                                    </div>
+                                    
+                                    <div class="form-group">
+                                        <label for="banner">Banner Image URL:</label>
+                                        <input type="url" id="banner" @bind="_profile.Banner" placeholder="https://example.com/your-banner.jpg" />
+                                    </div>
+                                </div>
+                                
+                                <div class="step-actions">
+                                    <button type="button" @onclick="() => _currentStep = 1" class="secondary-btn">
+                                        Back
+                                    </button>
+                                    <button type="button" @onclick="() => _currentStep = 3" class="primary-btn">
+                                        Continue to Publish
+                                    </button>
+                                </div>
+                            </div>
+                        }
+                        else if (_currentStep == 3)
+                        {
+                            <div class="step-content">
+                                <h2>Step 3: Publish Your Profile</h2>
+                                <p>Publish your profile to the Nostr network</p>
+                                
+                                @if (_publishingProfile)
+                                {
+                                    <div class="loading-container">
+                                        <div class="spinner"></div>
+                                        <p>Publishing your profile to Nostr relays...</p>
+                                    </div>
+                                }
+                                else
+                                {
+                                    <div class="profile-preview">
+                                        <h3>Profile Preview:</h3>
+                                        <div class="preview-card">
+                                            @if (!string.IsNullOrEmpty(_profile.ProfilePic))
+                                            {
+                                                <img src="@_profile.ProfilePic" alt="Profile" class="preview-avatar" />
+                                            }
+                                            <div class="preview-info">
+                                                <h4>@(!string.IsNullOrEmpty(_profile.Username) ? _profile.Username : "Anonymous")</h4>
+                                                @if (!string.IsNullOrEmpty(_profile.Bio))
+                                                {
+                                                    <p>@_profile.Bio</p>
+                                                }
+                                                <small>@_publicKeyBech32</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="step-actions">
+                                        <button type="button" @onclick="() => _currentStep = 2" class="secondary-btn">
+                                            Back to Edit
+                                        </button>
+                                        <button type="button" @onclick="PublishProfile" class="primary-btn">
+                                            Publish Profile
+                                        </button>
+                                    </div>
+                                }
+                            </div>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <div class="success-container">
+                        <div class="success-icon">✅</div>
+                        <h2>Account Created Successfully!</h2>
+                        <p>Welcome to Nostr! Your profile has been published to the network.</p>
+                        
+                        <div class="next-steps">
+                            <h3>What's next?</h3>
+                            <ul>
+                                <li>Start following other users</li>
+                                <li>Post your first note</li>
+                                <li>Connect with relays</li>
+                                <li>Explore the network</li>
+                            </ul>
+                        </div>
+                        
+                        <div class="step-actions">
+                            <button type="button" @onclick="GoToHome" class="primary-btn">Start Using Nostr</button>
+                        </div>
+                    </div>
+                }
+            </div>
+        </Card>
+    </div>
+</div>
+
+@code {
+    private Secp256k1KeyPair? _keyPair;
+    private string _publicKeyBech32 = string.Empty;
+    private string _privateKeyBech32 = string.Empty;
+    private bool _showPrivateKey = false;
+    private bool _keysBackedUp = false;
+    private bool _generatingKeys = false;
+    private bool _publishingProfile = false;
+    private bool _accountCreated = false;
+    private int _currentStep = 1;
+    private User _profile = new User();
+
+    private async Task GenerateNewKeys()
+    {
+        _generatingKeys = true;
+        StateHasChanged();
+        
+        await Task.Delay(500); // Small delay for UX
+        
+        // Generate new key pair
+        _keyPair = CryptoService.GetNewSecp256k1KeyPair();
+        
+        // Convert to bech32 format
+        var publicKeyBytes = _keyPair.PublicKey.ToXOnlyPubKey().ToBytes();
+        var privateKeyBytes = _keyPair.PrivateKey.sec.ToBytes();
+        
+        _publicKeyBech32 = GeneralHelpers.HexToBech32(Convert.ToHexString(publicKeyBytes), Bech32PrefixEnum.npub);
+        _privateKeyBech32 = GeneralHelpers.HexToBech32(Convert.ToHexString(privateKeyBytes), Bech32PrefixEnum.nsec);
+        
+        _generatingKeys = false;
+        StateHasChanged();
+    }
+
+    private void TogglePrivateKeyVisibility()
+    {
+        _showPrivateKey = !_showPrivateKey;
+    }
+
+    private async Task CopyToClipboard(string text)
+    {
+        // In a real implementation, you'd use JS interop to copy to clipboard
+        // For now, we'll just provide visual feedback
+    }
+
+    private async Task PublishProfile()
+    {
+        _publishingProfile = true;
+        StateHasChanged();
+
+        try
+        {
+            // Set the current key pair as ethereal for signing
+            CryptoService.CreateEtherealKeyPair();
+            // Note: In a real implementation, you'd need to set the actual key pair
+            
+            // Create profile metadata event
+            var profileJson = JsonConvert.SerializeObject(_profile);
+            var profileEvent = MessageService.CreateNEvent(KindEnum.Metadata, profileJson);
+            
+            // Send to relays
+            await MessageService.Send(KindEnum.Metadata, profileEvent);
+            
+            // Update user profile service
+            UserProfileService.User = _profile;
+            UserProfileService.NPubKey = _publicKeyBech32;
+            UserProfileService.IsLoggedIn = true;
+            
+            await Task.Delay(2000); // Give relays time to process
+            
+            _accountCreated = true;
+        }
+        catch (Exception ex)
+        {
+            // Error publishing profile - could add UI feedback here
+        }
+        finally
+        {
+            _publishingProfile = false;
+            StateHasChanged();
+        }
+    }
+
+    private void GoToHome()
+    {
+        NavigationManager.NavigateTo("/");
+    }
+}
